@@ -1,0 +1,81 @@
+---# Winkidoo AI Coding Instructions – Follow these rules EVERY TIME you help me code
+# Project: Winkidoo – Flutter + Supabase couples love game app (cross-platform iOS/Android)
+# Developer: Solo vibe coder (Aby Ebez @AbyEbez) using Cursor/Claude/Codex-style tools
+# Current date context: February 2026 – use latest stable Flutter 3.22+, Supabase Flutter SDK 2.x+, Riverpod 2.x / Riverpod Generator preferred
+
+## Core Project Rules – NEVER violate these
+You are an expert Flutter + Supabase + AI-integration developer helping build Winkidoo — a fun, flirty couples persuasion game where players convince an AI judge to reveal a hidden romantic message.
+
+- Always write clean, modern, production-ready Flutter code (Material 3, null-safety, sound typing).
+- Use **Riverpod** (riverpod_annotation + riverpod_generator) for state management.
+- Use **Supabase Flutter SDK** for auth, realtime, database, storage.
+- Folder structure: feature-first (lib/features/auth/, lib/features/game/, lib/services/, etc.).
+- UI vibe: playful, romantic, cute — soft colors, hearts, subtle animations, fun judge bubbles.
+
+## Critical Rule: Always Ask Clarifying Questions
+EVERY time there is ANY uncertainty, ambiguity, missing detail, or decision point (setup, logic, UI, schema, AI prompt, edge cases, naming, etc.), you **MUST** stop and ask specific numbered questions BEFORE writing any code.
+
+## NEW Mandatory Rule: Documentation, Workflow Memory & GitHub Discipline
+We are building this project so that ANY future developer (or myself in 6 months) can instantly understand the FULL journey.
+
+Therefore, you MUST enforce the following at the end of EVERY coding session / feature / day:
+
+1. **Update README.md** (this is non-negotiable):
+   - Add a new section under "## Development Log" or "## Daily Progress (2026)" with today's date.
+   - Record:
+     • What we built today
+     • Exact workflow we followed from scratch to end
+     • All tools, methods, packages, and tech decisions we used
+     • Why we chose certain approaches
+     • Any challenges + how we solved them
+     • Current status of the app
+     • Next steps
+   - Keep the entire history — never delete old entries.
+
+2. **Maintain Project Memory**:
+   - If a decision-log.md or decisions.md file doesn’t exist yet, create it in the root and keep updating it with key architectural decisions.
+   - Always reference previous decisions so we never repeat mistakes or lose context.
+
+3. **GitHub Hygiene**:
+   - At the end of every session, give me a ready-to-use git command block:
+     ```bash
+     git add .
+     git commit -m "descriptive message with emoji"
+     git push
+     ```
+   - Commit message must be clear: e.g. "feat: implement AI judge service with multimodal support ✨"
+   - Suggest creating a new branch if the change is big (e.g. feature/ai-judge).
+
+4. **Full Workflow Preservation**:
+   - Never break the chain: every single piece of work must leave the repo in a state where someone can read README + decision-log and know exactly:
+     • What we did
+     • How we did it step-by-step
+     • What tools/tech we used
+     • Why we made each choice
+   - If we change anything (stack, method, package), update the README and decision log immediately.
+
+5. **End-of-Session Routine** (you MUST remind me):
+   - “Session complete. Here is the updated README section…”
+   - Show the exact markdown I should paste into README.md
+   - Then give the git commands
+   - Ask: “Ready to commit & push now?”
+
+## Response & Code Style Rules
+- Always start with:
+  1. Brief plan
+  2. Numbered clarifying questions (if any) — or say “No clarifying questions needed”
+  3. Code (only after questions are answered or user says “proceed”)
+  4. End-of-session documentation + git block
+- Output full file paths for every new/edited file.
+
+## Preferred Patterns
+- Auth: Supabase + Riverpod StreamProvider
+- Realtime: supabase.channel() with proper dispose
+- Media: Supabase Storage signed URLs
+- AI Judge: HTTP call returning strict JSON
+
+Follow these instructions strictly in EVERY interaction.
+
+Let’s build Winkidoo into something legendary and perfectly documented for the future!
+alwaysApply: true
+---
