@@ -1,9 +1,9 @@
 # Winkidoo
 
-**AI-powered Digital Surprise Vault for couples.** One person hides a message (or future: photo, voice, gift). Both can play: convince the AI judge to unlock it. Winner gets the reveal.
+**AI-powered Digital Surprise Vault for couples.** One person hides a message, photo, or voice note. Both can play: convince the AI judge to unlock it. Winner gets the reveal.
 
 - **Stack:** Flutter 3.22+, Supabase (Auth, Realtime, Postgres, Storage), Riverpod 2.x, Google Gemini Flash (AI Judge).
-- **Vibe:** Dark mysterious romance UI, 5 judge personas, persuasion or collaboration unlock, Winks virtual economy.
+- **Vibe:** Dual theme (Midnight Romance + Blush & Wink), 5 judge personas, text/photo/voice surprises, persuasion or collaboration unlock, Winks virtual economy.
 
 ---
 
@@ -40,16 +40,19 @@
 ```
 lib/
 ├── main.dart                 # Entry, Supabase init
-├── app.dart                  # Root routing (auth → couple link → vault)
+├── app.dart                  # Root routing (auth → couple link → onboarding → vault)
 ├── core/
-│   ├── theme/               # Midnight Romance dark theme
-│   └── constants/           # App constants, persona IDs, costs
+│   ├── theme/               # Dual theme (Midnight Romance + Blush & Wink)
+│   ├── constants/           # App constants, persona IDs, costs, breakpoints
+│   ├── layout/              # ResponsiveVaultShell (desktop two-panel, mobile nav + FAB)
+│   └── widgets/              # ErrorScreen, SkeletonCard
 ├── features/
 │   ├── auth/                # Login, couple link (invite code)
-│   ├── vault/               # Vault list, create surprise, realtime subscription
-│   └── battle/              # Submission, judge deliberation, reveal
-├── models/                  # Surprise, Attempt, Couple, JudgeResponse, WinksBalance
-├── providers/               # Riverpod: auth, couple, surprise, winks, AI judge
+│   ├── onboarding/          # 3-screen onboarding (value prop, couple link, first surprise)
+│   ├── vault/               # Vault list, create surprise (text/photo/voice), realtime
+│   └── battle/              # Submission, judge deliberation, reveal (text/photo/voice)
+├── models/                  # Surprise (with type + storage path), Attempt, Couple, etc.
+├── providers/               # Riverpod: auth, couple, theme, onboarding, surprise, winks, AI judge
 └── services/
     ├── ai_judge_service.dart   # Gemini Flash judge
     ├── encryption_service.dart # Client-side encrypt/decrypt surprise content
@@ -143,12 +146,20 @@ lib/
 - **Status:** Wink+ state and gating in place; paywall is placeholder. Hint/instant-unlock UI was already present; polished with semantics and constants.
 - **Next:** Wire real IAP or Stripe to set `couples.wink_plus_until`. E2E test with two accounts; optionally add dev shortcut to grant Wink+ for testing.
 
+### February 25, 2026 – Phase 1: Responsive UI, dual theme, onboarding, photo & voice surprises, quality
+
+- **What we built:** Phase 1 roadmap delivered in order. (1) **Responsive & adaptive UI:** `LayoutBuilder` and `MediaQuery`; `ResponsiveVaultShell` in `core/layout/`. Web desktop (width ≥ 700px): two-panel layout — sidebar vault list (320px) + main area (battle/reveal/create) with nested `Navigator`. Mobile: full-screen flows, bottom nav (Vault), FAB for "Create Surprise". Breakpoint and `kIsWeb` used so desktop-only behavior is safe on web. (2) **Dual theme:** Full light theme "Blush & Wink" in `app_theme.dart` (light background, soft pinks, readable text); `AppTheme.gradientColors(Theme.of(context).brightness)` used on all gradient backgrounds. `ThemeModeNotifier` in `theme_provider.dart` persists theme mode (system/light/dark) in SharedPreferences; vault header has cycle toggle (system → light → dark). (3) **Micro-animations & haptics:** Reveal screen: `HapticFeedback.mediumImpact()` on successful unlock when `!kIsWeb`. Battle chat: send button with scale-down animation (0.88) on tap and `HapticFeedback.lightImpact()` on send; platform checks so web has no haptics. (4) **Onboarding & empty states:** 3-screen `OnboardingScreen` (value prop, couple link, first surprise) with "Get started"; `onboarding_provider.dart` persists completion; app shows onboarding once after login if not complete. Empty vault: illustration + "Nothing here yet" copy and "Create your first surprise" CTA. (5) **Photo surprise:** Migration `004_surprise_type_photo.sql` adds `surprise_type` (text/photo/voice) and `content_storage_path`. Supabase Storage bucket `surprises`; paths `{coupleId}/{surpriseId}.jpg`. Create flow: type selector (Text | Photo | Voice); photo = image_picker → upload binary → insert row with type + path. Reveal: signed URL for photo, `Image.network` when unlocked. (6) **Voice surprise:** Same schema; record via `record` package to temp `.m4a`, upload to Storage `{coupleId}/{id}.m4a`; reveal uses `audioplayers` with `UrlSource` for play/pause. (7) **Quality:** `ErrorScreen` widget (retry / back to vault); auth and couple error states in app show it. Vault loading shows 4 `SkeletonCard` placeholders; error state has Retry button. `flutter test`: app smoke test (ProviderScope + WinkidooApp) and `Surprise.fromJson` tests (text + photo). PWA: `web/manifest.json` and `web/index.html` title/description for installable web.
+- **Workflow:** Constants (desktop breakpoint, storage bucket) → responsive shell + vault list (desktop nav key, bottom nav, FAB) → theme (light theme, provider, persist) → gradients switched to brightness-aware → onboarding provider + screen + app gate → empty vault UI → migration 004 → Surprise model (surpriseType, contentStoragePath, isPhoto, isVoice) → create surprise type selector, photo pick/upload, voice record/upload → reveal photo/voice signed URL + image/audio player → haptics and send-button animation → ErrorScreen, skeleton in vault, tests, manifest/meta.
+- **Tech:** image_picker, record, audioplayers, path_provider; existing shared_preferences for theme and onboarding.
+- **Status:** Phase 1 complete. All main screens theme-aware; web desktop and mobile layouts in place; photo and voice create/battle/reveal working; tests pass.
+- **Next:** E2E smoke test (two accounts, full flow). Later: video/doodle surprises, push notifications, shareable reveal cards, Memory Wall, daily streak (Phase 2). Payments (IAP/Stripe) when ready.
+
 ---
 
 ## Git
 
 ```bash
 git add .
-git commit -m "feat: Winkidoo MVP1 — auth, vault, judge, reveal, winks, realtime ✨"
+git commit -m "docs: Phase 1 summary — responsive UI, dual theme, onboarding, photo/voice, quality"
 git push
 ```

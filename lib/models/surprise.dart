@@ -11,6 +11,8 @@ class Surprise {
     required this.isUnlocked,
     this.unlockedAt,
     required this.createdAt,
+    this.surpriseType = 'text',
+    this.contentStoragePath,
   });
 
   final String id;
@@ -24,13 +26,18 @@ class Surprise {
   final bool isUnlocked;
   final DateTime? unlockedAt;
   final DateTime createdAt;
+  final String surpriseType;
+  final String? contentStoragePath;
+
+  bool get isPhoto => surpriseType == 'photo';
+  bool get isVoice => surpriseType == 'voice';
 
   factory Surprise.fromJson(Map<String, dynamic> json) {
     return Surprise(
       id: json['id'] as String,
       coupleId: json['couple_id'] as String,
       creatorId: json['creator_id'] as String,
-      contentEncrypted: json['content_encrypted'] as String,
+      contentEncrypted: (json['content_encrypted'] as String?) ?? '',
       unlockMethod: json['unlock_method'] as String,
       judgePersona: json['judge_persona'] as String,
       difficultyLevel: json['difficulty_level'] as int,
@@ -42,6 +49,8 @@ class Surprise {
           ? DateTime.parse(json['unlocked_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
+      surpriseType: (json['surprise_type'] as String?) ?? 'text',
+      contentStoragePath: json['content_storage_path'] as String?,
     );
   }
 
@@ -58,6 +67,8 @@ class Surprise {
       'is_unlocked': isUnlocked,
       'unlocked_at': unlockedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
+      'surprise_type': surpriseType,
+      'content_storage_path': contentStoragePath,
     };
   }
 }

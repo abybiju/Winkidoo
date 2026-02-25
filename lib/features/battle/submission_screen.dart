@@ -148,14 +148,11 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppTheme.backgroundStart,
-              AppTheme.backgroundEnd,
-            ],
+            colors: AppTheme.gradientColors(Theme.of(context).brightness),
           ),
         ),
         child: SafeArea(

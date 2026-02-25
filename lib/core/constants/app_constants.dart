@@ -42,4 +42,10 @@ class AppConstants {
 
   /// Live battle: number of rounds (seeker + creator each send this many messages before verdict)
   static const int battleMaxRounds = 3;
+
+  /// Min width (px) for desktop two-panel layout (web). Below = mobile.
+  static const double desktopBreakpoint = 700;
+
+  /// Supabase Storage bucket for surprise media (photo, voice, etc.)
+  static const String surpriseStorageBucket = 'surprises';
 }

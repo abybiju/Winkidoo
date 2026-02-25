@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/skeleton_card.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
 import 'package:winkidoo/features/vault/wink_plus_screen.dart';
 import 'package:winkidoo/features/battle/battle_chat_screen.dart';
@@ -12,10 +13,22 @@ import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/onboarding_provider.dart';
+import 'package:winkidoo/providers/theme_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
 
 class VaultListScreen extends ConsumerStatefulWidget {
-  const VaultListScreen({super.key});
+  const VaultListScreen({
+    super.key,
+    this.desktopDetailNavigatorKey,
+    this.isDesktopSidebar = false,
+    this.showBottomNav = false,
+  });
+
+  /// When set (desktop two-panel), push battle/create to this navigator instead of context.
+  final GlobalKey<NavigatorState>? desktopDetailNavigatorKey;
+  final bool isDesktopSidebar;
+  final bool showBottomNav;
 
   @override
   ConsumerState<VaultListScreen> createState() => _VaultListScreenState();
@@ -64,17 +77,63 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     final couple = coupleAsync.value;
     final showWaitingBanner =
         couple != null && !couple.isLinked;
+    final isDesktop = widget.desktopDetailNavigatorKey != null;
+
+    void pushToBattle(String surpriseId) {
+      if (isDesktop) {
+        widget.desktopDetailNavigatorKey?.currentState?.push(
+          MaterialPageRoute<void>(
+            builder: (_) => BattleChatScreen(surpriseId: surpriseId),
+          ),
+        );
+      } else {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => BattleChatScreen(surpriseId: surpriseId),
+          ),
+        );
+      }
+    }
+
+    void pushToCreate() {
+      if (isDesktop) {
+        widget.desktopDetailNavigatorKey?.currentState?.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const CreateSurpriseScreen(),
+          ),
+        );
+      } else {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const CreateSurpriseScreen(),
+          ),
+        );
+      }
+    }
+
+    void pushToWinkPlus() {
+      if (isDesktop) {
+        widget.desktopDetailNavigatorKey?.currentState?.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const WinkPlusScreen(),
+          ),
+        );
+      } else {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const WinkPlusScreen(),
+          ),
+        );
+      }
+    }
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppTheme.backgroundStart,
-              AppTheme.backgroundEnd,
-            ],
+            colors: AppTheme.gradientColors(Theme.of(context).brightness),
           ),
         ),
         child: SafeArea(
@@ -82,14 +141,14 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(widget.isDesktopSidebar ? 12 : 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       AppConstants.appName,
                       style: GoogleFonts.poppins(
-                        fontSize: 24,
+                        fontSize: widget.isDesktopSidebar ? 18 : 24,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primary,
                       ),
@@ -97,12 +156,40 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const WinkPlusScreen(),
+                        IconButton(
+                          onPressed: () {
+                            final notifier = ref.read(themeModeProvider.notifier);
+                            final current = ref.read(themeModeProvider);
+                            if (current == ThemeMode.system) {
+                              notifier.setThemeMode(ThemeMode.light);
+                            } else if (current == ThemeMode.light) {
+                              notifier.setThemeMode(ThemeMode.dark);
+                            } else {
+                              notifier.setThemeMode(ThemeMode.system);
+                            }
+                          },
+                          icon: Icon(
+                            ref.watch(themeModeProvider) == ThemeMode.light
+                                ? Icons.light_mode
+                                : ref.watch(themeModeProvider) == ThemeMode.dark
+                                    ? Icons.dark_mode
+                                    : Icons.brightness_auto,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          tooltip: 'Toggle theme',
+                        ),
+                        if (widget.isDesktopSidebar)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: IconButton(
+                              onPressed: pushToCreate,
+                              icon: const Icon(Icons.add_circle_outline),
+                              color: AppTheme.primary,
+                              tooltip: 'Create surprise',
                             ),
                           ),
+                        GestureDetector(
+                          onTap: pushToWinkPlus,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -159,9 +246,21 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                     final myVault = surprises
                         .where((s) => s.creatorId == user?.id)
                         .toList();
+                    final isEmpty = forMe.isEmpty && myVault.isEmpty;
+
+                    if (isEmpty) {
+                      return _EmptyVaultState(
+                        onCreateTap: pushToCreate,
+                        onMarkFirstPromptSeen: () =>
+                            ref.read(createFirstSurprisePromptSeenProvider.notifier).setSeen(),
+                        promptSeen: ref.watch(createFirstSurprisePromptSeenProvider),
+                      );
+                    }
 
                     return ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: widget.isDesktopSidebar ? 12 : 20,
+                      ),
                       children: [
                         if (forMe.isNotEmpty) ...[
                           Text(
@@ -176,13 +275,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                           ...forMe.map((s) => _SurpriseCard(
                                 surprise: s,
                                 isForMe: true,
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => BattleChatScreen(
-                                      surpriseId: s.id,
-                                    ),
-                                  ),
-                                ),
+                                onTap: () => pushToBattle(s.id),
                               )),
                           const SizedBox(height: 24),
                         ],
@@ -195,18 +288,41 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ...myVault.map((s) => _MyVaultCard(surprise: s)),
+                        ...myVault.map((s) => _MyVaultCard(
+                              surprise: s,
+                              onTapBattle: pushToBattle,
+                            )),
                         const SizedBox(height: 80),
                       ],
                     );
                   },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primary),
+                  loading: () => ListView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: widget.isDesktopSidebar ? 12 : 20,
+                    ),
+                    children: const [
+                      SkeletonCard(),
+                      SkeletonCard(),
+                      SkeletonCard(),
+                      SkeletonCard(),
+                    ],
                   ),
                   error: (e, _) => Center(
-                    child: Text(
-                      'Could not load surprises',
-                      style: TextStyle(color: AppTheme.error),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Could not load surprises',
+                          style: TextStyle(color: AppTheme.error),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton.icon(
+                          onPressed: () =>
+                              ref.invalidate(surprisesListProvider),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -215,24 +331,41 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const CreateSurpriseScreen(),
-          ),
-        ),
-        backgroundColor: AppTheme.primary,
-        icon: const Icon(Icons.add),
-        label: const Text('Hide a surprise'),
-      ),
+      floatingActionButton: widget.isDesktopSidebar
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: pushToCreate,
+              backgroundColor: AppTheme.primary,
+              icon: const Icon(Icons.add),
+              label: const Text('Hide a surprise'),
+            ),
+      bottomNavigationBar: widget.showBottomNav
+          ? BottomNavigationBar(
+              currentIndex: 0,
+              onTap: (_) {},
+              backgroundColor: AppTheme.surface,
+              selectedItemColor: AppTheme.primary,
+              unselectedItemColor: AppTheme.textSecondary,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.inbox_rounded),
+                  label: 'Vault',
+                ),
+              ],
+            )
+          : null,
     );
   }
 }
 
 class _MyVaultCard extends ConsumerWidget {
-  const _MyVaultCard({required this.surprise});
+  const _MyVaultCard({
+    required this.surprise,
+    this.onTapBattle,
+  });
 
   final Surprise surprise;
+  final void Function(String surpriseId)? onTapBattle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -244,11 +377,7 @@ class _MyVaultCard extends ConsumerWidget {
         isForMe: false,
         subtitle: active ? 'Battle in progress — tap to join' : null,
         onTap: active
-            ? () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BattleChatScreen(surpriseId: surprise.id),
-                  ),
-                )
+            ? () => onTapBattle?.call(surprise.id)
             : () {},
       ),
       loading: () => _SurpriseCard(
@@ -260,6 +389,73 @@ class _MyVaultCard extends ConsumerWidget {
         surprise: surprise,
         isForMe: false,
         onTap: () {},
+      ),
+    );
+  }
+}
+
+class _EmptyVaultState extends StatelessWidget {
+  const _EmptyVaultState({
+    required this.onCreateTap,
+    required this.onMarkFirstPromptSeen,
+    required this.promptSeen,
+  });
+
+  final VoidCallback onCreateTap;
+  final VoidCallback onMarkFirstPromptSeen;
+  final bool promptSeen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_rounded,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Nothing here yet',
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Create a surprise for your partner, or wait for them to send one.',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () {
+                onMarkFirstPromptSeen();
+                onCreateTap();
+              },
+              icon: const Icon(Icons.add),
+              label: Text(promptSeen ? 'Create surprise' : 'Create your first surprise'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

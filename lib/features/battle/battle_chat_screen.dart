@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
@@ -304,11 +306,11 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
             ),
           ),
           body: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppTheme.backgroundStart, AppTheme.backgroundEnd],
+                colors: AppTheme.gradientColors(Theme.of(context).brightness),
               ),
             ),
             child: SafeArea(
@@ -442,28 +444,17 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  IconButton.filled(
-                                    onPressed: (verdict == null && !_isSending)
-                                        ? () {
-                                            final type = isCreator
-                                                ? 'creator'
-                                                : 'seeker';
-                                            _sendMessage(
-                                              type,
-                                              _textController.text,
-                                            );
-                                          }
-                                        : null,
-                                    icon: _isSending
-                                        ? const SizedBox(
-                                            width: 24,
-                                            height: 24,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : const Icon(Icons.send),
+                                  _SendButton(
+                                    isSending: _isSending,
+                                    enabled: verdict == null && !_isSending,
+                                    onPressed: () {
+                                      final type =
+                                          isCreator ? 'creator' : 'seeker';
+                                      _sendMessage(
+                                        type,
+                                        _textController.text,
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -587,6 +578,82 @@ class _ChatBubble extends StatelessWidget {
               fontSize: 15,
               color: AppTheme.textPrimary,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SendButton extends StatefulWidget {
+  const _SendButton({
+    required this.isSending,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final bool isSending;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  State<_SendButton> createState() => _SendButtonState();
+}
+
+class _SendButtonState extends State<_SendButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _scale = Tween<double>(begin: 1, end: 0.88).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        if (widget.enabled) _controller.forward();
+      },
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.enabled && !widget.isSending
+          ? () {
+              if (!kIsWeb) HapticFeedback.lightImpact();
+              widget.onPressed();
+            }
+          : null,
+      child: ScaleTransition(
+        scale: _scale,
+        child: AbsorbPointer(
+          child: IconButton.filled(
+            onPressed: widget.enabled && !widget.isSending
+                ? () {}
+                : null,
+            icon: widget.isSending
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.send),
           ),
         ),
       ),
