@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/models/couple.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
@@ -32,16 +36,35 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
       final user = ref.read(currentUserProvider);
       if (user == null) return;
 
-      final inviteCode = const Uuid().v4().substring(0, 8).toUpperCase();
-      await client.from('couples').insert({
-        'user_a_id': user.id,
-        'invite_code': inviteCode,
-      });
-      ref.invalidate(coupleProvider);
+      // Check for an existing unlinked couple where this user is the creator
+      final existing = await client
+          .from('couples')
+          .select()
+          .eq('user_a_id', user.id)
+          .isFilter('user_b_id', null)
+          .maybeSingle();
+
+      Couple couple;
+      if (existing is Map<String, dynamic>) {
+        // Reuse the existing unlinked couple
+        couple = Couple.fromJson(existing);
+        debugPrint('createCouple: reusing existing code ${couple.inviteCode}');
+      } else {
+        // Create a new couple
+        final inviteCode = const Uuid().v4().substring(0, 8).toUpperCase();
+        final result = await client.from('couples').insert({
+          'user_a_id': user.id,
+          'invite_code': inviteCode,
+        }).select().single();
+        couple = Couple.fromJson(result as Map<String, dynamic>);
+        debugPrint('createCouple: created new code ${couple.inviteCode}');
+      }
+
+      ref.read(coupleProvider.notifier).setCouple(couple);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Your code: $inviteCode — Share with your partner!'),
+            content: Text('Your code: ${couple.inviteCode} — Share with your partner!'),
             backgroundColor: AppTheme.primary,
           ),
         );
@@ -78,18 +101,32 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
       final user = ref.read(currentUserProvider);
       if (user == null) return;
 
-      final raw = await client
-          .from('couples')
-          .select()
-          .eq('invite_code', code)
-          .maybeSingle();
+      final raw = await client.rpc('join_couple_by_code', params: {
+        'p_invite_code': code,
+        'p_user_id': user.id,
+      });
 
-      final res = raw is Map<String, dynamic> ? raw : null;
-      if (res == null || res['user_b_id'] != null) {
+      debugPrint('joinCouple: code="$code" rawType=${raw.runtimeType} raw=$raw');
+
+      Map<String, dynamic>? res;
+      final r = raw as Object?;
+      if (r is Map<String, dynamic>) {
+        res = r;
+      } else if (r is String) {
+        try {
+          final decoded = Map<String, dynamic>.from(
+            (const JsonDecoder().convert(r)) as Map,
+          );
+          res = decoded;
+        } catch (_) {}
+      }
+
+      if (res == null) {
+        debugPrint('joinCouple: unexpected response');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Invalid or already used code'),
+              content: Text('Something went wrong. Try again.'),
               backgroundColor: AppTheme.error,
             ),
           );
@@ -97,15 +134,24 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
         return;
       }
 
-      final coupleId = res['id'];
-      if (coupleId == null) return;
+      if (res['error'] != null) {
+        final err = res['error'] as String;
+        final msg = switch (err) {
+          'not_found' => 'Code not found. Check the code and try again.',
+          'already_used' => 'This code was already used.',
+          'own_code' => 'You can\'t join your own code! Share it with your partner.',
+          _ => 'Something went wrong ($err).',
+        };
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: AppTheme.error),
+          );
+        }
+        return;
+      }
 
-      await client.from('couples').update({
-        'user_b_id': user.id,
-        'linked_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', coupleId);
-
-      ref.invalidate(coupleProvider);
+      final couple = Couple.fromJson(res);
+      ref.read(coupleProvider.notifier).setCouple(couple);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -115,6 +161,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
         );
       }
     } catch (e) {
+      debugPrint('joinCouple error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

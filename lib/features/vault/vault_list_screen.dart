@@ -1,25 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
-import 'package:winkidoo/features/battle/submission_screen.dart';
+import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
 
-class VaultListScreen extends ConsumerWidget {
+class VaultListScreen extends ConsumerStatefulWidget {
   const VaultListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VaultListScreen> createState() => _VaultListScreenState();
+}
+
+class _VaultListScreenState extends ConsumerState<VaultListScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(surprisesListProvider);
+      ref.invalidate(coupleProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final surprisesAsync = ref.watch(surprisesListProvider);
     final winksAsync = ref.watch(winksBalanceProvider);
     final user = ref.watch(currentUserProvider);
     final coupleAsync = ref.watch(coupleProvider);
+    final couple = coupleAsync.value;
+    final showWaitingBanner =
+        couple != null && !couple.isLinked;
 
     return Scaffold(
       body: Container(
@@ -64,6 +95,13 @@ class VaultListScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (showWaitingBanner) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _WaitingForPartnerBanner(inviteCode: couple.inviteCode),
+                ),
+                const SizedBox(height: 16),
+              ],
               Expanded(
                 child: surprisesAsync.when(
                   data: (surprises) {
@@ -94,7 +132,7 @@ class VaultListScreen extends ConsumerWidget {
                                 isForMe: true,
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => SubmissionScreen(
+                                    builder: (_) => BattleChatScreen(
                                       surpriseId: s.id,
                                     ),
                                   ),
@@ -111,11 +149,7 @@ class VaultListScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ...myVault.map((s) => _SurpriseCard(
-                              surprise: s,
-                              isForMe: false,
-                              onTap: () {},
-                            )),
+                        ...myVault.map((s) => _MyVaultCard(surprise: s)),
                         const SizedBox(height: 80),
                       ],
                     );
@@ -149,16 +183,134 @@ class VaultListScreen extends ConsumerWidget {
   }
 }
 
+class _MyVaultCard extends ConsumerWidget {
+  const _MyVaultCard({required this.surprise});
+
+  final Surprise surprise;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasBattle = ref.watch(hasActiveBattleProvider(surprise.id));
+
+    return hasBattle.when(
+      data: (active) => _SurpriseCard(
+        surprise: surprise,
+        isForMe: false,
+        subtitle: active ? 'Battle in progress — tap to join' : null,
+        onTap: active
+            ? () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => BattleChatScreen(surpriseId: surprise.id),
+                  ),
+                )
+            : () {},
+      ),
+      loading: () => _SurpriseCard(
+        surprise: surprise,
+        isForMe: false,
+        onTap: () {},
+      ),
+      error: (_, __) => _SurpriseCard(
+        surprise: surprise,
+        isForMe: false,
+        onTap: () {},
+      ),
+    );
+  }
+}
+
+class _WaitingForPartnerBanner extends StatelessWidget {
+  const _WaitingForPartnerBanner({required this.inviteCode});
+
+  final String inviteCode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 0),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Waiting for your partner',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Share this code with your partner:',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      inviteCode,
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton.filled(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: inviteCode));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Code copied to clipboard'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.copy),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SurpriseCard extends StatelessWidget {
   const _SurpriseCard({
     required this.surprise,
     required this.isForMe,
     required this.onTap,
+    this.subtitle,
   });
 
   final Surprise surprise;
   final bool isForMe;
   final VoidCallback onTap;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +318,7 @@ class _SurpriseCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: isForMe ? onTap : null,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -200,16 +352,18 @@ class _SurpriseCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Judge: $personaLabel',
+                      subtitle ?? 'Judge: $personaLabel',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: AppTheme.textSecondary,
+                        color: subtitle != null
+                            ? AppTheme.accent
+                            : AppTheme.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              if (isForMe)
+              if (isForMe || subtitle != null)
                 const Icon(Icons.chevron_right, color: AppTheme.primary),
             ],
           ),

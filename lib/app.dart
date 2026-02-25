@@ -22,7 +22,7 @@ class WinkidooApp extends ConsumerWidget {
               if (session == null) return const LoginScreen();
               return ref.watch(coupleProvider).when(
                     data: (couple) {
-                      if (couple == null || !couple.isLinked) {
+                      if (couple == null) {
                         return const CoupleLinkScreen();
                       }
                       return const RealtimeSurprisesSubscription(

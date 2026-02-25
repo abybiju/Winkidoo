@@ -6,6 +6,7 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -46,7 +47,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
     setState(() => _isLoading = true);
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = await ref.read(coupleProvider.future);
+      final couple = ref.read(coupleProvider).value;
       final userId = ref.read(currentUserProvider)?.id;
       if (couple == null || userId == null) throw Exception('Not linked');
 
@@ -69,6 +70,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
         'is_unlocked': false,
       });
 
+      ref.invalidate(surprisesListProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

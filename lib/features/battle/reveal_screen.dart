@@ -50,7 +50,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
   Future<void> _loadContent() async {
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = await ref.read(coupleProvider.future);
+      final couple = ref.read(coupleProvider).value;
       final res = await client
           .from('surprises')
           .select()

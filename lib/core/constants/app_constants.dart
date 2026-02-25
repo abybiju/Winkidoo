@@ -36,4 +36,7 @@ class AppConstants {
 
   /// Deliberation animation duration (seconds)
   static const int deliberationDurationSeconds = 4;
+
+  /// Live battle: number of rounds (seeker + creator each send this many messages before verdict)
+  static const int battleMaxRounds = 3;
 }

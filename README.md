@@ -95,6 +95,46 @@ lib/
 - **Testing:** To test “create couple” and “join with code” correctly, use two different accounts (two emails): one creates the couple and gets the code; the other joins from another device. Using the same account on both shows “Invalid or already used code” once the code is consumed (same user in both slots). Chrome and macOS can run on the same machine; they share the same Supabase backend.
 - **Status:** Auth and couple linking work on Chrome and macOS when config is set. Next: test with two accounts, then continue vault/judge flows and polish.
 
+### Two-account flow and macOS verification
+
+- **Goal:** Confirm that one account can create a couple and get a code, a different account can join with that code (e.g. on macOS), and macOS does not show “Something went wrong” after join or on the vault screen.
+- **Provider hardening:** `surprisesListProvider` and `surpriseByIdProvider` now handle non-List / non-Map API responses and parse only valid Map items; on error they return empty list or null. `winksBalanceProvider` now checks `res is Map<String, dynamic>` and is wrapped in try/catch so it never throws. This avoids vault/home errors after join when Supabase returns unexpected shapes on some platforms.
+- **Verification steps (manual):**
+  1. **Chrome – Account A:** Run `flutter run -d chrome`, sign in as Account A, create a couple link, note the code (e.g. `ABC12XYZ`).
+  2. **macOS – Account B:** Run `flutter run -d macos`, sign in as Account B (different email), enter the code from step 1, join. Confirm “You’re linked! Welcome to Winkidoo” and then the vault/home screen with no “Something went wrong.”
+  3. If “Something went wrong” still appears, reproduce and check terminal for `coupleProvider:` debug prints; fix the cause (e.g. in `lib/providers/couple_provider.dart` or the screen that shows the error).
+- **Success criteria:** Account B can join Account A’s couple from macOS; after join, macOS shows normal post-link UI (vault) and never “Something went wrong.”
+
+### February 23, 2026 – AI Judge Pro Responses
+
+- **Problem:** The AI judge often showed the same fallback (“Hold on, I'm still weighing this…”) repeatedly instead of substantive in-character replies. Gemini was returning valid JSON but with empty or very short `commentary`.
+- **Approach:** (1) **Schema:** Use Gemini `GenerationConfig.responseSchema` (Dart `Schema.object` with `requiredProperties: ['commentary']`) so the API enforces a non-empty commentary field. (2) **Prompt:** Hardened `judgeChat` prompt with an explicit rule that commentary must be 1–3 full sentences in persona voice and never empty; added one example non-verdict JSON. (3) **Retry:** When the first response is valid JSON but commentary is empty/short, send one retry request with “Your previous reply had no commentary…” and use the second response if it has valid commentary. (4) **Fallbacks:** Replaced the single fallback string with a list of five varied messages and pick at random so the UI never repeats the same line. (5) **Context:** Added optional `surpriseContextHint` to `judgeChat` (e.g. “Surprise type: message”) and pass it from `BattleChatScreen` (derived from `surprise.unlockMethod`) so the judge can reference the surprise type without revealing content. (6) **Config:** Increased `maxOutputTokens` from 512 to 1024 so the model has room for full commentary.
+- **Files:** `lib/services/ai_judge_service.dart` (schema, prompt, retry, varied fallbacks, `surpriseContextHint` param), `lib/features/battle/battle_chat_screen.dart` (pass `surpriseContextHint` into `judgeChat`).
+- **Status:** Implemented. Judge should respond consistently with substantive, in-character commentary and varied fallbacks when needed.
+- **Next:** Test live battle chat; tune persona examples or schema if needed.
+
+### February 23, 2026 – Judge: Helpful "How to Impress" Answers and Less Repetition
+
+- **Problem:** When the seeker (or creator) asked "what should I do to impress you?" or "how do you want to be impressed?", the Judge repeated the same deflection ("the magic comes from you", "bring your A-game") without giving concrete guidance. Responses felt repetitive.
+- **Approach:** (1) **Rule:** Added an explicit prompt instruction that when users ask how to impress or how to win, the Judge must answer helpfully in character with 1–3 concrete ideas (no refusal without suggestions). (2) **Persona guidance:** New static map `_howToImpressByPersona` in `AiJudgeService` — each persona (Sassy Cupid, Poetic Romantic, Chaos Gremlin, The Ex, Dr. Love) has a short "what this judge wants" line (effort + sass, romantic language, chaos with heart, etc.). (3) **Unlock-method guidance:** From `surpriseContextHint`, inject a line for "persuade" (words, creativity, gesture) or "collaborate" (teamwork, shared effort). (4) **Optional `howToImpressHint`:** New optional parameter on `judgeChat()` for future game_mode or surprise_type hints (e.g. "Send a voice note", "Describe dream date in emojis"); battle screen passes `null` for now. (5) **Repetition:** Added instruction to vary reactions and give new angles or more concrete suggestions instead of repeating the same phrase when the user keeps asking. (6) **Example:** Added one in-prompt example of a good "how to impress" response (Sassy Cupid style) so the model has a clear pattern.
+- **Files:** `lib/services/ai_judge_service.dart` (map, param, prompt blocks A/B/C, example), `lib/features/battle/battle_chat_screen.dart` (`howToImpressHint: null`).
+- **Status:** Implemented. Judge should now give actionable, persona- and context-aware guidance when asked how to impress, and vary replies to reduce repetition.
+- **Next:** Test in live chat; when game_mode or surprise_type are added to schema, pass `howToImpressHint` from battle screen.
+
+### February 23, 2026 – AI Judge: Web Quote Detection and In-Character Nudges
+
+- **Goal:** When a message sounds like a generic romantic quote, famous line, or copy-pasted web text, the Judge should respond in character with a warm, witty nudge that encourages original thinking — without shaming or literally accusing the user of copying.
+- **Approach:** Prompt-only change in `judgeChat`: new rule (`webQuoteRule`) instructs the Judge to watch for web-quote-like phrasing (generic quotes, "According to…", search-result style) and respond with a clever, indirect nudge (e.g. "that had a little help from the internet", "tap into your own brain"). Two in-prompt examples: Sassy Cupid style and Poetic Romantic style, so the model keeps tone consistent. No schema or UI changes; the nudge lives in commentary only.
+- **Files:** `lib/services/ai_judge_service.dart` (new `webQuoteRule` constant, injected into verdict instruction block; two example JSON responses).
+- **Status:** Implemented. Judge may now respond with in-character web-quote nudges when it infers copied or generic text.
+
+### February 23, 2026 – AI Judge: Vary Openers (No Repetitive "Oh Honey")
+
+- **Problem:** The Judge (especially Sassy Cupid) repeated "Oh honey" at the start of messages too often, making replies feel samey.
+- **Approach:** (1) **New rule:** Added `openerRule` in `judgeChat`: Judge must switch opening words every message — not start with "Oh honey" (or the same pet name) every time; use alternatives like "bestie", "sweetheart", "love", "darling", or no opener. Same for other personas (vary thy/thee, BRO, etc.). (2) **Sassy Cupid persona:** Updated from "Use phrases like 'Oh honey'" to "Vary your openers: sometimes 'Oh honey', sometimes 'bestie', 'sweetheart', 'love', 'darling', or jump straight in — never use the same opener two messages in a row." (3) **Examples:** Replaced repeated "Oh honey" in in-prompt examples with varied openers ("Bestie,…", "Sweetheart,…", and one with no opener) so the model sees variety.
+- **Files:** `lib/services/ai_judge_service.dart` (`openerRule`, persona text, example commentary strings).
+- **Status:** Implemented. Judge should now vary openers across messages and feel less repetitive.
+
 ---
 
 ## Git

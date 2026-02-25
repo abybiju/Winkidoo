@@ -4,31 +4,35 @@ import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 
 final winksBalanceProvider = FutureProvider<WinksBalance?>((ref) async {
-  final client = ref.watch(supabaseClientProvider);
-  final user = ref.watch(currentUserProvider);
-  if (user == null) return null;
+  try {
+    final client = ref.watch(supabaseClientProvider);
+    final user = ref.watch(currentUserProvider);
+    if (user == null) return null;
 
-  var res = await client
-      .from('winks_balance')
-      .select()
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-  if (res == null) {
-    await client.from('winks_balance').insert({
-      'user_id': user.id,
-      'balance': 10,
-      'last_updated': DateTime.now().toUtc().toIso8601String(),
-    });
-    res = await client
+    var res = await client
         .from('winks_balance')
         .select()
         .eq('user_id', user.id)
-        .single();
-  }
+        .maybeSingle();
 
-  if (res == null) return null;
-  return WinksBalance.fromJson(res as Map<String, dynamic>);
+    if (res == null || res is! Map<String, dynamic>) {
+      await client.from('winks_balance').insert({
+        'user_id': user.id,
+        'balance': 10,
+        'last_updated': DateTime.now().toUtc().toIso8601String(),
+      });
+      final raw = await client
+          .from('winks_balance')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+      if (raw is Map<String, dynamic>) return WinksBalance.fromJson(raw);
+      return null;
+    }
+    return WinksBalance.fromJson(res);
+  } catch (_) {
+    return null;
+  }
 });
 
 final todayAttemptsCountProvider = FutureProvider<int>((ref) async {
