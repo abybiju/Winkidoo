@@ -135,6 +135,14 @@ lib/
 - **Files:** `lib/services/ai_judge_service.dart` (`openerRule`, persona text, example commentary strings).
 - **Status:** Implemented. Judge should now vary openers across messages and feel less repetitive.
 
+### February 25, 2026 – Wink+ subscription and hint/instant-unlock polish
+
+- **What we built:** (1) **Wink+ subscription (Supabase-backed):** New migration `003_wink_plus.sql` adds `wink_plus_until` (timestamptz) to `couples`. When set and in the future, the couple has Wink+. Couple model and provider now expose `isWinkPlus`. Benefits: Wink+ gets 10 free judge attempts per day (vs 3), and access to all 5 judge personas (Chaos Gremlin, The Ex, Dr. Love are gated as Wink+ only in Create Surprise). (2) **Provider:** `effectiveFreeAttemptsPerDayProvider` in `winks_provider.dart` returns 10 or 3 based on couple’s Wink+ status; `submission_screen.dart` uses it for attempt gating. (3) **Wink+ benefits screen:** New `WinkPlusScreen` lists benefits and shows “In-app purchase coming soon” for non-subscribers; vault header has a “Wink+” / “Wink+ ✓” chip that opens it. (4) **Create Surprise:** Premium personas (Chaos Gremlin, The Ex, Dr. Love) show a lock icon and “(Wink+)” and are disabled unless the couple has Wink+. (5) **Hint and instant-unlock UI:** Reveal and battle chat already had Get hint (5 Winks) and Unlock now (50 Winks); added Semantics for accessibility and switched button labels to use `AppConstants.hintCostWinks` and `AppConstants.instantUnlockCostWinks`.
+- **Workflow:** Migration → Couple model + provider → effective free attempts → submission screen → create surprise persona gating → Wink+ screen + vault entry → reveal/battle semantics and constants.
+- **Tech:** No new packages. Schema change only; IAP/Stripe can be wired later by setting `wink_plus_until` (e.g. via backend or admin).
+- **Status:** Wink+ state and gating in place; paywall is placeholder. Hint/instant-unlock UI was already present; polished with semantics and constants.
+- **Next:** Wire real IAP or Stripe to set `couples.wink_plus_until`. E2E test with two accounts; optionally add dev shortcut to grant Wink+ for testing.
+
 ---
 
 ## Git

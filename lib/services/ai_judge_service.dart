@@ -365,6 +365,35 @@ Your previous reply had no commentary. You must respond with your actual in-char
     }
   }
 
+  /// Returns one short, non-revealing hint for the surprise (e.g. for paid hint). Uses judge in hint-only mode.
+  Future<String> getHint({
+    required String persona,
+    required int difficultyLevel,
+    String? surpriseContextHint,
+  }) async {
+    final hintRequest = [
+      BattleMessage(
+        id: 'hint-req',
+        surpriseId: '',
+        senderType: 'seeker',
+        senderId: null,
+        content: 'Give me one short, non-revealing hint to help me unlock this surprise. Do not reveal the content.',
+        isVerdict: false,
+        verdictScore: null,
+        verdictUnlocked: null,
+        createdAt: DateTime.now(),
+      ),
+    ];
+    final response = await judgeChat(
+      persona: persona,
+      difficultyLevel: difficultyLevel,
+      messages: hintRequest,
+      surpriseContextHint: surpriseContextHint ?? 'romantic surprise',
+      howToImpressHint: null,
+    );
+    return response.commentary;
+  }
+
   /// Parses JSON from model output. Tolerates markdown code fences and surrounding text.
   static Map<String, dynamic> _parseJsonFromResponse(String text) {
     if (text.isEmpty) return {};

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/models/winks_balance.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 
 final winksBalanceProvider = FutureProvider<WinksBalance?>((ref) async {
@@ -35,6 +37,14 @@ final winksBalanceProvider = FutureProvider<WinksBalance?>((ref) async {
   }
 });
 
+/// Effective free attempts per day: Wink+ gets more, else free tier.
+final effectiveFreeAttemptsPerDayProvider = Provider<int>((ref) {
+  final couple = ref.watch(coupleProvider).value;
+  return couple?.isWinkPlus == true
+      ? AppConstants.winkPlusFreeAttemptsPerDay
+      : AppConstants.freeAttemptsPerDay;
+});
+
 final todayAttemptsCountProvider = FutureProvider<int>((ref) async {
   final client = ref.watch(supabaseClientProvider);
   final user = ref.watch(currentUserProvider);
@@ -53,3 +63,42 @@ final todayAttemptsCountProvider = FutureProvider<int>((ref) async {
 
   return (res as List).length;
 });
+
+/// Spends [amount] Winks, records a [type] transaction with [description].
+/// Returns true if balance was sufficient and spend succeeded.
+/// Call from widgets with their ref (Ref/WidgetRef); only used from UI.
+Future<bool> spendWinks(
+  dynamic ref,
+  int amount, {
+  required String type,
+  required String description,
+}) async {
+  final r = ref as Ref;
+  if (amount <= 0) return false;
+  final client = r.read(supabaseClientProvider);
+  final user = r.read(currentUserProvider);
+  if (user == null) return false;
+
+  final balance = await r.read(winksBalanceProvider.future);
+  if (balance == null || balance.balance < amount) return false;
+
+  try {
+    await client.from('winks_balance').update({
+      'balance': balance.balance - amount,
+      'last_updated': DateTime.now().toUtc().toIso8601String(),
+    }).eq('user_id', user.id);
+
+    await client.from('transactions').insert({
+      'user_id': user.id,
+      'amount': -amount,
+      'type': type,
+      'description': description,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    });
+
+    r.invalidate(winksBalanceProvider);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}

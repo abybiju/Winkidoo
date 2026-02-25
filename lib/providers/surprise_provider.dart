@@ -3,6 +3,9 @@ import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 
+/// Set when realtime detects a new surprise created by the partner; vault listens and shows snackbar.
+final partnerAddedSurpriseAtProvider = StateProvider<DateTime?>((ref) => null);
+
 final surprisesListProvider = FutureProvider<List<Surprise>>((ref) async {
   try {
     final client = ref.watch(supabaseClientProvider);

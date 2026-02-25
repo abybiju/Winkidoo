@@ -44,7 +44,8 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
 
     final attemptCount = await ref.read(todayAttemptsCountProvider.future);
     final winks = await ref.read(winksBalanceProvider.future);
-    final freeAttemptsLeft = AppConstants.freeAttemptsPerDay - attemptCount;
+    final freeAttemptsPerDay = ref.read(effectiveFreeAttemptsPerDayProvider);
+    final freeAttemptsLeft = freeAttemptsPerDay - attemptCount;
     final canTry = freeAttemptsLeft > 0 || (winks?.balance ?? 0) >= 1;
     if (!canTry) {
       ScaffoldMessenger.of(context).showSnackBar(

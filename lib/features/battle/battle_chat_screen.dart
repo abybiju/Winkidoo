@@ -13,6 +13,7 @@ import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/services/battle_realtime_service.dart';
 
 class BattleChatScreen extends ConsumerStatefulWidget {
@@ -89,12 +90,13 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
       final surpriseContextHint = surprise.unlockMethod.isNotEmpty
           ? 'Surprise type: ${surprise.unlockMethod}'
           : 'romantic surprise';
+      final howToImpressHint = _howToImpressHintForSurprise(surprise);
       final judgeResponse = await ai.judgeChat(
         persona: surprise.judgePersona,
         difficultyLevel: surprise.difficultyLevel,
         messages: messages,
         surpriseContextHint: surpriseContextHint,
-        howToImpressHint: null,
+        howToImpressHint: howToImpressHint,
       );
 
       final isVerdictNow = judgeResponse.isVerdict;
@@ -140,6 +142,123 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _buyHint(Surprise surprise) async {
+    final ok = await spendWinks(
+      ref,
+      AppConstants.hintCostWinks,
+      type: 'hint',
+      description: 'Hint for surprise',
+    );
+    if (!ok || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Not enough Winks (need 5 😉)'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+      return;
+    }
+    setState(() => _isSending = true);
+    try {
+      final ai = ref.read(aiJudgeServiceProvider);
+      final hint = await ai.getHint(
+        persona: surprise.judgePersona,
+        difficultyLevel: surprise.difficultyLevel,
+        surpriseContextHint: surprise.unlockMethod.isNotEmpty
+            ? 'Surprise type: ${surprise.unlockMethod}'
+            : null,
+      );
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Judge\'s hint'),
+          content: Text(hint),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _buyInstantUnlock(Surprise surprise) async {
+    final ok = await spendWinks(
+      ref,
+      AppConstants.instantUnlockCostWinks,
+      type: 'instant_unlock',
+      description: 'Instant unlock',
+    );
+    if (!ok || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Not enough Winks (need 50 😉)'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+      return;
+    }
+    try {
+      final client = ref.read(supabaseClientProvider);
+      await client.from('surprises').update({
+        'is_unlocked': true,
+        'unlocked_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', widget.surpriseId);
+      ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+      ref.invalidate(surprisesListProvider);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => RevealScreen(
+            surpriseId: widget.surpriseId,
+            judgeResponse: JudgeResponse(
+              score: 0,
+              isUnlocked: true,
+              commentary: 'Unlocked with Winks! 🎉',
+              hint: null,
+              moodEmoji: '😉',
+              isVerdict: true,
+            ),
+            creatorId: surprise.creatorId,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
+        );
+      }
+    }
+  }
+
+  /// Derives a short "how to impress" hint from surprise (unlock method; MVP1 is message-only).
+  String? _howToImpressHintForSurprise(Surprise surprise) {
+    switch (surprise.unlockMethod) {
+      case AppConstants.unlockPersuade:
+        return 'For this message surprise: try a voice note, a really personal line, or a little grand gesture.';
+      case AppConstants.unlockCollaborate:
+        return 'Show teamwork — both of you chip in with something thoughtful.';
+      default:
+        return 'Try a voice note or a personal message.';
     }
   }
 
@@ -241,6 +360,45 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                                 ),
                               ),
                             ),
+                            if (verdict == null && !isCreator)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Semantics(
+                                      label:
+                                          'Get a hint for ${AppConstants.hintCostWinks} Winks',
+                                      button: true,
+                                      child: OutlinedButton.icon(
+                                        onPressed: _isSending
+                                            ? null
+                                            : () => _buyHint(surprise),
+                                        icon: Text(
+                                            '${AppConstants.hintCostWinks} 😉'),
+                                        label: const Text('Get hint'),
+                                      ),
+                                    ),
+                                    Semantics(
+                                      label:
+                                          'Unlock now for ${AppConstants.instantUnlockCostWinks} Winks',
+                                      button: true,
+                                      child: OutlinedButton.icon(
+                                        onPressed: _isSending
+                                            ? null
+                                            : () => _buyInstantUnlock(surprise),
+                                        icon: Text(
+                                            '${AppConstants.instantUnlockCostWinks} 😉'),
+                                        label: const Text('Unlock now'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             Expanded(
                               child: ListView.builder(
                                 padding: const EdgeInsets.symmetric(

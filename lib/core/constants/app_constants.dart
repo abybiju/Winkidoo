@@ -7,6 +7,9 @@ class AppConstants {
   /// Free tier: 3 judge attempts per day
   static const int freeAttemptsPerDay = 3;
 
+  /// Wink+ tier: more free attempts per day
+  static const int winkPlusFreeAttemptsPerDay = 10;
+
   /// Wink costs
   static const int hintCostWinks = 5;
   static const int instantUnlockCostWinks = 50;

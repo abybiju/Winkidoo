@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
+import 'package:winkidoo/features/vault/wink_plus_screen.dart';
 import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
@@ -44,6 +45,18 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<DateTime?>(partnerAddedSurpriseAtProvider, (prev, next) {
+      if (next != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Your partner added a surprise'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        ref.read(partnerAddedSurpriseAtProvider.notifier).state = null;
+      }
+    });
+
     final surprisesAsync = ref.watch(surprisesListProvider);
     final winksAsync = ref.watch(winksBalanceProvider);
     final user = ref.watch(currentUserProvider);
@@ -81,16 +94,49 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                         color: AppTheme.primary,
                       ),
                     ),
-                    winksAsync.when(
-                      data: (w) => Text(
-                        '${w?.balance ?? 0} 😉',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          color: AppTheme.accent,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const WinkPlusScreen(),
+                            ),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: couple?.isWinkPlus == true
+                                  ? AppTheme.accent.withValues(alpha: 0.3)
+                                  : AppTheme.surface,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              couple?.isWinkPlus == true ? 'Wink+ ✓' : 'Wink+',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
+                        const SizedBox(width: 12),
+                        winksAsync.when(
+                          data: (w) => Text(
+                            '${w?.balance ?? 0} 😉',
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              color: AppTheme.accent,
+                            ),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
+                      ],
                     ),
                   ],
                 ),

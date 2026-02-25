@@ -171,46 +171,57 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _PersonaChip(
-                      id: AppConstants.personaSassyCupid,
-                      label: 'Sassy Cupid',
-                      selected: _judgePersona == AppConstants.personaSassyCupid,
-                      onSelected: () =>
-                          setState(() => _judgePersona = AppConstants.personaSassyCupid),
-                    ),
-                    _PersonaChip(
-                      id: AppConstants.personaPoeticRomantic,
-                      label: 'Poetic',
-                      selected: _judgePersona == AppConstants.personaPoeticRomantic,
-                      onSelected: () =>
-                          setState(() => _judgePersona = AppConstants.personaPoeticRomantic),
-                    ),
-                    _PersonaChip(
-                      id: AppConstants.personaChaosGremlin,
-                      label: 'Chaos Gremlin',
-                      selected: _judgePersona == AppConstants.personaChaosGremlin,
-                      onSelected: () =>
-                          setState(() => _judgePersona = AppConstants.personaChaosGremlin),
-                    ),
-                    _PersonaChip(
-                      id: AppConstants.personaTheEx,
-                      label: 'The Ex',
-                      selected: _judgePersona == AppConstants.personaTheEx,
-                      onSelected: () =>
-                          setState(() => _judgePersona = AppConstants.personaTheEx),
-                    ),
-                    _PersonaChip(
-                      id: AppConstants.personaDrLove,
-                      label: 'Dr. Love',
-                      selected: _judgePersona == AppConstants.personaDrLove,
-                      onSelected: () =>
-                          setState(() => _judgePersona = AppConstants.personaDrLove),
-                    ),
-                  ],
+                Builder(
+                  builder: (context) {
+                    final couple = ref.watch(coupleProvider).value;
+                    final isWinkPlus = couple?.isWinkPlus ?? false;
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _PersonaChip(
+                          id: AppConstants.personaSassyCupid,
+                          label: 'Sassy Cupid',
+                          selected: _judgePersona == AppConstants.personaSassyCupid,
+                          onSelected: () =>
+                              setState(() => _judgePersona = AppConstants.personaSassyCupid),
+                          isWinkPlusLocked: false,
+                        ),
+                        _PersonaChip(
+                          id: AppConstants.personaPoeticRomantic,
+                          label: 'Poetic',
+                          selected: _judgePersona == AppConstants.personaPoeticRomantic,
+                          onSelected: () =>
+                              setState(() => _judgePersona = AppConstants.personaPoeticRomantic),
+                          isWinkPlusLocked: false,
+                        ),
+                        _PersonaChip(
+                          id: AppConstants.personaChaosGremlin,
+                          label: 'Chaos Gremlin',
+                          selected: _judgePersona == AppConstants.personaChaosGremlin,
+                          onSelected: () =>
+                              setState(() => _judgePersona = AppConstants.personaChaosGremlin),
+                          isWinkPlusLocked: !isWinkPlus,
+                        ),
+                        _PersonaChip(
+                          id: AppConstants.personaTheEx,
+                          label: 'The Ex',
+                          selected: _judgePersona == AppConstants.personaTheEx,
+                          onSelected: () =>
+                              setState(() => _judgePersona = AppConstants.personaTheEx),
+                          isWinkPlusLocked: !isWinkPlus,
+                        ),
+                        _PersonaChip(
+                          id: AppConstants.personaDrLove,
+                          label: 'Dr. Love',
+                          selected: _judgePersona == AppConstants.personaDrLove,
+                          onSelected: () =>
+                              setState(() => _judgePersona = AppConstants.personaDrLove),
+                          isWinkPlusLocked: !isWinkPlus,
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -317,19 +328,33 @@ class _PersonaChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onSelected,
+    this.isWinkPlusLocked = false,
   });
 
   final String id;
   final String label;
   final bool selected;
   final VoidCallback onSelected;
+  final bool isWinkPlusLocked;
 
   @override
   Widget build(BuildContext context) {
+    final effectiveLabel = isWinkPlusLocked ? '$label (Wink+)' : label;
     return ChoiceChip(
-      label: Text(label),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isWinkPlusLocked) ...[
+            Icon(Icons.lock, size: 14, color: AppTheme.textSecondary),
+            const SizedBox(width: 4),
+          ],
+          Text(effectiveLabel),
+        ],
+      ),
       selected: selected,
-      onSelected: (_) => onSelected(),
+      onSelected: isWinkPlusLocked
+          ? null
+          : (_) => onSelected(),
       selectedColor: AppTheme.primary,
     );
   }

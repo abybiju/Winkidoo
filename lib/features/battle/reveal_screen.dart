@@ -2,11 +2,15 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/vault/vault_list_screen.dart';
 import 'package:winkidoo/models/judge_response.dart';
+import 'package:winkidoo/providers/ai_judge_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 
 class RevealScreen extends ConsumerStatefulWidget {
@@ -30,6 +34,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
   String? _decryptedContent;
   bool _loading = true;
   String? _error;
+  bool _buyingHintOrUnlock = false;
 
   @override
   void initState() {
@@ -44,6 +49,115 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       });
     } else {
       setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _buyHint() async {
+    final surprise = await ref.read(surpriseByIdProvider(widget.surpriseId).future);
+    if (surprise == null || !mounted) return;
+    final ok = await spendWinks(
+      ref,
+      AppConstants.hintCostWinks,
+      type: 'hint',
+      description: 'Hint for surprise',
+    );
+    if (!ok || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Not enough Winks (need 5 😉)'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+      return;
+    }
+    setState(() => _buyingHintOrUnlock = true);
+    try {
+      final ai = ref.read(aiJudgeServiceProvider);
+      final hint = await ai.getHint(
+        persona: surprise.judgePersona,
+        difficultyLevel: surprise.difficultyLevel,
+        surpriseContextHint: surprise.unlockMethod.isNotEmpty
+            ? 'Surprise type: ${surprise.unlockMethod}'
+            : null,
+      );
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Judge\'s hint'),
+          content: Text(hint),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _buyingHintOrUnlock = false);
+    }
+  }
+
+  Future<void> _buyInstantUnlock() async {
+    final surprise = await ref.read(surpriseByIdProvider(widget.surpriseId).future);
+    if (surprise == null || !mounted) return;
+    final ok = await spendWinks(
+      ref,
+      AppConstants.instantUnlockCostWinks,
+      type: 'instant_unlock',
+      description: 'Instant unlock',
+    );
+    if (!ok || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Not enough Winks (need 50 😉)'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+      return;
+    }
+    try {
+      final client = ref.read(supabaseClientProvider);
+      await client.from('surprises').update({
+        'is_unlocked': true,
+        'unlocked_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', widget.surpriseId);
+      ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+      ref.invalidate(surprisesListProvider);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => RevealScreen(
+            surpriseId: widget.surpriseId,
+            judgeResponse: JudgeResponse(
+              score: 0,
+              isUnlocked: true,
+              commentary: 'Unlocked with Winks! 🎉',
+              hint: null,
+              moodEmoji: '😉',
+              isVerdict: true,
+            ),
+            creatorId: surprise.creatorId,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
+        );
+      }
     }
   }
 
@@ -179,6 +293,40 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                           color: AppTheme.textSecondary,
                           fontStyle: FontStyle.italic,
                         ),
+                      ),
+                    ],
+                    if (!unlocked) ...[
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Semantics(
+                            label:
+                                'Get a hint from the judge for ${AppConstants.hintCostWinks} Winks',
+                            button: true,
+                            child: OutlinedButton.icon(
+                              onPressed: _buyingHintOrUnlock
+                                  ? null
+                                  : _buyHint,
+                              icon: Text('${AppConstants.hintCostWinks} 😉'),
+                              label: const Text('Get hint'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Semantics(
+                            label:
+                                'Unlock surprise now for ${AppConstants.instantUnlockCostWinks} Winks',
+                            button: true,
+                            child: OutlinedButton.icon(
+                              onPressed: _buyingHintOrUnlock
+                                  ? null
+                                  : _buyInstantUnlock,
+                              icon: Text(
+                                  '${AppConstants.instantUnlockCostWinks} 😉'),
+                              label: const Text('Unlock now'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                     const Spacer(),

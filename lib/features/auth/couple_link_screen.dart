@@ -138,8 +138,8 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
         final err = res['error'] as String;
         final msg = switch (err) {
           'not_found' => 'Code not found. Check the code and try again.',
-          'already_used' => 'This code was already used.',
-          'own_code' => 'You can\'t join your own code! Share it with your partner.',
+          'already_used' || 'expired' => 'This code is already used.',
+          'own_code' => 'This is your invite code — share it with your partner.',
           _ => 'Something went wrong ($err).',
         };
         if (mounted) {
