@@ -160,6 +160,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
         'difficulty_level': _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
+        'battle_status': 'active',
         'surprise_type': 'text',
       });
 
@@ -218,6 +219,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
         'difficulty_level': _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
+        'battle_status': 'active',
         'surprise_type': 'photo',
         'content_storage_path': path,
       });
@@ -279,6 +281,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
         'difficulty_level': _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
+        'battle_status': 'active',
         'surprise_type': 'voice',
         'content_storage_path': path,
       });
@@ -523,8 +526,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                 const SizedBox(height: 8),
                 Builder(
                   builder: (context) {
-                    final couple = ref.watch(coupleProvider).value;
-                    final isWinkPlus = couple?.isWinkPlus ?? false;
+                    final effectiveWinkPlus = ref.watch(effectiveWinkPlusProvider);
                     return Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -551,7 +553,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                           selected: _judgePersona == AppConstants.personaChaosGremlin,
                           onSelected: () =>
                               setState(() => _judgePersona = AppConstants.personaChaosGremlin),
-                          isWinkPlusLocked: !isWinkPlus,
+                          isWinkPlusLocked: !effectiveWinkPlus,
                         ),
                         _PersonaChip(
                           id: AppConstants.personaTheEx,
@@ -559,7 +561,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                           selected: _judgePersona == AppConstants.personaTheEx,
                           onSelected: () =>
                               setState(() => _judgePersona = AppConstants.personaTheEx),
-                          isWinkPlusLocked: !isWinkPlus,
+                          isWinkPlusLocked: !effectiveWinkPlus,
                         ),
                         _PersonaChip(
                           id: AppConstants.personaDrLove,
@@ -567,7 +569,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                           selected: _judgePersona == AppConstants.personaDrLove,
                           onSelected: () =>
                               setState(() => _judgePersona = AppConstants.personaDrLove),
-                          isWinkPlusLocked: !isWinkPlus,
+                          isWinkPlusLocked: !effectiveWinkPlus,
                         ),
                       ],
                     );

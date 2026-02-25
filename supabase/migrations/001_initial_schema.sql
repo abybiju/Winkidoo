@@ -63,7 +63,10 @@ alter table public.attempts enable row level security;
 alter table public.winks_balance enable row level security;
 alter table public.transactions enable row level security;
 
--- Couples: users can read/insert/update only their own couple
+-- Couples: users can read/insert/update only their own couple (drop first so re-run is safe)
+drop policy if exists "Users can read own couple" on public.couples;
+drop policy if exists "Users can insert couple as user_a" on public.couples;
+drop policy if exists "Users can update couple for link" on public.couples;
 create policy "Users can read own couple"
   on public.couples for select
   using (
@@ -77,6 +80,9 @@ create policy "Users can update couple for link"
   using (auth.uid() = user_a_id or auth.uid() = user_b_id);
 
 -- Surprises: couple members only
+drop policy if exists "Couple can read surprises" on public.surprises;
+drop policy if exists "Couple member can insert surprise" on public.surprises;
+drop policy if exists "Couple can update surprise" on public.surprises;
 create policy "Couple can read surprises"
   on public.surprises for select
   using (
@@ -103,6 +109,8 @@ create policy "Couple can update surprise"
   );
 
 -- Attempts: couple members only
+drop policy if exists "Couple can read attempts" on public.attempts;
+drop policy if exists "Couple member can insert attempt" on public.attempts;
 create policy "Couple can read attempts"
   on public.attempts for select
   using (
@@ -117,6 +125,9 @@ create policy "Couple member can insert attempt"
   with check (auth.uid() = user_id);
 
 -- Winks: own row only
+drop policy if exists "User can read own winks" on public.winks_balance;
+drop policy if exists "User can insert own winks" on public.winks_balance;
+drop policy if exists "User can update own winks" on public.winks_balance;
 create policy "User can read own winks"
   on public.winks_balance for select
   using (auth.uid() = user_id);
@@ -128,6 +139,8 @@ create policy "User can update own winks"
   using (auth.uid() = user_id);
 
 -- Transactions: own only
+drop policy if exists "User can read own transactions" on public.transactions;
+drop policy if exists "User can insert own transaction" on public.transactions;
 create policy "User can read own transactions"
   on public.transactions for select
   using (auth.uid() = user_id);

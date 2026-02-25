@@ -5,6 +5,8 @@
 - **Stack:** Flutter 3.22+, Supabase (Auth, Realtime, Postgres, Storage), Riverpod 2.x, Google Gemini Flash (AI Judge).
 - **Vibe:** Dual theme (Midnight Romance + Blush & Wink), 5 judge personas, text/photo/voice surprises, persuasion or collaboration unlock, Winks virtual economy.
 
+**Product & UX (Blueprint v1)** — See **[PRODUCT_BLUEPRINT.md](PRODUCT_BLUEPRINT.md)** for the source of truth. In short: one shared vault per couple with sections **Waiting for You** (partner’s surprises) and **Your Surprises** (yours). One battle per surprise; base difficulty Easy 80, Medium 100, Hard 130; Dynamic Resistance Score; creator can defend; emotional states (Cold → Unlock). After battle: **Result Summary** then **Keep in Treasure** or **Delete Forever**. **Treasure Archive** holds metadata for kept battles; Wink+ can reopen revealed content. Winks for hints/instant unlock; Wink+ for more attempts, all judges, archive access.
+
 ---
 
 ## Next session: run locally + validate
@@ -28,7 +30,7 @@ After that, MVP1 is shippable; consider Phase 2 (push notifications or shareable
 
 2. **Supabase**
    - Create a project at [supabase.com](https://supabase.com).
-   - Run the schema: copy contents of `supabase/migrations/001_initial_schema.sql` into SQL Editor and run.
+   - Run migrations **in order** (001 → 005) in the SQL Editor. See **[supabase/migrations/README.md](supabase/migrations/README.md)** for the list; run each file’s contents in sequence so `surprises` and related tables exist before Blueprint v1 (005).
    - Enable Email auth (or add other providers in Auth settings).
    - In Dashboard → Project Settings → API: copy **Project URL** and **anon public** key.
 
@@ -173,12 +175,17 @@ lib/
 - **Status:** Smoke-test polish (Part 2) done. Manual smoke-test (Part 1) remains for you to run on devices.
 - **Next:** Run manual smoke-test (two accounts, vault/create/battle/reveal, platform checks). Then Phase 2 (video/doodle, push, shareable cards, Memory Wall, streak) or payments.
 
+### February 25, 2026 – Blueprint v1 Phase 1: schema, vault copy, difficulty, treasure archive, judges
+
+- **What we built:** Schema and app aligned to [PRODUCT_BLUEPRINT.md](PRODUCT_BLUEPRINT.md). (1) **Migration 005:** Added to `surprises`: `battle_status`, `archived_flag`, `seeker_score`, `resistance_score`, `fatigue_level`, `last_activity_at`, `winner`, `creator_defense_count`. Created `treasure_archive` and `judges` (with seed rows). (2) **Surprise model:** Extended with new fields; create/update flows set `battle_status`. (3) **Difficulty:** Base values Easy 80, Medium 100, Hard 130 in `app_constants.dart` (plus Chaos variance). (4) **Vault copy:** Sections labeled **Waiting for You** (partner’s) and **Your Surprises** (yours). (5) **Models:** `TreasureArchive` and `Judge`; app ready for Result Summary and Keep in Treasure / Delete flows. Migrations 001–002 made idempotent (drop policy if exists, publication add only if not present) so re-runs are safe.
+- **Status:** Blueprint v1 Phase 1 schema and UX plan in place; docs (README, migrations README) updated. Manual smoke-test and Phase 2 (Result Summary UI, tug-of-war meter, seasonal judges) when ready.
+
 ---
 
 ## Git
 
 ```bash
 git add .
-git commit -m "docs: smoke-test polish + dev log update"
+git commit -m "docs: README Blueprint v1 UX, migration order, dev log"
 git push
 ```

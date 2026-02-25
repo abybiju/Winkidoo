@@ -37,10 +37,10 @@ final winksBalanceProvider = FutureProvider<WinksBalance?>((ref) async {
   }
 });
 
-/// Effective free attempts per day: Wink+ gets more, else free tier.
+/// Effective free attempts per day: Wink+ (or forceWinkPlusForTesting) gets more, else free tier.
 final effectiveFreeAttemptsPerDayProvider = Provider<int>((ref) {
-  final couple = ref.watch(coupleProvider).value;
-  return couple?.isWinkPlus == true
+  final isWinkPlus = ref.watch(effectiveWinkPlusProvider);
+  return isWinkPlus
       ? AppConstants.winkPlusFreeAttemptsPerDay
       : AppConstants.freeAttemptsPerDay;
 });

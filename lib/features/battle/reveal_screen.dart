@@ -141,6 +141,8 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       await client.from('surprises').update({
         'is_unlocked': true,
         'unlocked_at': DateTime.now().toUtc().toIso8601String(),
+        'battle_status': 'resolved',
+        'winner': 'seeker',
       }).eq('id', widget.surpriseId);
       ref.invalidate(surpriseByIdProvider(widget.surpriseId));
       ref.invalidate(surprisesListProvider);

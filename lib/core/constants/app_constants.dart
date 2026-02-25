@@ -1,8 +1,13 @@
+import 'package:flutter/foundation.dart';
+
 /// App-wide constants for Winkidoo.
 class AppConstants {
   AppConstants._();
 
   static const String appName = 'Winkidoo';
+
+  /// When true (debug only), treat as Wink+ for testing: all personas + 10 free attempts. Must be false in release.
+  static const bool forceWinkPlusForTesting = kDebugMode;
 
   /// Free tier: 3 judge attempts per day
   static const int freeAttemptsPerDay = 3;
@@ -30,9 +35,14 @@ class AppConstants {
   static const String unlockPersuade = 'persuade';
   static const String unlockCollaborate = 'collaborate';
 
-  /// Difficulty levels (1–5), affect score threshold
+  /// Difficulty levels (1–5), affect score threshold. Blueprint: Easy 80, Medium 100, Hard 130.
   static const int difficultyMin = 1;
   static const int difficultyMax = 5;
+
+  /// Base resistance scores per blueprint (Easy / Medium / Hard). Level 1–5 maps to these.
+  static const int difficultyEasy = 80;
+  static const int difficultyMedium = 100;
+  static const int difficultyHard = 130;
 
   /// Auto-delete options (hours). 0 = after viewing only.
   static const List<int> autoDeleteHoursOptions = [0, 24, 48];

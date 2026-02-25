@@ -16,7 +16,9 @@ create index if not exists idx_battle_messages_created_at on public.battle_messa
 
 alter table public.battle_messages enable row level security;
 
--- Couple members can read messages for their surprise
+-- Couple members can read messages for their surprise (drop first so re-run is safe)
+drop policy if exists "Couple can read battle_messages" on public.battle_messages;
+drop policy if exists "Couple member can insert battle_message" on public.battle_messages;
 create policy "Couple can read battle_messages"
   on public.battle_messages for select
   using (
@@ -38,5 +40,14 @@ create policy "Couple member can insert battle_message"
     )
   );
 
--- Enable Realtime for battle_messages
-alter publication supabase_realtime add table public.battle_messages;
+-- Enable Realtime for battle_messages (only if not already in publication, so re-run is safe)
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'battle_messages'
+  ) then
+    alter publication supabase_realtime add table public.battle_messages;
+  end if;
+end
+$$;

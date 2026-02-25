@@ -76,6 +76,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     final user = ref.watch(currentUserProvider);
     final coupleAsync = ref.watch(coupleProvider);
     final couple = coupleAsync.value;
+    final effectiveWinkPlus = ref.watch(effectiveWinkPlusProvider);
     final showWaitingBanner =
         couple != null && !couple.isLinked;
     final isDesktop = widget.desktopDetailNavigatorKey != null;
@@ -146,12 +147,16 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      AppConstants.appName,
-                      style: GoogleFonts.poppins(
-                        fontSize: widget.isDesktopSidebar ? 18 : 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primary,
+                    Expanded(
+                      child: Text(
+                        AppConstants.appName,
+                        style: GoogleFonts.poppins(
+                          fontSize: widget.isDesktopSidebar ? 18 : 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
                     Row(
@@ -197,13 +202,13 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: couple?.isWinkPlus == true
+                              color: effectiveWinkPlus
                                   ? AppTheme.accent.withValues(alpha: 0.3)
                                   : AppTheme.surface,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              couple?.isWinkPlus == true ? 'Wink+ ✓' : 'Wink+',
+                              effectiveWinkPlus ? 'Wink+ ✓' : 'Wink+',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -265,7 +270,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                       children: [
                         if (forMe.isNotEmpty) ...[
                           Text(
-                            'Waiting for you',
+                            'Waiting for You',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -281,7 +286,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                           const SizedBox(height: 24),
                         ],
                         Text(
-                          'Your vault',
+                          'Your Surprises',
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,

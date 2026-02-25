@@ -11,8 +11,7 @@ class WinkPlusScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final couple = ref.watch(coupleProvider).value;
-    final isWinkPlus = couple?.isWinkPlus ?? false;
+    final effectiveWinkPlus = ref.watch(effectiveWinkPlusProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -36,7 +35,7 @@ class WinkPlusScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (isWinkPlus)
+                if (effectiveWinkPlus)
                   Container(
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.only(bottom: 24),
@@ -89,7 +88,7 @@ class WinkPlusScreen extends ConsumerWidget {
                   detail: 'Show your couple you\'re all in.',
                 ),
                 const SizedBox(height: 32),
-                if (!isWinkPlus)
+                if (!effectiveWinkPlus)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

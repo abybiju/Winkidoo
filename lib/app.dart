@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/error_screen.dart';
 import 'package:winkidoo/features/auth/login_screen.dart';
+import 'package:winkidoo/features/auth/welcome_screen.dart';
 import 'package:winkidoo/features/auth/couple_link_screen.dart';
 import 'package:winkidoo/core/layout/responsive_vault_shell.dart';
 import 'package:winkidoo/features/vault/realtime_surprises_subscription.dart';
@@ -26,7 +27,7 @@ class WinkidooApp extends ConsumerWidget {
       themeMode: themeMode,
       home: ref.watch(authStateProvider).when(
             data: (session) {
-              if (session == null) return const LoginScreen();
+              if (session == null) return const WelcomeScreen();
               final onboardingComplete = ref.watch(onboardingCompleteProvider);
               if (!onboardingComplete) {
                 return OnboardingScreen(

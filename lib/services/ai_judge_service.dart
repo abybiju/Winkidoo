@@ -105,17 +105,22 @@ Commentary tone: When praising or reacting, lean into wit and warmth — a littl
         'I want emotional honesty and thoughtfulness — show me you\'ve reflected on what matters to them.',
   };
 
-  /// Required score = base (persona) + difficulty * 5
-  static int requiredScoreFor(String persona, int difficulty) {
-    const bases = {
-      AppConstants.personaSassyCupid: 70,
-      AppConstants.personaPoeticRomantic: 65,
-      AppConstants.personaChaosGremlin: 75,
-      AppConstants.personaTheEx: 80,
-      AppConstants.personaDrLove: 70,
+  /// Required score from blueprint: Easy 80, Medium 100, Hard 130. Level 1–5 maps to 80–130.
+  static int requiredScoreFor(String persona, int difficultyLevel) {
+    const levelToBase = {
+      1: AppConstants.difficultyEasy,   // 80
+      2: 90,
+      3: AppConstants.difficultyMedium, // 100
+      4: 115,
+      5: AppConstants.difficultyHard,   // 130
     };
-    final base = bases[persona] ?? 70;
-    return base + (difficulty * 5);
+    final base = levelToBase[difficultyLevel.clamp(1, 5)] ?? AppConstants.difficultyMedium;
+    // Chaos Gremlin: slight variance (never blocks eventual unlock)
+    if (persona == AppConstants.personaChaosGremlin) {
+      final variance = Random().nextInt(11) - 5; // -5 to +5
+      return (base + variance).clamp(75, 135);
+    }
+    return base;
   }
 
   Future<JudgeResponse> judge({

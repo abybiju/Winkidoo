@@ -6,15 +6,9 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Defaults for local dev; use --dart-define in production and avoid committing real keys to public repos
-  const supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://chwfirmrhceskjztdvhr.supabase.co',
-  );
-  const supabaseKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNod2Zpcm1yaGNlc2tqenRkdmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4OTkxNDcsImV4cCI6MjA4NzQ3NTE0N30.6jY-Gr9A0CFBKLCWIm5JeDfjnCv2iRwFXzifCvETSUY',
-  );
+  // No defaults in repo — pass keys via --dart-define to avoid committing secrets
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  const supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
 
   if (supabaseUrl.isEmpty || supabaseKey.isEmpty) {
     runApp(const ConfigErrorApp());

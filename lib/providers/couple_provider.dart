@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/models/couple.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
@@ -50,3 +51,9 @@ class CoupleNotifier extends AsyncNotifier<Couple?> {
 
 final coupleProvider =
     AsyncNotifierProvider<CoupleNotifier, Couple?>(() => CoupleNotifier());
+
+/// Effective Wink+ status: true when couple has Wink+ or when forceWinkPlusForTesting is on (debug).
+final effectiveWinkPlusProvider = Provider<bool>((ref) {
+  final couple = ref.watch(coupleProvider).value;
+  return (couple?.isWinkPlus ?? false) || AppConstants.forceWinkPlusForTesting;
+});
