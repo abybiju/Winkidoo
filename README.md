@@ -7,6 +7,18 @@
 
 ---
 
+## Next session: run locally + validate
+
+When you sit to work next, run the app locally and use **[LOCAL_VALIDATION.md](LOCAL_VALIDATION.md)** to:
+
+1. Confirm error screens (vault, battle chat), semantics (submission, send, create surprise), and loading skeletons.
+2. Spot-check judge tone (witty/warm, playful roasts).
+3. Then do the **Part 1 manual smoke-test** (two accounts, full flow) — see checklist in that file.
+
+After that, MVP1 is shippable; consider Phase 2 (push notifications or shareable reveal cards).
+
+---
+
 ## Setup
 
 1. **Flutter**
