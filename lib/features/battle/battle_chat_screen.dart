@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/error_screen.dart';
+import 'package:winkidoo/core/widgets/skeleton_message_row.dart';
 import 'package:winkidoo/features/battle/reveal_screen.dart';
 import 'package:winkidoo/models/battle_message.dart';
 import 'package:winkidoo/models/judge_response.dart';
@@ -463,19 +465,26 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                         ),
                       );
                     },
-                    loading: () => const Expanded(
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppTheme.primary,
+                    loading: () => Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
+                        children: const [
+                          SkeletonMessageRow(),
+                          SkeletonMessageRow(alignRight: true),
+                          SkeletonMessageRow(),
+                          SkeletonMessageRow(alignRight: true),
+                        ],
                       ),
                     ),
-                    error: (e, _) => Expanded(
-                      child: Center(
-                        child: Text(
-                          'Could not load messages',
-                          style: TextStyle(color: AppTheme.error),
-                        ),
+                    error: (_, __) => Expanded(
+                      child: ErrorScreen(
+                        message: 'Could not load messages. Try again?',
+                        onRetry: () => ref.invalidate(
+                            battleMessagesProvider(widget.surpriseId)),
+                        onBack: () => Navigator.of(context).pop(),
                       ),
                     ),
                   ),
@@ -486,13 +495,38 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         );
       },
       loading: () => Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: AppTheme.primary),
+        appBar: AppBar(
+          title: const Text('Battle'),
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppTheme.textPrimary,
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: AppTheme.gradientColors(Theme.of(context).brightness),
+            ),
+          ),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              children: const [
+                SkeletonMessageRow(),
+                SkeletonMessageRow(alignRight: true),
+                SkeletonMessageRow(),
+              ],
+            ),
+          ),
         ),
       ),
-      error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Battle')),
-        body: Center(child: Text('Error: $e', style: TextStyle(color: AppTheme.error))),
+      error: (_, __) => ErrorScreen(
+        message: 'Something went wrong loading this battle. Try again?',
+        onRetry: () {
+          ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+          ref.invalidate(battleMessagesProvider(widget.surpriseId));
+        },
+        onBack: () => Navigator.of(context).pop(),
       ),
     );
   }
@@ -625,35 +659,39 @@ class _SendButtonState extends State<_SendButton>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) {
-        if (widget.enabled) _controller.forward();
-      },
-      onTapUp: (_) => _controller.reverse(),
-      onTapCancel: () => _controller.reverse(),
-      onTap: widget.enabled && !widget.isSending
-          ? () {
-              if (!kIsWeb) HapticFeedback.lightImpact();
-              widget.onPressed();
-            }
-          : null,
-      child: ScaleTransition(
-        scale: _scale,
-        child: AbsorbPointer(
-          child: IconButton.filled(
-            onPressed: widget.enabled && !widget.isSending
-                ? () {}
-                : null,
-            icon: widget.isSending
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.send),
+    return Semantics(
+      label: 'Send message to judge',
+      button: true,
+      child: GestureDetector(
+        onTapDown: (_) {
+          if (widget.enabled) _controller.forward();
+        },
+        onTapUp: (_) => _controller.reverse(),
+        onTapCancel: () => _controller.reverse(),
+        onTap: widget.enabled && !widget.isSending
+            ? () {
+                if (!kIsWeb) HapticFeedback.lightImpact();
+                widget.onPressed();
+              }
+            : null,
+        child: ScaleTransition(
+          scale: _scale,
+          child: AbsorbPointer(
+            child: IconButton.filled(
+              onPressed: widget.enabled && !widget.isSending
+                  ? () {}
+                  : null,
+              icon: widget.isSending
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.send),
+            ),
           ),
         ),
       ),

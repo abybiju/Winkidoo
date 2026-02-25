@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/error_screen.dart';
 import 'package:winkidoo/core/widgets/skeleton_card.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
 import 'package:winkidoo/features/vault/wink_plus_screen.dart';
@@ -307,23 +308,9 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                       SkeletonCard(),
                     ],
                   ),
-                  error: (e, _) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Could not load surprises',
-                          style: TextStyle(color: AppTheme.error),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton.icon(
-                          onPressed: () =>
-                              ref.invalidate(surprisesListProvider),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
-                        ),
-                      ],
-                    ),
+                  error: (_, __) => ErrorScreen(
+                    message: 'Could not load surprises. Try again?',
+                    onRetry: () => ref.invalidate(surprisesListProvider),
                   ),
                 ),
               ),

@@ -339,29 +339,33 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _ChoiceChip(
-                      label: 'Text',
-                      selected: _surpriseType == 'text',
-                      onSelected: () =>
-                          setState(() => _surpriseType = 'text'),
-                    ),
-                    const SizedBox(width: 12),
-                    _ChoiceChip(
-                      label: 'Photo',
-                      selected: _surpriseType == 'photo',
-                      onSelected: () =>
-                          setState(() => _surpriseType = 'photo'),
-                    ),
-                    const SizedBox(width: 12),
-                    _ChoiceChip(
-                      label: 'Voice',
-                      selected: _surpriseType == 'voice',
-                      onSelected: () =>
-                          setState(() => _surpriseType = 'voice'),
-                    ),
-                  ],
+                Semantics(
+                  label:
+                      'Surprise type: Text, Photo, or Voice. ${_surpriseType == 'text' ? 'Text' : _surpriseType == 'photo' ? 'Photo' : 'Voice'} selected.',
+                  child: Row(
+                    children: [
+                      _ChoiceChip(
+                        label: 'Text',
+                        selected: _surpriseType == 'text',
+                        onSelected: () =>
+                            setState(() => _surpriseType = 'text'),
+                      ),
+                      const SizedBox(width: 12),
+                      _ChoiceChip(
+                        label: 'Photo',
+                        selected: _surpriseType == 'photo',
+                        onSelected: () =>
+                            setState(() => _surpriseType = 'photo'),
+                      ),
+                      const SizedBox(width: 12),
+                      _ChoiceChip(
+                        label: 'Voice',
+                        selected: _surpriseType == 'voice',
+                        onSelected: () =>
+                            setState(() => _surpriseType = 'voice'),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 if (_surpriseType == 'text') ...[
@@ -624,18 +628,22 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Lock it!'),
+                Semantics(
+                  label: 'Create surprise',
+                  button: true,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Lock it!'),
+                  ),
                 ),
               ],
             ),

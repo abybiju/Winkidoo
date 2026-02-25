@@ -174,18 +174,22 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Submit to judge'),
+                Semantics(
+                  label: 'Send submission to judge',
+                  button: true,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Submit to judge'),
+                  ),
                 ),
               ],
             ),

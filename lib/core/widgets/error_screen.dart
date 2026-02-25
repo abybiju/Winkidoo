@@ -6,7 +6,7 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 class ErrorScreen extends StatelessWidget {
   const ErrorScreen({
     super.key,
-    this.message = 'Something went wrong',
+    this.message = 'Something went wrong. Try again?',
     this.onRetry,
     this.onBack,
   });

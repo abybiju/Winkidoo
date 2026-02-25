@@ -154,12 +154,19 @@ lib/
 - **Status:** Phase 1 complete. All main screens theme-aware; web desktop and mobile layouts in place; photo and voice create/battle/reveal working; tests pass.
 - **Next:** E2E smoke test (two accounts, full flow). Later: video/doodle surprises, push notifications, shareable reveal cards, Memory Wall, daily streak (Phase 2). Payments (IAP/Stripe) when ready.
 
+### February 25, 2026 – Smoke-test polish: error screens, semantics, skeletons, copy
+
+- **What we built:** Targeted polish from the smoke-test plan (Part 2). (1) **Error screens:** Vault list error state now uses full `ErrorScreen` (“Could not load surprises. Try again?”) with onRetry (invalidate surprisesListProvider). Battle chat: both messages-load error and full-screen surprise-load error use `ErrorScreen` with onRetry and onBack (pop). (2) **Accessibility:** Semantics added — submission screen “Submit to judge” button (`Send submission to judge`); battle chat send button (`Send message to judge`); create surprise type selector (group label with selected type) and “Lock it!” button (`Create surprise`). (3) **Battle chat loading:** New `SkeletonMessageRow` in `core/widgets/skeleton_message_row.dart` (left/right aligned placeholders). Battle chat initial load and messages load now show 3–4 skeleton rows instead of spinners; full-screen loading uses same gradient + skeleton list. (4) **Copy:** ErrorScreen default message set to “Something went wrong. Try again?”. AI Judge system prompt: added “Commentary tone: When praising or reacting, lean into wit and warmth — a little funny, a little romantic. Make the couple smile. Roasts should be playful, not mean.”
+- **Workflow:** ErrorScreen in vault + battle chat → Semantics (submission, send, create) → SkeletonMessageRow + battle chat loading branches → ErrorScreen default + judge prompt tweak.
+- **Status:** Smoke-test polish (Part 2) done. Manual smoke-test (Part 1) remains for you to run on devices.
+- **Next:** Run manual smoke-test (two accounts, vault/create/battle/reveal, platform checks). Then Phase 2 (video/doodle, push, shareable cards, Memory Wall, streak) or payments.
+
 ---
 
 ## Git
 
 ```bash
 git add .
-git commit -m "docs: Phase 1 summary — responsive UI, dual theme, onboarding, photo/voice, quality"
+git commit -m "docs: smoke-test polish + dev log update"
 git push
 ```
