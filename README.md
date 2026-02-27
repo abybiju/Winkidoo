@@ -44,10 +44,13 @@ After that, MVP1 is shippable; consider Phase 2 (push notifications or shareable
      flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... --dart-define=GEMINI_API_KEY=...
      ```
 
-4. **Realtime (optional)**
+4. **Storage (for photo/voice surprises)**
+   - Create a Storage bucket named **`surprises`** in Supabase Dashboard → Storage, and add policies so authenticated users can upload and read. See **[docs/STORAGE_SETUP.md](docs/STORAGE_SETUP.md)**.
+
+5. **Realtime (optional)**
    - In Supabase Dashboard → Database → Replication, add `surprises` table to the publication so new surprises push to the app.
 
-5. **Push notifications (optional)**
+6. **Push notifications (optional)**
    - Firebase: **web** config is in **web/index.html** (Firebase SDK + `firebaseConfig`). For Android and iOS, each developer downloads **google-services.json** and **GoogleService-Info.plist** from Firebase Console (Winkidoo project) and places them in **android/app/** and **ios/Runner/** respectively; these paths are in `.gitignore`. Do not commit the Firebase service account key (set via `supabase secrets set FIREBASE_SERVICE_ACCOUNT=...`).
    - Run migrations **009** and **010** for push tokens (multi-device). Deploy Edge Function `send_battle_notification` and create the Database Webhook on `surprises`; see **[supabase/migrations/README.md](supabase/migrations/README.md)**. Full checklist: **[docs/FIREBASE_AND_PUSH_SETUP.md](docs/FIREBASE_AND_PUSH_SETUP.md)**.
 

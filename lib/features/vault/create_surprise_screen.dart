@@ -74,15 +74,37 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         _voicePath = path;
       });
     } else {
-      final hasPermission = await _recorder.hasPermission();
-      if (!hasPermission || !mounted) return;
+      // request: true so Android shows the mic permission dialog if needed
+      final hasPermission = await _recorder.hasPermission(request: true);
+      if (!hasPermission || !mounted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Microphone permission is required to record.'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
+        return;
+      }
       final dir = await getTemporaryDirectory();
       final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
-      if (mounted) setState(() {
-        _isRecording = true;
-        _voicePath = null;
-      });
+      try {
+        await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+        if (mounted) setState(() {
+          _isRecording = true;
+          _voicePath = null;
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Recording failed: $e'),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
+      }
     }
   }
 
