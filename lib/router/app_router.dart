@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/auth/couple_link_screen.dart';
 import 'package:winkidoo/features/auth/login_screen.dart';
+import 'package:winkidoo/features/couple/vault_sealed_screen.dart';
 import 'package:winkidoo/features/auth/welcome_auth_screen.dart';
 import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/features/battle/judge_deliberation_screen.dart';
@@ -19,6 +20,7 @@ import 'package:winkidoo/features/vault/wink_plus_screen.dart';
 import 'package:winkidoo/features/winks/winks_tab_screen.dart';
 import 'package:winkidoo/core/layout/responsive_vault_shell.dart';
 import 'package:winkidoo/models/judge_response.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
 
 /// Notifier for go_router redirect: updated when auth/couple/onboarding changes.
@@ -27,21 +29,31 @@ class RouterRefreshNotifier extends ChangeNotifier {
   bool? _authenticated;
   bool _onboardingComplete = false;
   bool? _hasCouple;
+  bool? _isCoupleLinked;
 
   bool get isAuthLoading => _authLoading;
   bool? get isAuthenticated => _authenticated;
   bool get onboardingComplete => _onboardingComplete;
   bool? get hasCouple => _hasCouple;
+  bool? get isCoupleLinked => _isCoupleLinked;
 
-  void update(bool authLoading, bool? authenticated, bool onboardingComplete, bool? hasCouple) {
+  void update(
+    bool authLoading,
+    bool? authenticated,
+    bool onboardingComplete,
+    bool? hasCouple, {
+    bool? isCoupleLinked,
+  }) {
     if (_authLoading != authLoading ||
         _authenticated != authenticated ||
         _onboardingComplete != onboardingComplete ||
-        _hasCouple != hasCouple) {
+        _hasCouple != hasCouple ||
+        _isCoupleLinked != isCoupleLinked) {
       _authLoading = authLoading;
       _authenticated = authenticated;
       _onboardingComplete = onboardingComplete;
       _hasCouple = hasCouple;
+      _isCoupleLinked = isCoupleLinked;
       notifyListeners();
     }
   }
@@ -69,9 +81,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
       if (routerRefreshNotifier.hasCouple == true) {
+        final isLinked = routerRefreshNotifier.isCoupleLinked == true;
         if (loc == '/' || loc == '/login' || loc == '/onboarding' || loc == '/couple-link') {
-          return '/shell/vault';
+          return isLinked ? '/shell/vault' : '/vault-sealed';
         }
+        if (loc == '/vault-sealed' && isLinked) return '/shell/vault';
         if (loc == '/shell') return '/shell/vault';
       }
       return null;
@@ -103,6 +117,78 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/couple-link',
         builder: (_, __) => const CoupleLinkScreen(),
+      ),
+      GoRoute(
+        path: '/vault-sealed',
+        builder: (context, _) => Consumer(
+          builder: (context, ref, _) {
+            final coupleAsync = ref.watch(coupleProvider);
+            return coupleAsync.when(
+              data: (couple) {
+                if (couple == null || couple.isLinked) {
+                  return Scaffold(
+                    body: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFF0F172A),
+                            Color(0xFF1B1030),
+                          ],
+                        ),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return VaultSealedScreen(inviteCode: couple.inviteCode);
+              },
+              loading: () => Scaffold(
+                body: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFF0F172A),
+                        Color(0xFF1B1030),
+                      ],
+                    ),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+              error: (_, __) => Scaffold(
+                body: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFF0F172A),
+                        Color(0xFF1B1030),
+                      ],
+                    ),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

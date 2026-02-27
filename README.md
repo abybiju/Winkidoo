@@ -54,6 +54,9 @@ After that, MVP1 is shippable; consider Phase 2 (push notifications or shareable
    - Firebase: **web** config is in **web/index.html** (Firebase SDK + `firebaseConfig`). For Android and iOS, each developer downloads **google-services.json** and **GoogleService-Info.plist** from Firebase Console (Winkidoo project) and places them in **android/app/** and **ios/Runner/** respectively; these paths are in `.gitignore`. Do not commit the Firebase service account key (set via `supabase secrets set FIREBASE_SERVICE_ACCOUNT=...`).
    - Run migrations **009** and **010** for push tokens (multi-device). Deploy Edge Function `send_battle_notification` and create the Database Webhook on `surprises`; see **[supabase/migrations/README.md](supabase/migrations/README.md)**. Full checklist: **[docs/FIREBASE_AND_PUSH_SETUP.md](docs/FIREBASE_AND_PUSH_SETUP.md)**.
 
+7. **OAuth (Google / Apple / Facebook) and store setup**
+   - Step-by-step without storing secrets in the repo: **[docs/OAUTH_AND_STORE_SETUP.md](docs/OAUTH_AND_STORE_SETUP.md)**. Covers Supabase Auth providers, Google (SHA-1, Android), Apple (developer account), Facebook (Meta app, Basic settings), deep links, and app store checklist.
+
 ---
 
 ## Project structure
@@ -64,20 +67,27 @@ lib/
 ├── app.dart                  # Root routing (auth → couple link → onboarding → vault)
 ├── core/
 │   ├── theme/               # Dual theme (Midnight Romance + Blush & Wink)
-│   ├── constants/           # App constants, persona IDs, costs, breakpoints
+│   ├── constants/           # App constants, persona IDs, costs, breakpoints, achievement icons
 │   ├── layout/              # ResponsiveVaultShell (desktop two-panel, mobile nav + FAB)
 │   └── widgets/              # ErrorScreen, SkeletonCard, SkeletonMessageRow
 ├── features/
-│   ├── auth/                # Login, couple link (invite code)
+│   ├── auth/                # Welcome (WelcomeAuthScreen), login, couple link (invite code)
+│   ├── couple/              # VaultSealedScreen (invite code + Share/Copy), LinkVaultScreen (pairing UI)
+│   ├── season/              # SeasonRecapScreen (PageView recap, onFinish)
 │   ├── onboarding/          # 3-screen onboarding (value prop, couple link, first surprise)
 │   ├── vault/               # Vault list, create surprise (text/photo/voice), realtime
-│   └── battle/              # Submission, judge deliberation, reveal (text/photo/voice)
-├── models/                  # Surprise (with type + storage path), Attempt, Couple, etc.
-├── providers/               # Riverpod: auth, couple, theme, onboarding, surprise, winks, AI judge
+│   ├── battle/              # Submission, judge deliberation, reveal (text/photo/voice)
+│   ├── treasure/            # Treasure archive, detail, replay battle view
+│   ├── profile/             # Profile, achievement unlocked dialog
+│   ├── home/                # Home tab
+│   └── winks/               # Winks tab
+├── models/                  # Surprise, Attempt, Couple, Judge, Achievement, etc.
+├── providers/               # Riverpod: auth, couple, theme, onboarding, surprise, winks, AI judge, achievements, judges, season recap, streak
 └── services/
     ├── ai_judge_service.dart   # Gemini Flash judge
     ├── encryption_service.dart # Client-side encrypt/decrypt surprise content
-    └── realtime_service.dart   # Supabase Realtime channel for surprises
+    ├── realtime_service.dart   # Supabase Realtime channel for surprises
+    └── push_service.dart       # FCM token upsert (multi-device)
 ```
 
 ---
@@ -210,12 +220,26 @@ lib/
 - **Status:** Implemented. Users no longer stuck indefinitely on the couple-link loading screen; retry gives a path when the couple fetch hangs.
 - **Next:** Run app again; if a spinner appears before sign-in (initial auth check), we can add a dedicated auth-loading screen and/or logging.
 
+### February 27, 2026 – Creator flow, premium screens, OAuth/store setup, domain
+
+- **Router — creator vs linked flow:** When user has a couple but partner has not joined yet (`hasCouple == true` and `!isCoupleLinked`), redirect goes to **/vault-sealed** (not vault). When `isCoupleLinked == true`, redirect goes to **/shell/vault**. This gives creators a dedicated “Vault Sealed” screen with invite code and Share/Copy while waiting for partner; once linked, both go to vault. Implemented in `app.dart` (routerRefreshNotifier with `isCoupleLinked`) and `app_router.dart` redirect logic.
+- **Vault Sealed screen redesign:** Replaced with presentational **VaultSealedScreen(inviteCode)**. No Riverpod/go_router/Supabase in screen file. Three-layer background: linear gradient (navy → plum), radial plum glow (center 0,-0.2, radius 0.8, 0.25 opacity), optional vignette. Content: “VAULT SEALED” label, headline “Your private vault is ready.”, subtext, hero card with formatted code (XXXX–XXXX if length 8), “Share Invite” (primary) and “Copy Code” (outlined) buttons — UI only, no share/copy implementation. Load animation: FadeTransition + ScaleTransition (0.97→1, 250ms easeOut). Route **/vault-sealed** uses Consumer + coupleProvider; builds `VaultSealedScreen(inviteCode: couple.inviteCode)` when couple present and not linked; otherwise gradient + CircularProgressIndicator.
+- **Welcome/Auth screen:** **WelcomeAuthScreen** — full-screen background image (`assets/images/welcomepage_background.png`), optional radial overlay; title “Sign in or Create your vault”, subtitle, email field, Continue (Poppins 18px, letterSpacing 0.5, AnimatedScale 0.97), divider “or”, Google (white bg, Google logo asset) and Apple (transparent bg, white 0.3 border, Apple logo asset) buttons, footer (Terms/Privacy, “Already have an account? Sign In”). Fade-in on load (200–250ms). Root route **/** shows WelcomeAuthScreen; Continue/Sign In/Google/Apple wire to auth (login or OAuth). Logo assets: `assets/images/google_logo.png`, `assets/images/apple_logo.png`.
+- **Link Vault screen (UI only):** **LinkVaultScreen** in `lib/features/couple/link_vault_screen.dart`. Same navy–plum gradient + radial glow as other premium screens. Reusable **_VaultOptionCard** (title, description, child). Card 1: “Create a new vault” / “We’ll generate a private invite code…” / “Create Vault” button (tap scale 0.97). Card 2: “Join with a code” / invite code TextField + “Join Vault” outlined button. Footer: “One vault. One partner. Infinite persuasion.” No navigation or Supabase; wiring to create/join logic can be done when route is added.
+- **Season Recap screen (UI only):** **SeasonRecapScreen** in `lib/features/season/season_recap_screen.dart`. Accepts **SeasonRecap** model and **onFinish** callback. PageView with 6 slides: (1) Season intro (title, judge placeholder, “Your story this season”), (2) Performance (battles played, win rate, avg persuasion), (3) Streak (longest streak, warm styling), (4) Achievements (horizontal badges from achievementIcons), (5) Highlight duel (preview + “Replay This Battle” if highlightSurpriseId; else empty state), (6) Closing CTA (“Next season begins now.” + “Continue” calling onFinish). Dark gradient, dot indicators, no provider/DB in screen.
+- **OAuth and store setup (no secrets in repo):** Google OAuth: Supabase Auth → Google provider enabled; Android requires SHA-1 from debug/release keystore. Get SHA-1: ensure Java available (e.g. Android Studio JBR: `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`), then `cd android && ./gradlew signingReport`; add the SHA-1 and package name in Google Cloud Console OAuth client (Android) and paste Client ID in Supabase. Apple: Sign in with Apple requires Apple Developer Program ($99/year); configure in Supabase and Apple Developer; can ship Android-first without Apple. Facebook (Meta): App created in Meta for Developers; Facebook Login product; Basic settings: App icon 1024×1024, Privacy policy URL, User data deletion URL (e.g. data-deletion.html), Category (e.g. “Social networks & dating”), Contact email. Do not commit App ID, Client Token, or App Secret in public repos; set in Supabase Auth providers and in app via env or build config. See **docs/OAUTH_AND_STORE_SETUP.md** for step-by-step (no keys).
+- **Deep links:** For mobile OAuth callback, configure app URL scheme (e.g. `winkidoo://`) in iOS/Android and add the redirect URL (e.g. `winkidoo://auth/callback`) to Supabase Auth → URL configuration so the app returns from browser after sign-in.
+- **Domain and GitHub Pages:** Custom domain **winkidoo.com**. GitHub repo: **github.com/abybiju/Winkidoo**. Pages: Deploy from branch **main**, folder **/docs**. Site available at **https://abybiju.github.io/Winkidoo/**; custom domain can be set in repo Settings → Pages → Custom domain (winkidoo.com). DNS (GoDaddy): A records for **@** (root) point to GitHub Pages IPs (185.199.109.153, 185.199.110.153, 185.199.111.153). If **www** is used, CNAME **www** → **abybiju.github.io** (note: existing CNAME www → winkidoo.com can conflict; use root for Pages or adjust CNAME). Privacy policy: **https://winkidoo.com/privacy-policy.html** (or GitHub Pages URL until DNS propagates). Data deletion: **docs/data-deletion.html** → **https://winkidoo.com/data-deletion.html**.
+- **App store / Meta submission:** For store or Meta app review, ensure: App icon 1024×1024 (e.g. assets/images/app_icon_1024.png), Privacy policy URL, User data deletion URL, Category. Meta Basic settings completed with above; Apple/Google Play can be done later (Apple requires paid developer account).
+- **Status:** Creator flow and Vault Sealed UX in place; welcome and link-vault screens ready for auth wiring; season recap ready for caller; OAuth and domain documented without secrets. Repo pushed to GitHub.
+- **Next:** Wire Share/Copy on Vault Sealed (share_plus, Clipboard); optionally add “Enter Vault” or “Waiting for partner…” on same screen; connect LinkVaultScreen to router and couple create/join logic; run E2E with Google/Apple/Facebook OAuth when credentials are set.
+
 ---
 
 ## Git
 
 ```bash
 git add .
-git commit -m "fix: CoupleLinkScreen loading stuck — navigate when linked + 8s timeout & retry; docs & decision-log updated"
+git commit -m "docs: Feb 27 — creator flow, Vault Sealed redesign, welcome/link/season screens, OAuth/store/domain (no secrets)"
 git push
 ```

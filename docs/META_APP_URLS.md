@@ -2,7 +2,15 @@
 
 Use these URLs in **Meta for Developers → App settings → Basic** once the `docs/` folder is hosted on the web.
 
-## Option A: GitHub Pages (recommended)
+## Custom domain (winkidoo.com)
+
+When the custom domain **winkidoo.com** is configured for GitHub Pages (repo Settings → Pages → Custom domain, and DNS A records pointing to GitHub):
+
+- **Privacy policy URL:** `https://winkidoo.com/privacy-policy.html`
+- **User data deletion:** `https://winkidoo.com/data-deletion.html`
+- **App domains:** Add `winkidoo.com` in Basic settings if required.
+
+## Option A: GitHub Pages (no custom domain)
 
 1. Push this repo to GitHub (e.g. `https://github.com/YourUsername/Winkidoo`).
 2. In the repo: **Settings → Pages**.
@@ -27,4 +35,4 @@ Upload this file in Meta → App settings → Basic → **App icon (1024 x 1024)
 
 ## Category
 
-In Basic settings, set **Category** to something that fits your app (e.g. **Lifestyle**, **Dating**, or **Social**).
+In Basic settings, set **Category** to something that fits your app. For Winkidoo we use **Social networks & dating**. Also set **Contact email** (do not commit real addresses in public docs).

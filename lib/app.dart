@@ -25,7 +25,8 @@ class _WinkidooAppState extends ConsumerState<WinkidooApp> {
     final authLoading = auth.isLoading;
     final authenticated = auth.hasValue ? (auth.value != null) : null;
     final hasCouple = couple.hasValue ? (couple.value != null) : null;
-    routerRefreshNotifier.update(authLoading, authenticated, onboarding, hasCouple);
+    final isCoupleLinked = couple.hasValue ? (couple.value?.isLinked ?? false) : null;
+    routerRefreshNotifier.update(authLoading, authenticated, onboarding, hasCouple, isCoupleLinked: isCoupleLinked);
   }
 
   @override
