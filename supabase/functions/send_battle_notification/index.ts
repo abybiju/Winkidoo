@@ -1,6 +1,7 @@
-// Battle-aware push notifications. Triggered by Database Webhook on public.surprises (INSERT/UPDATE).
+// Battle-aware push notifications. Triggered by Database Webhooks on public.surprises and public.judges (INSERT/UPDATE).
 // Requires: FIREBASE_SERVICE_ACCOUNT (JSON string) in Supabase secrets. No client-triggered sends.
 // Idempotency: for UPDATE we only send when a relevant field changed (avoids duplicate sends when unrelated columns update).
+// Judges: one-time "New Judge Has Arrived" when seasonal judge's season starts; season_push_sent prevents duplicates.
 // Future: rate-limit reinforcement notifications (e.g. first reinforcement per surprise in 10s window).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -66,6 +67,15 @@ interface SurpriseRecord {
   resistance_score?: number;
 }
 
+interface JudgeRecord {
+  id: string;
+  name: string;
+  season_start: string | null;
+  season_end: string | null;
+  is_new?: boolean;
+  season_push_sent?: boolean;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -78,6 +88,84 @@ Deno.serve(async (req) => {
 
   try {
     const payload = (await req.json()) as WebhookPayload;
+
+    // --- Judges: season-launch push (one-time when new seasonal judge becomes active) ---
+    if (payload.table === "judges" && (payload.type === "INSERT" || payload.type === "UPDATE")) {
+      const record = payload.record as JudgeRecord | null;
+      const oldRecord = (payload.old_record as JudgeRecord | null) ?? null;
+      if (!record?.id || !record?.name) {
+        return new Response(JSON.stringify({ ok: true, skipped: "judges no record/id/name" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const isSeasonal = record.season_start != null && record.season_end != null;
+      const now = new Date();
+      const seasonStartDate = record.season_start ? new Date(record.season_start) : null;
+      const seasonActiveNow = seasonStartDate != null && seasonStartDate <= now;
+      const oldSeasonStart = oldRecord?.season_start ? new Date(oldRecord.season_start) : null;
+      const seasonJustStarted =
+        payload.type === "INSERT" ||
+        !oldRecord ||
+        (oldSeasonStart != null && oldSeasonStart > now);
+      const isNew = record.is_new === true;
+      const notYetSent = record.season_push_sent !== true;
+      if (
+        !isSeasonal ||
+        !seasonActiveNow ||
+        !seasonJustStarted ||
+        !isNew ||
+        !notYetSent
+      ) {
+        return new Response(JSON.stringify({ ok: true, skipped: "judges not season launch" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      // Future: filter tokens updated in last 90 days, or only users in a couple, or paginate sends.
+      const { data: tokenRows, error: tokensError } = await supabase
+        .from("user_push_tokens")
+        .select("push_token")
+        .not("push_token", "is", null);
+      const allTokens: string[] =
+        tokensError || !tokenRows
+          ? []
+          : (tokenRows as { push_token: string }[])
+              .filter((r) => r.push_token)
+              .map((r) => r.push_token);
+      const title = "✨ A New Judge Has Arrived";
+      const body = `Meet ${record.name}. Dare to persuade?`;
+      const data: Record<string, string> = { type: "season_launch", judge_id: record.id };
+      if (FIREBASE_SERVICE_ACCOUNT && allTokens.length > 0) {
+        try {
+          const sa = JSON.parse(FIREBASE_SERVICE_ACCOUNT) as {
+            client_email: string;
+            private_key: string;
+            project_id: string;
+          };
+          const accessToken = await getGoogleAccessToken(sa.client_email, sa.private_key);
+          const projectId = sa.project_id;
+          for (const token of allTokens) {
+            try {
+              await sendFCM(projectId, accessToken, token, title, body, data);
+            } catch (e) {
+              console.error("FCM season_launch send failed for token", e);
+            }
+          }
+        } catch (e) {
+          console.error("FCM season_launch failed", e);
+        }
+      } else if (allTokens.length > 0 && !FIREBASE_SERVICE_ACCOUNT) {
+        console.log("FIREBASE_SERVICE_ACCOUNT missing, skipping season_launch FCM");
+      }
+      await supabase.from("judges").update({ season_push_sent: true }).eq("id", record.id);
+      return new Response(JSON.stringify({ ok: true, season_launch: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (payload.table !== "surprises" || (payload.type !== "INSERT" && payload.type !== "UPDATE")) {
       return new Response(JSON.stringify({ ok: true, skipped: "not surprises insert/update" }), {
         status: 200,

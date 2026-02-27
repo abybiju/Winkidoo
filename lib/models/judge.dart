@@ -19,6 +19,8 @@ class Judge {
     this.toneTags = const [],
     this.previewQuotes = const [],
     this.primaryColorHex,
+    this.createdAt,
+    this.isNew = true,
   });
 
   final String id;
@@ -36,6 +38,8 @@ class Judge {
   final List<String> toneTags;
   final List<String> previewQuotes;
   final String? primaryColorHex;
+  final DateTime? createdAt;
+  final bool isNew;
 
   Color get primaryColor {
     final hex = primaryColorHex ?? accentColorHex ?? 'FF6B9D';
@@ -68,7 +72,7 @@ class Judge {
       seasonEnd: json['season_end'] != null
           ? DateTime.parse(json['season_end'] as String)
           : null,
-      premiumFlag: json['premium_flag'] as bool? ?? false,
+      premiumFlag: json['is_premium'] as bool? ?? json['premium_flag'] as bool? ?? false,
       tagline: json['tagline'] as String?,
       difficultyLevel: (json['difficulty_level'] as int?) ?? 2,
       chaosLevel: (json['chaos_level'] as int?) ?? 1,
@@ -79,6 +83,10 @@ class Judge {
           ? (previewQuotesJson as List).map((e) => e.toString()).toList()
           : const [],
       primaryColorHex: json['primary_color_hex'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      isNew: json['is_new'] as bool? ?? true,
     );
   }
 
@@ -99,104 +107,36 @@ class Judge {
       if (toneTags.isNotEmpty) 'tone_tags': toneTags,
       if (previewQuotes.isNotEmpty) 'preview_quotes': previewQuotes,
       if (primaryColorHex != null) 'primary_color_hex': primaryColorHex,
+      'is_new': isNew,
     };
   }
 
-  /// Static registry for Judge Selection 2.0. Order: Cupid, Poetic, Gremlin, Ex, Dr. Love.
-  /// Aura colors: Cupid pink/red, Poetic violet, Gremlin green, Ex dark red, Dr. Love gold.
-  static const List<Judge> selectionList = [
-    Judge(
-      id: 'sassy_cupid',
-      personaId: 'sassy_cupid',
-      name: 'Sassy Cupid',
+  /// Fallback when DB lookup fails (e.g. judge removed or network error). Used for battle/reveal.
+  static Judge placeholder(String personaId) {
+    final name = _placeholderNames[personaId] ?? _humanizePersonaId(personaId);
+    return Judge(
+      id: personaId,
+      personaId: personaId,
+      name: name,
       accentColorHex: 'FF6B9D',
       primaryColorHex: 'FF6B9D',
       premiumFlag: false,
-      tagline: 'Love is a battlefield.',
       difficultyLevel: 2,
       chaosLevel: 1,
-      toneTags: ['Romantic', 'Strict'],
-      previewQuotes: [
-        'Bring your A-game.',
-        'I\'ve seen better.',
-        'Try again, sweetheart.',
-      ],
-    ),
-    Judge(
-      id: 'poetic_romantic',
-      personaId: 'poetic_romantic',
-      name: 'Poetic Romantic',
-      accentColorHex: 'C44569',
-      primaryColorHex: '6B4C7A',
-      premiumFlag: false,
-      tagline: 'Where words become magic.',
-      difficultyLevel: 2,
-      chaosLevel: 1,
-      toneTags: ['Romantic', 'Poetic'],
-      previewQuotes: [
-        'Speak from the heart.',
-        'More feeling, less logic.',
-        'Romance me with your words.',
-      ],
-    ),
-    Judge(
-      id: 'chaos_gremlin',
-      personaId: 'chaos_gremlin',
-      name: 'Chaos Gremlin',
-      accentColorHex: 'F8B500',
-      primaryColorHex: '7CB342',
-      premiumFlag: true,
-      tagline: 'Convince me… if you dare.',
-      difficultyLevel: 4,
-      chaosLevel: 5,
-      toneTags: ['Chaotic'],
-      previewQuotes: [
-        'Beg harder.',
-        'That was cute.',
-        'You think that\'ll work?',
-      ],
-    ),
-    Judge(
-      id: 'the_ex',
-      personaId: 'the_ex',
-      name: 'The Ex',
-      accentColorHex: '8B5A6B',
-      primaryColorHex: '8B0000',
-      premiumFlag: true,
-      tagline: 'I\'ve heard it all before.',
-      difficultyLevel: 3,
-      chaosLevel: 3,
-      toneTags: ['Strict'],
-      previewQuotes: [
-        'Prove it.',
-        'Actions speak louder.',
-        'Don\'t waste my time.',
-      ],
-    ),
-    Judge(
-      id: 'dr_love',
-      personaId: 'dr_love',
-      name: 'Dr. Love',
-      accentColorHex: '6B9D7A',
-      primaryColorHex: 'D4A574',
-      premiumFlag: true,
-      tagline: 'Science meets romance.',
-      difficultyLevel: 2,
-      chaosLevel: 2,
-      toneTags: ['Analytical', 'Romantic'],
-      previewQuotes: [
-        'Data doesn\'t lie.',
-        'Show me the chemistry.',
-        'Logical love wins.',
-      ],
-    ),
-  ];
+      isNew: false,
+    );
+  }
 
-  /// Resolves a Judge from a surprise's judgePersona. Fallback to first if unknown.
-  static Judge forPersonaId(String personaId) {
-    for (final j in selectionList) {
-      if (j.personaId == personaId) return j;
-    }
-    return selectionList.first;
+  static const Map<String, String> _placeholderNames = {
+    'sassy_cupid': 'Sassy Cupid',
+    'poetic_romantic': 'Poetic Romantic',
+    'chaos_gremlin': 'Chaos Gremlin',
+    'the_ex': 'The Ex',
+    'dr_love': 'Dr. Love',
+  };
+
+  static String _humanizePersonaId(String id) {
+    if (id.isEmpty) return 'Judge';
+    return id.split('_').map((s) => s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}').join(' ');
   }
 }

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/auth/couple_link_screen.dart';
 import 'package:winkidoo/features/auth/login_screen.dart';
-import 'package:winkidoo/features/auth/welcome_screen.dart';
+import 'package:winkidoo/features/auth/welcome_auth_screen.dart';
 import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/features/battle/judge_deliberation_screen.dart';
 import 'package:winkidoo/features/battle/reveal_screen.dart';
@@ -12,6 +12,7 @@ import 'package:winkidoo/features/home/home_screen.dart';
 import 'package:winkidoo/features/onboarding/onboarding_screen.dart';
 import 'package:winkidoo/features/profile/profile_screen.dart';
 import 'package:winkidoo/features/treasure/treasure_archive_screen.dart';
+import 'package:winkidoo/features/treasure/treasure_detail_screen.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
 import 'package:winkidoo/features/vault/realtime_surprises_subscription.dart';
 import 'package:winkidoo/features/vault/wink_plus_screen.dart';
@@ -78,11 +79,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (_, __) => const WelcomeScreen(),
+        builder: (_, __) => const WelcomeAuthScreen(),
       ),
       GoRoute(
         path: '/login',
-        builder: (_, __) => const LoginScreen(),
+        builder: (_, state) {
+          final extra = state.extra;
+          final email = (extra is Map ? (extra['email'] as String?) : null);
+          return LoginScreen(initialEmail: email);
+        },
       ),
       GoRoute(
         path: '/onboarding',
@@ -227,6 +232,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/shell/treasure-archive',
         builder: (_, __) => const TreasureArchiveScreen(),
+      ),
+      GoRoute(
+        path: '/shell/treasure-archive/:surpriseId',
+        builder: (_, state) {
+          final surpriseId = state.pathParameters['surpriseId']!;
+          return TreasureDetailScreen(surpriseId: surpriseId);
+        },
       ),
     ],
   );

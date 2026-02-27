@@ -51,10 +51,14 @@ class _WinkidooAppState extends ConsumerState<WinkidooApp> {
   }
 
   void _navigateFromPush(Map<String, dynamic> data) {
+    final type = data['type'] as String?;
+    if (type == 'season_launch') {
+      ref.read(goRouterProvider).go('/shell/create');
+      return;
+    }
     final surpriseId = data['surprise_id'] as String?;
     if (surpriseId == null || surpriseId.isEmpty) return;
-    final router = ref.read(goRouterProvider);
-    router.go('/shell/battle/$surpriseId');
+    ref.read(goRouterProvider).go('/shell/battle/$surpriseId');
   }
 
   @override

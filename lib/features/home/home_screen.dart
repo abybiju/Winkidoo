@@ -2,17 +2,84 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
+import 'package:winkidoo/features/season/season_recap_screen.dart';
+import 'package:winkidoo/models/achievement.dart';
 import 'package:winkidoo/models/couple.dart';
 import 'package:winkidoo/models/surprise.dart';
+import 'package:winkidoo/providers/achievements_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/season_recap_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
+import 'package:winkidoo/services/achievement_storage_service.dart';
+import 'package:winkidoo/services/season_recap_storage_service.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  /// Single guard so recap and achievement checks run at most once per load.
+  /// Recap is shown first, then achievement modal (if both qualify).
+  bool _checkedHomeCelebrations = false;
+
+  Future<void> _checkNewUnlocks(BuildContext context, List<Achievement> achievements) async {
+    final seen = await AchievementStorageService.getSeenAchievements();
+    final newlyUnlocked = achievements
+        .where((a) => a.unlocked && !seen.contains(a.id))
+        .toList();
+    final firstNew = newlyUnlocked.isEmpty ? null : newlyUnlocked.first;
+    if (firstNew == null || !context.mounted) return;
+    final icon = achievementIcons[firstNew.id] ?? Icons.emoji_events_rounded;
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (_) => AchievementUnlockedDialog(achievement: firstNew, icon: icon),
+    );
+    if (context.mounted) await AchievementStorageService.markAsSeen(firstNew.id);
+  }
+
+  Future<void> _checkSeasonRecap(BuildContext context, SeasonRecap? recap) async {
+    if (recap == null || !context.mounted) return;
+    final seen = await SeasonRecapStorageService.hasSeenSeason(recap.seasonId);
+    if (seen || !context.mounted) return;
+    final nav = Navigator.of(context);
+    await nav.push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => SeasonRecapScreen(
+          recap: recap,
+          onFinish: () async {
+            await SeasonRecapStorageService.markSeasonSeen(recap.seasonId);
+            if (context.mounted) nav.pop();
+          },
+          onReplayHighlight: (surpriseId) {
+            if (context.mounted) {
+              nav.pop();
+              context.push('/shell/treasure-archive/$surpriseId');
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Runs once per load: season recap first (if unseen), then achievement modal (if any).
+  Future<void> _runCelebrationSequence(
+    BuildContext context,
+    SeasonRecap? recap,
+    List<Achievement> achievements,
+  ) async {
+    await _checkSeasonRecap(context, recap);
+    if (context.mounted) await _checkNewUnlocks(context, achievements);
+  }
 
   static String _personaDisplayName(String id) {
     switch (id) {
@@ -37,6 +104,20 @@ class HomeScreen extends ConsumerWidget {
     final couple = ref.watch(coupleProvider).value;
     final winks = ref.watch(winksBalanceProvider).value;
     final surprises = ref.watch(surprisesListProvider).value ?? [];
+    final achievementsAsync = ref.watch(achievementsProvider);
+    final seasonRecapAsync = ref.watch(seasonRecapProvider);
+
+    // Run at most once per load; recap takes priority over achievement modal.
+    if (!_checkedHomeCelebrations &&
+        achievementsAsync.hasValue &&
+        seasonRecapAsync.hasValue) {
+      _checkedHomeCelebrations = true;
+      final recap = seasonRecapAsync.value;
+      final achievements = achievementsAsync.value ?? [];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _runCelebrationSequence(context, recap, achievements);
+      });
+    }
 
     final waitingForMe = surprises.where((s) => s.creatorId != user?.id && !s.isUnlocked).toList();
     final recentResolved = surprises.where((s) => s.battleStatus == 'resolved').toList()

@@ -18,6 +18,7 @@ import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/ai_judge_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
+import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
@@ -442,8 +443,10 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           );
         }
         if (_showTease) {
+          final judgeAsync = ref.watch(judgeByPersonaIdProvider(surprise.judgePersona));
+          final judge = judgeAsync.valueOrNull ?? Judge.placeholder(surprise.judgePersona);
           return PreBattleTease(
-            judge: Judge.forPersonaId(surprise.judgePersona),
+            judge: judge,
             surpriseId: widget.surpriseId,
             onBegin: () => setState(() => _showTease = false),
           );

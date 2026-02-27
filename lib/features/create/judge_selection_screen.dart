@@ -3,16 +3,59 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/judge.dart';
+import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
 
 /// Cinematic judge selection: swipeable cards, animated aura, difficulty/chaos meters,
-/// tone tags, rotating quotes. Call [onSelect] with personaId and difficulty when user taps CTA.
-class JudgeSelectionScreen extends StatefulWidget {
+/// tone tags, rotating quotes. Fetches active judges from DB. Call [onSelect] with personaId and difficulty when user taps CTA.
+class JudgeSelectionScreen extends ConsumerWidget {
   const JudgeSelectionScreen({
     super.key,
+    required this.isJudgeLocked,
+    required this.onSelect,
+  });
+
+  final bool Function(String personaId) isJudgeLocked;
+  final void Function(String personaId, int difficulty) onSelect;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncJudges = ref.watch(activeJudgesProvider);
+    return asyncJudges.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppTheme.primary),
+      ),
+      error: (_, __) => Center(
+        child: Text(
+          'Something went wrong',
+          style: TextStyle(color: AppTheme.error),
+        ),
+      ),
+      data: (judges) {
+        if (judges.isEmpty) {
+          return Center(
+            child: Text(
+              'No judges right now',
+              style: GoogleFonts.inter(color: AppTheme.textSecondary),
+            ),
+          );
+        }
+        return _JudgeSelectionContent(
+          judges: judges,
+          isJudgeLocked: isJudgeLocked,
+          onSelect: onSelect,
+        );
+      },
+    );
+  }
+}
+
+class _JudgeSelectionContent extends StatefulWidget {
+  const _JudgeSelectionContent({
     required this.judges,
     required this.isJudgeLocked,
     required this.onSelect,
@@ -23,10 +66,10 @@ class JudgeSelectionScreen extends StatefulWidget {
   final void Function(String personaId, int difficulty) onSelect;
 
   @override
-  State<JudgeSelectionScreen> createState() => _JudgeSelectionScreenState();
+  State<_JudgeSelectionContent> createState() => _JudgeSelectionContentState();
 }
 
-class _JudgeSelectionScreenState extends State<JudgeSelectionScreen>
+class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
     with TickerProviderStateMixin {
   late PageController _pageController;
   late AnimationController _auraController;
@@ -114,9 +157,6 @@ class _JudgeSelectionScreenState extends State<JudgeSelectionScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.judges.isEmpty) {
-      return const Center(child: Text('No judges available'));
-    }
     final judge = widget.judges[_currentIndex];
     final locked = widget.isJudgeLocked(judge.personaId);
     final sealingProgress = _isSealing ? _sealingController.value : 0.0;
@@ -256,10 +296,25 @@ class _JudgeCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          JudgePortrait(
-            judge: judge,
-            floatAnimation: portraitFloat,
-            sealingProgress: sealingProgress,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              JudgePortrait(
+                judge: judge,
+                floatAnimation: portraitFloat,
+                sealingProgress: sealingProgress,
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                child: _NewBadge(judge: judge),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: _SeasonalBadge(judge: judge),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           JudgeMetaInfo(judge: judge),
@@ -276,6 +331,111 @@ class _JudgeCard extends StatelessWidget {
                 : '',
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "New" badge at top-left of portrait: show when judge is new, seasonal, and within 7 days of season start or creation.
+class _NewBadge extends StatelessWidget {
+  const _NewBadge({required this.judge});
+
+  final Judge judge;
+
+  static const int _newDays = 7;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!judge.isNew || judge.seasonStart == null) {
+      return const SizedBox.shrink();
+    }
+    final now = DateTime.now().toUtc();
+    final withinSeason =
+        judge.seasonStart != null &&
+            now.difference(judge.seasonStart!.toUtc()).inDays <= _newDays;
+    final withinCreated =
+        judge.createdAt != null &&
+            now.difference(judge.createdAt!.toUtc()).inDays <= _newDays;
+    if (!withinSeason && !withinCreated) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: judge.primaryColor.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Text(
+        '✨ New',
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+/// Small badge at top-right of portrait: "Seasonal" / "Limited Time" or "Ends in X days" when near expiry.
+class _SeasonalBadge extends StatelessWidget {
+  const _SeasonalBadge({required this.judge});
+
+  final Judge judge;
+
+  static const int _daysNearExpiry = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    if (judge.seasonStart == null && judge.seasonEnd == null) {
+      return const SizedBox.shrink();
+    }
+    final end = judge.seasonEnd;
+    final now = DateTime.now().toUtc();
+    String label;
+    if (end != null) {
+      final daysLeft = end.difference(now).inDays;
+      if (daysLeft <= _daysNearExpiry && daysLeft >= 0) {
+        label = daysLeft == 0
+            ? 'Ends today'
+            : daysLeft == 1
+                ? 'Ends in 1 day'
+                : 'Ends in $daysLeft days';
+      } else if (judge.seasonStart != null) {
+        label = 'Limited Time';
+      } else {
+        label = 'Limited Time';
+      }
+    } else {
+      label = 'Seasonal';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: judge.primaryColor.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
     );
   }

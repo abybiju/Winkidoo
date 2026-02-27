@@ -11,9 +11,9 @@ import 'package:record/record.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/create/judge_selection_screen.dart';
-import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
+import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
@@ -365,11 +365,12 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       ),
       body: _showJudgeSelection
           ? JudgeSelectionScreen(
-              judges: Judge.selectionList,
               isJudgeLocked: (personaId) {
                 final effectiveWinkPlus = ref.read(effectiveWinkPlusProvider);
-                return !effectiveWinkPlus &&
-                    !AppConstants.freePersonas.contains(personaId);
+                if (effectiveWinkPlus) return false;
+                final list = ref.read(activeJudgesProvider).valueOrNull ?? [];
+                final judge = list.where((j) => j.personaId == personaId).firstOrNull;
+                return judge?.premiumFlag ?? true;
               },
               onSelect: (personaId, difficulty) {
                 setState(() {
