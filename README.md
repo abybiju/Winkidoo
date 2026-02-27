@@ -52,7 +52,7 @@ After that, MVP1 is shippable; consider Phase 2 (push notifications or shareable
 
 6. **Push notifications (optional)**
    - Firebase: **web** config is in **web/index.html** (Firebase SDK + `firebaseConfig`). For Android and iOS, each developer downloads **google-services.json** and **GoogleService-Info.plist** from Firebase Console (Winkidoo project) and places them in **android/app/** and **ios/Runner/** respectively; these paths are in `.gitignore`. Do not commit the Firebase service account key (set via `supabase secrets set FIREBASE_SERVICE_ACCOUNT=...`).
-   - Run migrations **009** and **010** for push tokens (multi-device). Deploy Edge Function `send_battle_notification` and create the Database Webhook on `surprises`; see **[supabase/migrations/README.md](supabase/migrations/README.md)**. Full checklist: **[docs/FIREBASE_AND_PUSH_SETUP.md](docs/FIREBASE_AND_PUSH_SETUP.md)**.
+   - Run migrations **009** and **010** for push tokens (multi-device). Deploy Edge Function `send_battle_notification` and create Database Webhooks on `surprises` and `judges` (INSERT + UPDATE); see **[supabase/migrations/README.md](supabase/migrations/README.md)**. Full checklist: **[docs/FIREBASE_AND_PUSH_SETUP.md](docs/FIREBASE_AND_PUSH_SETUP.md)**.
 
 7. **OAuth (Google / Apple / Facebook) and store setup**
    - Step-by-step without storing secrets in the repo: **[docs/OAUTH_AND_STORE_SETUP.md](docs/OAUTH_AND_STORE_SETUP.md)**. Covers Supabase Auth providers, Google (SHA-1, Android), Apple (developer account), Facebook (Meta app, Basic settings), deep links, and app store checklist.
@@ -84,10 +84,12 @@ lib/
 ├── models/                  # Surprise, Attempt, Couple, Judge, Achievement, etc.
 ├── providers/               # Riverpod: auth, couple, theme, onboarding, surprise, winks, AI judge, achievements, judges, season recap, streak
 └── services/
-    ├── ai_judge_service.dart   # Gemini Flash judge
-    ├── encryption_service.dart # Client-side encrypt/decrypt surprise content
-    ├── realtime_service.dart   # Supabase Realtime channel for surprises
-    └── push_service.dart       # FCM token upsert (multi-device)
+    ├── ai_judge_service.dart       # Gemini Flash judge
+    ├── encryption_service.dart    # Client-side encrypt/decrypt surprise content
+    ├── realtime_service.dart      # Supabase Realtime channel for surprises
+    ├── push_service.dart         # FCM token upsert (multi-device)
+    ├── achievement_storage_service.dart   # Seen achievement IDs (shared_preferences)
+    └── season_recap_storage_service.dart  # Seen season recap IDs (shared_preferences)
 ```
 
 ---
@@ -204,6 +206,20 @@ lib/
 - **Tech:** Supabase Flutter `onPostgresChanges` for `surprises` table filtered by row id; no new packages.
 - **Status:** Realtime sync layer complete. Battle screen auto-reacts to surprise row updates; partner sees auto-navigation to reveal when seeker resolves; local resolver does not double-navigate when surprise-row event arrives later.
 - **Next:** UI polish (animations, transitions); manual smoke-test with two devices to confirm realtime resolve flow.
+
+### February 26, 2026 – Couple stats, Treasure Archive 2.0, Achievements, Season recap, Judges, Pre-battle tease, Push (full session)
+
+- **Couple Stats ("Your Dynamic"):** `lib/providers/couple_stats_provider.dart` — `CoupleStats` (totalBattles, unlockRate, toughestJudgePersonaId, avgPersuasion, creatorDefenseRatio, monthlyBattles) computed from resolved surprises; `coupleStatsProvider` watches couple + surprisesListProvider. Profile screen: "Your Dynamic" section with stat cards (Total Battles, Unlock Rate, Toughest Judge, Avg Persuasion, Creator interventions) and custom monthly bar chart (last 6 months); empty state when no battles.
+- **Treasure Archive 2.0:** Redesigned archive as memory vault. `treasure_archive_screen.dart` — cards with judge portrait, outcome badge, date, difficulty, attempts, mini persuasion/resistance meter; blur + lock overlay for non–Wink+; tap → detail. Route `/shell/treasure-archive/:surpriseId` → `TreasureDetailScreen`: free users see summary + "Unlock full memory with Wink+"; Wink+ see full surprise content, battle chat replay, "Replay Battle". `replay_battle_view.dart` — sequential message + meter replay (no new schema). `archiveWithSurprisesProvider` (or list + surpriseById per card) for enriched cards. Premium gating via `effectiveWinkPlusProvider`; no blocking of navigation.
+- **Achievements (Phase 1):** `lib/models/achievement.dart` (id, title, description, unlocked, unlockedAt). `lib/providers/achievements_provider.dart` — depends on coupleStatsProvider + surprisesListProvider; computes First Victory, 5/10 Battles, 100+ Persuasion, Beat Chaos Gremlin, 3+ Creator Defenses, Active 3 Months; read-only, retroactive. Profile: "Achievements" below "Your Dynamic" — horizontal scroll of circular badges; locked = grayscale + lock overlay, unlocked = colored + glow; tap → bottom sheet (title + description). Icons in `lib/core/constants/achievement_icons.dart`.
+- **Achievements (Phase 2 — Unlock celebration):** `lib/services/achievement_storage_service.dart` — shared_preferences, getSeenAchievements/markAsSeen. `AchievementUnlockedDialog` — scale 0.8→1, fade 250ms, haptic on open; "Achievement Unlocked", icon, title, description, "Nice." Detection on Home and Profile: when achievements load, compare with seen IDs; show modal for first new unlock, then mark seen. Guard so runs once per screen load. Unlock detection also on Home for earlier celebration when user returns from battle.
+- **Celebration order (Home):** Single sequence so season recap takes priority over achievement modal. When both providers have data, `_runCelebrationSequence` runs: first `_checkSeasonRecap`, then `_checkNewUnlocks`. One guard `_checkedHomeCelebrations`; no duplicate fires.
+- **Season Recap trigger:** `lib/services/season_recap_storage_service.dart` — hasSeenSeason(seasonId), markSeasonSeen(seasonId). HomeScreen watches `seasonRecapProvider`; when recap != null and !hasSeenSeason, push SeasonRecapScreen with onFinish (markSeasonSeen + pop) and onReplayHighlight (pop + push treasure-archive/:id). Guard `_checkedSeasonRecap` (now folded into `_checkedHomeCelebrations` with achievements). No provider or DB changes.
+- **Data-driven judges:** Migration 011 — judges table extended (tagline, difficulty_level, chaos_level, tone_tags, preview_quotes, primary_color_hex, created_at, is_premium; season_start/season_end timestamptz). Judge model: selectionList removed; fromJson for DB; Judge.placeholder(personaId). `activeJudgesProvider` and `judgeByPersonaIdProvider(personaId)` in judges_provider. JudgeSelectionScreen uses activeJudgesProvider (loading/empty); CreateSurpriseScreen passes isJudgeLocked from judge.premiumFlag. Seasonal badge ("Limited Time", "Ends in X days") and "New" badge (migration 012 is_new; client hides after 7 days).
+- **Judge Selection 2.0:** Full-screen judge selection (aura, portrait, difficulty/chaos meters, tone tags, rotating preview quotes, "Seal with This Judge"); vault sealing transition (portrait scale, aura intensify, "The vault is sealed." overlay, then onSelect). Pre-battle tease before battle chat: PreBattleTease (aura, portrait, lock pulse, random quote, "Begin Persuasion"); 1.5s auto-advance or tap; BattleChatScreen shows tease first then chat.
+- **Season-launch push:** Migration 013 — judges.season_push_sent. Edge Function send_battle_notification extended: on table `judges` (INSERT/UPDATE), when seasonal + season just started + is_new + !season_push_sent, send "✨ A New Judge Has Arrived" to all user_push_tokens; then update judge set season_push_sent = true. Second Database Webhook on `public.judges` (INSERT, UPDATE) to same function URL. App deep link type `season_launch` → router.go('/shell/create').
+- **Push (Firebase + FCM):** Migrations 009–010 (user_push_tokens, multi-device). Firebase project: Android (package com.winkidoo.winkidoo), iOS, Web. google-services.json and GoogleService-Info.plist in android/app/ and ios/Runner/ (gitignored). Web: Firebase SDK + firebaseConfig in web/index.html. Edge Function deployed; FIREBASE_SERVICE_ACCOUNT secret set (never in repo). Webhooks: surprises and judges. push_service.dart upserts token on login and onTokenRefresh. Deep links: surprise_id → battle or reveal; season_launch → create. See docs/FIREBASE_AND_PUSH_SETUP.md.
+- **Known issues / future:** (1) Photo lock: StorageException "Bucket not found" — ensure Supabase Storage bucket `surprises` exists and policies allow upload/read. (2) Voice note: UI shows "Recording... tap to stop" but recording may need device permissions and record package compatibility (record_linux version conflict on desktop; pin record to compatible version for Android). (3) Future: filter push tokens by updated_at last 90 days or users in a couple; idempotency in Edge Function for unrelated field updates.
 
 ### February 25–26, 2026 – Documentation and project memory update
 

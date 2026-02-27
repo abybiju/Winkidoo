@@ -12,7 +12,7 @@ Summary of what was done and what remains for Winkidoo push (FCM) and Firebase.
 ### 2. Multi-device push tokens
 - **Migration 010_user_push_tokens_multi_device.sql**: `user_push_tokens` now has `id` as PK, `push_token` unique (one row per device; one user can have multiple devices).
 - **lib/services/push_service.dart**: Upsert uses `onConflict: 'push_token'` so same device updates one row, new devices get new rows.
-- Migrations README lists 001–010.
+- Migrations 001–013: see supabase/migrations/README.md. Push-related: 009 (tokens), 010 (multi-device); judges: 011 (data-driven), 012 (is_new), 013 (season_push_sent).
 
 ### 3. Firebase project (Firebase Console)
 - Firebase project created; Android app added (package `com.winkidoo.winkidoo`), iOS app added, Web app added.
@@ -50,7 +50,7 @@ Summary of what was done and what remains for Winkidoo push (FCM) and Firebase.
    `git rm --cached android/app/google-services.json ios/Runner/GoogleService-Info.plist`  
    then commit. Files stay locally; repo no longer tracks them.
 
-2. **Supabase Edge Function and webhook** — **Done.** Function deployed (`supabase functions deploy send_battle_notification`). Secret `FIREBASE_SERVICE_ACCOUNT` set. Database webhook created on `public.surprises`, events INSERT + UPDATE, type Supabase Edge Function → `send_battle_notification`.
+2. **Supabase Edge Function and webhooks** — **Done.** Function deployed (`supabase functions deploy send_battle_notification`). Secret `FIREBASE_SERVICE_ACCOUNT` set (value from Firebase Console → Project settings → Service accounts → Generate new private key; never commit). Two Database Webhooks: (1) table `public.surprises`, events INSERT + UPDATE; (2) table `public.judges`, events INSERT + UPDATE; both URL `https://<PROJECT_REF>.supabase.co/functions/v1/send_battle_notification`. Payload: include record and old_record.
 
 3. **Run migration 010** — **Done.** Run in Supabase SQL Editor (multi-device tokens).
 
@@ -68,8 +68,8 @@ Summary of what was done and what remains for Winkidoo push (FCM) and Firebase.
 | Firebase web config | `web/index.html` (Firebase SDK + firebaseConfig) |
 | Service account key | Never in repo; `supabase secrets set FIREBASE_SERVICE_ACCOUNT='...'` |
 | Deploy function | `supabase functions deploy send_battle_notification` |
-| Webhook | Dashboard → Database → Webhooks → `public.surprises`, INSERT+UPDATE, function URL |
-| Migrations 001–010 | See supabase/migrations/README.md |
+| Webhooks | Dashboard → Database → Webhooks: (1) `public.surprises` INSERT+UPDATE, (2) `public.judges` INSERT+UPDATE; same function URL |
+| Migrations 001–013 | See supabase/migrations/README.md |
 
 ---
 
@@ -77,4 +77,4 @@ Summary of what was done and what remains for Winkidoo push (FCM) and Firebase.
 
 **Note for future sessions:** This file is the single place that records what was done for Firebase and push. Deploy, secret, webhook, and migration 010 are done. Remaining: optional git rm --cached for JSON/plist if ever committed; Hosting/domain when going live.
 
-*Last updated: February 2026 — Firebase (Android/iOS/Web), Gradle/CocoaPods, web index.html, .gitignore, README; migrations 009–010; Edge Function deployed; FIREBASE_SERVICE_ACCOUNT set; Database webhook on surprises; migration 010 run. Ready for manual testing.*
+*Last updated: February 2026 — Firebase (Android/iOS/Web), Gradle/CocoaPods, web index.html, .gitignore, README; migrations 009–013; Edge Function deployed (surprises + judges); FIREBASE_SERVICE_ACCOUNT set; Database webhooks on surprises and judges. Season-launch push when new seasonal judge becomes active; deep link season_launch → /shell/create. Ready for manual testing.*
