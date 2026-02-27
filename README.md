@@ -200,12 +200,22 @@ lib/
 - **What we did:** Updated project documentation and memory to reflect the full current state. (1) **README:** Project structure now lists `SkeletonMessageRow` in `core/widgets/`. Development log already contained smoke-test Part 2 (error screens, semantics, skeletons, judge tone), Blueprint v1 schema/vault/difficulty/treasure/judges, Phase 1 (responsive UI, dual theme, onboarding, photo/voice, quality), Wink+ and hint/instant-unlock, and Feb 26 realtime sync layer. (2) **Push notifications (Firebase/FCM):** Migrations 009 (`user_push_tokens`) and 010 (multi-device: `id` PK, `push_token` unique); Firebase project with Android/iOS/Web apps; configs in `android/app/google-services.json` and `ios/Runner/GoogleService-Info.plist` (gitignored); web config in `web/index.html`; `push_service.dart` upserts with `onConflict: 'push_token'`; Edge Function `send_battle_notification` (relevant-field check, idempotency). Full checklist: **docs/FIREBASE_AND_PUSH_SETUP.md**. (3) **Validation:** LOCAL_VALIDATION.md is the run-locally checklist (error paths, semantics, skeletons, judge tone, then Part 1 manual smoke-test). (4) **Memory:** Project state and “what’s done / what’s next” captured for future sessions.
 - **Status:** Docs and memory up to date. Next: run app locally, run LOCAL_VALIDATION checklist, then Part 1 manual smoke-test (two accounts); optionally deploy Edge Function and webhook for push.
 
+### February 26, 2026 – App stuck on loading screen (CoupleLinkScreen) fix
+
+- **Problem:** On launch (e.g. Android), the app sometimes showed a full-screen dark gradient with a pink circular loading spinner and never progressed. Console showed surface/visibility logs; user was stuck.
+- **Cause:** The spinner matches **CoupleLinkScreen**: (1) when the user was already linked, the screen showed a spinner and relied only on router redirect to go to the vault — if redirect didn't run or was delayed, they stayed stuck; (2) when `coupleProvider` stayed in a loading state (e.g. slow/failing network or Supabase), the loading UI never cleared.
+- **What we built:** (1) **Explicit navigation when linked:** In `lib/features/auth/couple_link_screen.dart`, when `couple != null && couple.isLinked`, we now call `context.go('/shell/vault')` in a post-frame callback so the app always navigates to the vault even if the router redirect hasn't fired. (2) **Loading timeout and retry:** Replaced the infinite loading state with `_CoupleLinkLoadingBody`: after 8 seconds it shows "Taking too long? Check your connection and try again." and a **Retry** button that invalidates `coupleProvider` and resets the timeout. Added `go_router` import and `kCoupleLoadTimeout` (8s).
+- **Workflow:** Identified CoupleLinkScreen as source of spinner → added post-frame `context.go` for linked case → extracted loading branch to stateful widget with Timer, timeout message, and retry.
+- **Files:** `lib/features/auth/couple_link_screen.dart` (navigate when linked; `_CoupleLinkLoadingBody` with timeout + retry).
+- **Status:** Implemented. Users no longer stuck indefinitely on the couple-link loading screen; retry gives a path when the couple fetch hangs.
+- **Next:** Run app again; if a spinner appears before sign-in (initial auth check), we can add a dedicated auth-loading screen and/or logging.
+
 ---
 
 ## Git
 
 ```bash
 git add .
-git commit -m "docs: README Blueprint v1 UX, migration order, dev log"
+git commit -m "fix: CoupleLinkScreen loading stuck — navigate when linked + 8s timeout & retry; docs & decision-log updated"
 git push
 ```

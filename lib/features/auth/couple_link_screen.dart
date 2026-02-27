@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/couple.dart';
@@ -197,6 +199,9 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
           child: coupleAsync.when(
             data: (couple) {
               if (couple != null && couple.isLinked) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) context.go('/shell/vault');
+                });
                 return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
               }
               return Padding(
@@ -298,15 +303,88 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                 ),
               );
             },
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
-            ),
+            loading: () => _CoupleLinkLoadingBody(),
             error: (_, __) => const Center(
               child: Text('Something went wrong', style: TextStyle(color: AppTheme.error)),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Loading state with timeout: after [kCoupleLoadTimeout] shows retry.
+class _CoupleLinkLoadingBody extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_CoupleLinkLoadingBody> createState() => _CoupleLinkLoadingBodyState();
+}
+
+const Duration kCoupleLoadTimeout = Duration(seconds: 8);
+
+class _CoupleLinkLoadingBodyState extends ConsumerState<_CoupleLinkLoadingBody> {
+  bool _timedOut = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(kCoupleLoadTimeout, () {
+      if (mounted) setState(() => _timedOut = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _retry() {
+    ref.invalidate(coupleProvider);
+    setState(() => _timedOut = false);
+    _timer?.cancel();
+    _timer = Timer(kCoupleLoadTimeout, () {
+      if (mounted) setState(() => _timedOut = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_timedOut) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Taking too long?',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Check your connection and try again.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _retry,
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return const Center(
+      child: CircularProgressIndicator(color: AppTheme.primary),
     );
   }
 }
