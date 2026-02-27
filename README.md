@@ -252,10 +252,20 @@ lib/
 
 ---
 
+### February 27, 2026 – Connection Streak, Season Recap Provider (data layer), recap query optimization
+
+- **Connection Streak (Light Streak Mechanic):** Read-only weekly activity streak; no DB or achievement changes. (1) **Provider:** `lib/providers/streak_provider.dart` — `StreakStats` (currentStreak, longestStreak, activeThisWeek) computed from resolved surprises (`resolvedAt`). ISO week via Thursday method (year + week number); unique active weeks from resolved dates; current streak = consecutive weeks backward from "this week" (0 if this week inactive); longest streak = max run of consecutive weeks with year transition (week 52 → week 1) handled. No couple or no resolved battles → (0, 0, false). (2) **Profile UI:** New section "Connection Streak" in `lib/features/profile/profile_screen.dart` between "Your Dynamic" and "Achievements": flame icon, warm gradient card (orange/deepOrange); large current streak ("X weeks" / "1 week"), subtitle "Keep the spark alive.", longest streak below; when not active this week, subtle line "Play a battle this week to continue your streak."; optional glow (elevation + border) when currentStreak ≥ 3. Loading/error same pattern as Your Dynamic (card + CircularProgressIndicator or "—").
+- **Season Recap Provider (data layer only):** Read-only recap for the most recently ended seasonal judge. (1) **File:** `lib/providers/season_recap_provider.dart`. (2) **Model:** `SeasonRecap` — seasonId (judge personaId), seasonTitle (judge name), seasonStart, seasonEnd; battlesPlayed, winRate, avgPersuasion; longestStreakDuringSeason (consecutive active weeks within season window only); achievementsUnlockedDuringSeason (achievements whose first-unlock date falls in [seasonStart, seasonEnd]); highlightSurpriseId (surprise id with highest resistance_score, tie-break smallest |resistance − seeker|). (3) **Logic:** Detect most recently ended seasonal judge (season_end < now, order by season_end desc, take first). Filter resolved surprises to [seasonStart, seasonEnd]. Compute battlesPlayed, winRate, avgPersuasion; longest streak via duplicated ISO-week helpers (same algorithm as streak_provider, scoped to season dates); first-unlock date per achievement from global resolved (sorted by resolvedAt) then filter by window; highlight = max resistance_score then min gap. Return null if no ended season. No DB writes; no push; no UI in this provider. (4) **Achievement unlock derivation:** first_victory = first seeker win; battles_5/10 = 5th/10th resolved; persuasion_100 = first battle with seekerScore ≥ 100; beat_chaos_gremlin = first chaos_gremlin seeker win; creator_defenses_3 = first with creatorDefenseCount ≥ 3; active_3_months = battle that first brings distinct-month count to 3.
+- **Recap judges query optimization:** Instead of fetching all judges and filtering client-side, season recap now uses a single Supabase query: `.lt('season_end', now.toIso8601String())`, `.not('season_start', 'is', null)`, `.order('season_end', ascending: false)`, `.limit(1)`. One row returned when a recap exists; scales when the judges table grows.
+- **Status:** Connection Streak and Season Recap data layer in place; docs updated. No secrets in repo.
+- **Next:** Optional: Season Recap UI already exists (SeasonRecapScreen); wire Home (or other entry) to show recap when `seasonRecapProvider` is non-null and not yet seen. Continue with Share/Copy on Vault Sealed, LinkVaultScreen wiring, E2E OAuth.
+
+---
+
 ## Git
 
 ```bash
 git add .
-git commit -m "docs: Feb 27 — creator flow, Vault Sealed redesign, welcome/link/season screens, OAuth/store/domain (no secrets)"
+git commit -m "docs: Feb 27 — Connection Streak, Season Recap Provider (data layer), recap query optimization; update memory"
 git push
 ```
