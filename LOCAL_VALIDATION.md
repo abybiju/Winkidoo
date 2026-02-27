@@ -2,6 +2,8 @@
 
 Use this **before or during** your next dev session to confirm Part 2 polish and prepare for Part 1 smoke-test.
 
+*Last doc update: February 2026 — error screens, semantics, SkeletonMessageRow, judge tone, push setup (see docs/FIREBASE_AND_PUSH_SETUP.md).*
+
 ---
 
 ## 1. Error paths

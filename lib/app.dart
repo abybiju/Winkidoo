@@ -1,85 +1,84 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
-import 'package:winkidoo/core/widgets/error_screen.dart';
-import 'package:winkidoo/features/auth/login_screen.dart';
-import 'package:winkidoo/features/auth/welcome_screen.dart';
-import 'package:winkidoo/features/auth/couple_link_screen.dart';
-import 'package:winkidoo/core/layout/responsive_vault_shell.dart';
-import 'package:winkidoo/features/vault/realtime_surprises_subscription.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
-import 'package:winkidoo/features/onboarding/onboarding_screen.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
 import 'package:winkidoo/providers/theme_provider.dart';
+import 'package:winkidoo/router/app_router.dart';
+import 'package:winkidoo/services/push_service.dart';
 
-class WinkidooApp extends ConsumerWidget {
+class WinkidooApp extends ConsumerStatefulWidget {
   const WinkidooApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WinkidooApp> createState() => _WinkidooAppState();
+}
+
+class _WinkidooAppState extends ConsumerState<WinkidooApp> {
+  void _updateRouterState() {
+    final auth = ref.read(authStateProvider);
+    final onboarding = ref.read(onboardingCompleteProvider);
+    final couple = ref.read(coupleProvider);
+    final authLoading = auth.isLoading;
+    final authenticated = auth.hasValue ? (auth.value != null) : null;
+    final hasCouple = couple.hasValue ? (couple.value != null) : null;
+    routerRefreshNotifier.update(authLoading, authenticated, onboarding, hasCouple);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouterState());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setupPush());
+  }
+
+  void _setupPush() {
+    final client = Supabase.instance.client;
+    PushService.onTokenRefresh(client);
+    final session = ref.read(authStateProvider).valueOrNull;
+    if (session != null) {
+      PushService.register(client, session.user.id);
+    }
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _navigateFromPush(message.data);
+    });
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) _navigateFromPush(message.data);
+    });
+  }
+
+  void _navigateFromPush(Map<String, dynamic> data) {
+    final surpriseId = data['surprise_id'] as String?;
+    if (surpriseId == null || surpriseId.isEmpty) return;
+    final router = ref.read(goRouterProvider);
+    router.go('/shell/battle/$surpriseId');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(authStateProvider, (_, next) {
+      _updateRouterState();
+      final session = next.valueOrNull;
+      if (session != null) {
+        PushService.register(Supabase.instance.client, session.user.id);
+      }
+    });
+    ref.listen(coupleProvider, (_, __) => _updateRouterState());
+    ref.listen(onboardingCompleteProvider, (_, __) => _updateRouterState());
+
     final themeMode = ref.watch(themeModeProvider);
-    return MaterialApp(
+    final router = ref.watch(goRouterProvider);
+
+    return MaterialApp.router(
       title: 'Winkidoo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: ref.watch(authStateProvider).when(
-            data: (session) {
-              if (session == null) return const WelcomeScreen();
-              final onboardingComplete = ref.watch(onboardingCompleteProvider);
-              if (!onboardingComplete) {
-                return OnboardingScreen(
-                  onComplete: () {},
-                );
-              }
-              return ref.watch(coupleProvider).when(
-                    data: (couple) {
-                      if (couple == null) {
-                        return const CoupleLinkScreen();
-                      }
-                      return const RealtimeSurprisesSubscription(
-                        child: ResponsiveVaultShell(),
-                      );
-                    },
-                    loading: () => const _LoadingScreen(),
-                    error: (e, _) => ErrorScreen(
-                      message: 'Could not load your couple. Tap to try again.',
-                      onRetry: () => ref.invalidate(coupleProvider),
-                      onBack: () => ref.invalidate(coupleProvider),
-                    ),
-                  );
-            },
-            loading: () => const _LoadingScreen(),
-            error: (_, __) => ErrorScreen(
-              message: 'Could not sign in. Tap to try again.',
-              onRetry: () => ref.invalidate(authStateProvider),
-              onBack: () => ref.invalidate(authStateProvider),
-            ),
-          ),
-    );
-  }
-}
-
-class _LoadingScreen extends StatelessWidget {
-  const _LoadingScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppTheme.gradientColors(Theme.of(context).brightness),
-          ),
-        ),
-        child: const Center(
-          child: CircularProgressIndicator(color: AppTheme.primary),
-        ),
-      ),
+      routerConfig: router,
     );
   }
 }

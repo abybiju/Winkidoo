@@ -23,11 +23,14 @@ class GeminiApiKeyMissingException implements Exception {
 /// AI Judge using Google Gemini Flash.
 /// Returns structured JSON: score, isUnlocked, commentary, hint?, moodEmoji.
 class AiJudgeService {
-  /// Schema for judge JSON output: commentary required; score, is_unlocked, hint, mood_emoji optional.
+  /// Schema for judge JSON output: commentary required; score_delta every turn; score, is_unlocked at verdict.
   static Schema get _judgeResponseSchema => Schema.object(
         properties: {
           'commentary': Schema.string(
             description: 'Your in-character reaction, 1-3 full sentences. Never empty.',
+          ),
+          'score_delta': Schema.integer(
+            description: "Change in seeker's persuasion this turn (e.g. -10 to +15). Required every turn.",
           ),
           'score': Schema.integer(description: '0-100, only for verdict'),
           'is_unlocked': Schema.boolean(description: 'Only for verdict'),
@@ -158,12 +161,14 @@ Respond with JSON only, no markdown:
       final json = _parseJsonFromResponse(text);
       final score = json['score'] as int? ?? 0;
       final thresholdMet = score >= required;
+      // Single-shot submission: treat returned score as the delta for this one attempt.
       return JudgeResponse(
         score: score.clamp(0, 100),
         isUnlocked: json['is_unlocked'] as bool? ?? thresholdMet,
         commentary: json['commentary'] as String? ?? 'No comment.',
         hint: json['hint'] as String?,
         moodEmoji: json['mood_emoji'] as String?,
+        scoreDelta: score.clamp(0, 100),
       );
     } catch (e, st) {
       assert(() {
@@ -178,6 +183,7 @@ Respond with JSON only, no markdown:
         commentary: 'The judge is speechless. Try again!',
         hint: null,
         moodEmoji: '😶',
+        scoreDelta: 0,
       );
     }
   }
@@ -232,9 +238,11 @@ Respond with JSON only, no markdown:
     final verdictInstruction = '''
 After EVERY message you must do one of two things:
 
-A) If the seeker has NOT yet convinced you enough (your internal score for them is below the threshold): respond with ONLY commentary and mood. Use this JSON (no "score" or "is_unlocked"): {"commentary": "<your reaction in character, short and punchy>", "mood_emoji": "<single emoji>"}. Do NOT reveal the surprise.
+A) If the seeker has NOT yet convinced you enough (your internal score for them is below the threshold): respond with commentary, mood, and score_delta. Use this JSON (no "score" or "is_unlocked"): {"commentary": "<your reaction in character, short and punchy>", "mood_emoji": "<single emoji>", "score_delta": <number from -10 to +15>}. score_delta = how much this message moved the needle (positive = more convincing, negative = backsliding, 0 = no change). Do NOT reveal the surprise.
 
-B) If the seeker HAS convinced you — i.e. based on the full conversation so far, their convincing skill and arguments deserve a score >= $required — deliver your FINAL VERDICT now. Use this JSON: {"score": <0-100>, "is_unlocked": true, "commentary": "<your verdict speech in character>", "hint": null, "mood_emoji": "<single emoji>"}. If they did not convince you enough, you can deny: {"score": <0-100>, "is_unlocked": false, "commentary": "<verdict speech>", "hint": "<optional short hint>", "mood_emoji": "<emoji>"}.
+B) If the seeker HAS convinced you — i.e. based on the full conversation so far, their convincing skill and arguments deserve a score >= $required — deliver your FINAL VERDICT now. Use this JSON: {"score": <0-100>, "is_unlocked": true, "commentary": "<your verdict speech in character>", "hint": null, "mood_emoji": "<single emoji>", "score_delta": <number>}. If they did not convince you enough, you can deny: {"score": <0-100>, "is_unlocked": false, "commentary": "<verdict speech>", "hint": "<optional short hint>", "mood_emoji": "<emoji>", "score_delta": <number>}.
+
+You MUST include score_delta on every response (-10 to +15). It is the change in the seeker's persuasion this turn.
 
 $substantiveRule
 $repetitionRule
@@ -242,7 +250,7 @@ $openerRule
 $webQuoteRule
 Threshold to unlock: score >= $required. You decide the score based on how convincing the seeker has been overall. Reply with JSON only, no markdown.
 
-Example of a valid non-verdict response (vary openers — never empty): {"commentary": "Bestie, 'what do you mean' isn't exactly giving 'romantic hero' vibes. I'm looking for effort, not a dictionary definition! 😏", "mood_emoji": "😏"}
+Example of a valid non-verdict response (vary openers — never empty): {"commentary": "Bestie, 'what do you mean' isn't exactly giving 'romantic hero' vibes. I'm looking for effort, not a dictionary definition! 😏", "mood_emoji": "😏", "score_delta": 2}
 Example when they ask how to impress you (give concrete ideas, varied opener): {"commentary": "I want *effort* — like a real message that says something, or a voice note, or a little grand gesture. Give me something to work with! 💅", "mood_emoji": "💅"}
 Example when a message sounds like a web quote (nudge, different opener): {"commentary": "Sweetheart, that sounded like it had a little help from the internet. I'd love to hear what *you* would say if you tapped into your own brain for a sec! 💅", "mood_emoji": "💅"}
 Example (another persona — poetic nudge): {"commentary": "Thy words ring familiar, as if borrowed from another's quill. Pray, let thy own heart speak — I would hear what only thou couldst say.", "mood_emoji": "🌸"}
@@ -280,6 +288,7 @@ $verdictInstruction
         if (hasVerdict) {
           final score = json['score'] as int? ?? 0;
           final isUnlocked = json['is_unlocked'] as bool? ?? (score >= required);
+          final delta = (json['score_delta'] as int?) ?? 0;
           return (
             JudgeResponse(
               score: score.clamp(0, 100),
@@ -288,12 +297,14 @@ $verdictInstruction
               hint: json['hint'] as String?,
               moodEmoji: json['mood_emoji'] as String?,
               isVerdict: true,
+              scoreDelta: delta.clamp(-20, 20),
             ),
             true,
           );
         }
         final commentary = json['commentary'] as String?;
         final trimmed = commentary?.trim() ?? '';
+        final delta = (json['score_delta'] as int?) ?? 0;
         if (trimmed.isNotEmpty && trimmed.length > 2) {
           return (
             JudgeResponse(
@@ -303,6 +314,7 @@ $verdictInstruction
               hint: null,
               moodEmoji: json['mood_emoji'] as String? ?? '🤔',
               isVerdict: false,
+              scoreDelta: delta.clamp(-20, 20),
             ),
             true,
           );
@@ -336,6 +348,7 @@ Your previous reply had no commentary. You must respond with your actual in-char
           hint: null,
           moodEmoji: result.moodEmoji ?? '🤔',
           isVerdict: false,
+          scoreDelta: 0,
         );
       }
       return result;
@@ -354,6 +367,7 @@ Your previous reply had no commentary. You must respond with your actual in-char
         hint: null,
         moodEmoji: json['mood_emoji'] as String? ?? '🤔',
         isVerdict: false,
+        scoreDelta: (json['score_delta'] as int?)?.clamp(-20, 20) ?? 0,
       );
     } catch (e, st) {
       assert(() {
@@ -368,6 +382,7 @@ Your previous reply had no commentary. You must respond with your actual in-char
         commentary: 'The judge is speechless.',
         hint: null,
         moodEmoji: '😶',
+        scoreDelta: 0,
       );
     }
   }

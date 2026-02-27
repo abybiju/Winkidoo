@@ -3,12 +3,15 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/features/create/judge_selection_screen.dart';
+import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
@@ -24,7 +27,8 @@ class CreateSurpriseScreen extends ConsumerStatefulWidget {
       _CreateSurpriseScreenState();
 }
 
-class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
+class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
+    with TickerProviderStateMixin {
   final _contentController = TextEditingController();
   String _surpriseType = 'text';
   XFile? _photoFile;
@@ -37,9 +41,26 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
   int _difficulty = 2;
   int _autoDeleteHours = 0;
   bool _isLoading = false;
+  bool _showJudgeSelection = true;
+  late AnimationController _formFadeController;
+  late Animation<double> _formFadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _formFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _formFadeAnimation = CurvedAnimation(
+      parent: _formFadeController,
+      curve: Curves.easeOut,
+    );
+  }
 
   @override
   void dispose() {
+    _formFadeController.dispose();
     _contentController.dispose();
     _recorder.dispose();
     super.dispose();
@@ -172,7 +193,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
             backgroundColor: AppTheme.primary,
           ),
         );
-        Navigator.of(context).pop();
+        context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -232,7 +253,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
             backgroundColor: AppTheme.primary,
           ),
         );
-        Navigator.of(context).pop();
+        context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -294,7 +315,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
             backgroundColor: AppTheme.primary,
           ),
         );
-        Navigator.of(context).pop();
+        context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -317,10 +338,31 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
         title: const Text('Hide a surprise'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
       ),
-      body: Container(
+      body: _showJudgeSelection
+          ? JudgeSelectionScreen(
+              judges: Judge.selectionList,
+              isJudgeLocked: (personaId) {
+                final effectiveWinkPlus = ref.read(effectiveWinkPlusProvider);
+                return !effectiveWinkPlus &&
+                    !AppConstants.freePersonas.contains(personaId);
+              },
+              onSelect: (personaId, difficulty) {
+                setState(() {
+                  _judgePersona = personaId;
+                  _difficulty = difficulty;
+                  _showJudgeSelection = false;
+                });
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _formFadeController.forward();
+                });
+              },
+            )
+          : FadeTransition(
+        opacity: _formFadeAnimation,
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -517,66 +559,6 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Judge persona',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Builder(
-                  builder: (context) {
-                    final effectiveWinkPlus = ref.watch(effectiveWinkPlusProvider);
-                    return Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _PersonaChip(
-                          id: AppConstants.personaSassyCupid,
-                          label: 'Sassy Cupid',
-                          selected: _judgePersona == AppConstants.personaSassyCupid,
-                          onSelected: () =>
-                              setState(() => _judgePersona = AppConstants.personaSassyCupid),
-                          isWinkPlusLocked: false,
-                        ),
-                        _PersonaChip(
-                          id: AppConstants.personaPoeticRomantic,
-                          label: 'Poetic',
-                          selected: _judgePersona == AppConstants.personaPoeticRomantic,
-                          onSelected: () =>
-                              setState(() => _judgePersona = AppConstants.personaPoeticRomantic),
-                          isWinkPlusLocked: false,
-                        ),
-                        _PersonaChip(
-                          id: AppConstants.personaChaosGremlin,
-                          label: 'Chaos Gremlin',
-                          selected: _judgePersona == AppConstants.personaChaosGremlin,
-                          onSelected: () =>
-                              setState(() => _judgePersona = AppConstants.personaChaosGremlin),
-                          isWinkPlusLocked: !effectiveWinkPlus,
-                        ),
-                        _PersonaChip(
-                          id: AppConstants.personaTheEx,
-                          label: 'The Ex',
-                          selected: _judgePersona == AppConstants.personaTheEx,
-                          onSelected: () =>
-                              setState(() => _judgePersona = AppConstants.personaTheEx),
-                          isWinkPlusLocked: !effectiveWinkPlus,
-                        ),
-                        _PersonaChip(
-                          id: AppConstants.personaDrLove,
-                          label: 'Dr. Love',
-                          selected: _judgePersona == AppConstants.personaDrLove,
-                          onSelected: () =>
-                              setState(() => _judgePersona = AppConstants.personaDrLove),
-                          isWinkPlusLocked: !effectiveWinkPlus,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Text(
                   'Difficulty (affects score needed)',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
@@ -652,6 +634,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

@@ -8,9 +8,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/surprise.dart';
-import 'package:winkidoo/features/vault/vault_list_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/ai_judge_provider.dart';
+import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
@@ -137,31 +138,24 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       return;
     }
     try {
-      final client = ref.read(supabaseClientProvider);
-      await client.from('surprises').update({
-        'is_unlocked': true,
-        'unlocked_at': DateTime.now().toUtc().toIso8601String(),
-        'battle_status': 'resolved',
-        'winner': 'seeker',
-      }).eq('id', widget.surpriseId);
+      final battleService = ref.read(battleServiceProvider);
+      await battleService.resolveAsSeekerWin(widget.surpriseId);
       ref.invalidate(surpriseByIdProvider(widget.surpriseId));
       ref.invalidate(surprisesListProvider);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => RevealScreen(
-            surpriseId: widget.surpriseId,
-            judgeResponse: JudgeResponse(
-              score: 0,
-              isUnlocked: true,
-              commentary: 'Unlocked with Winks! 🎉',
-              hint: null,
-              moodEmoji: '😉',
-              isVerdict: true,
-            ),
-            creatorId: surprise.creatorId,
+      context.go(
+        '/shell/reveal/${widget.surpriseId}',
+        extra: {
+          'response': JudgeResponse(
+            score: 0,
+            isUnlocked: true,
+            commentary: 'Unlocked with Winks! 🎉',
+            hint: null,
+            moodEmoji: '😉',
+            isVerdict: true,
           ),
-        ),
+          'creatorId': surprise.creatorId,
+        },
       );
     } catch (e) {
       if (mounted) {
@@ -243,9 +237,33 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     super.dispose();
   }
 
+  static String _formatBattleStats({
+    required int? finalPersuasion,
+    required int? finalResistance,
+    required int? attempts,
+    required int? creatorDefenses,
+  }) {
+    final p = finalPersuasion?.toString() ?? '—';
+    final r = finalResistance?.toString() ?? '—';
+    final a = attempts?.toString() ?? '—';
+    final c = creatorDefenses?.toString() ?? '—';
+    return 'Final persuasion: $p · Resistance: $r · Attempts: $a · Creator defenses: $c';
+  }
+
   @override
   Widget build(BuildContext context) {
     final unlocked = widget.judgeResponse.isUnlocked;
+    final surpriseAsync = ref.watch(surpriseByIdProvider(widget.surpriseId));
+    final messagesAsync = ref.watch(battleMessagesProvider(widget.surpriseId));
+
+    final surprise = surpriseAsync.valueOrNull;
+    final messages = messagesAsync.valueOrNull;
+    final seekerAttempts = messages != null
+        ? messages.where((m) => m.senderType == 'seeker').length
+        : null;
+    final finalPersuasion = surprise?.seekerScore;
+    final finalResistance = surprise?.resistanceScore;
+    final creatorDefenses = surprise?.creatorDefenseCount;
 
     return Scaffold(
       body: Stack(
@@ -275,12 +293,36 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '${widget.judgeResponse.moodEmoji ?? ''} Score: ${widget.judgeResponse.score}/100',
+                      '${widget.judgeResponse.moodEmoji ?? ''} Last turn: ${widget.judgeResponse.score}/100',
                       style: GoogleFonts.inter(
                         color: AppTheme.textSecondary,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _formatBattleStats(
+                          finalPersuasion: finalPersuasion,
+                          finalResistance: finalResistance,
+                          attempts: seekerAttempts,
+                          creatorDefenses: creatorDefenses,
+                        ),
+                        style: GoogleFonts.inter(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     Container(
@@ -405,12 +447,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const VaultListScreen(),
-                            ),
-                            (r) => false,
-                          );
+                          context.go('/shell/vault');
                         },
                         child: const Text('Back to vault'),
                       ),

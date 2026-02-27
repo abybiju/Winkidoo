@@ -6,6 +6,7 @@ class JudgeResponse {
     this.hint,
     this.moodEmoji,
     this.isVerdict = false,
+    this.scoreDelta = 0,
   });
 
   final int score;
@@ -15,6 +16,8 @@ class JudgeResponse {
   final String commentary;
   final String? hint;
   final String? moodEmoji;
+  /// Per-turn change in seeker persuasion; used for accumulation (seeker_score += scoreDelta). Source of truth for DB updates.
+  final int scoreDelta;
 
   factory JudgeResponse.fromJson(Map<String, dynamic> json) {
     final hasVerdict = json.containsKey('score') && json.containsKey('is_unlocked');
@@ -25,6 +28,7 @@ class JudgeResponse {
       hint: json['hint'] as String?,
       moodEmoji: json['mood_emoji'] as String?,
       isVerdict: (json['is_verdict'] as bool?) ?? hasVerdict,
+      scoreDelta: (json['score_delta'] as int?) ?? 0,
     );
   }
 
@@ -35,6 +39,7 @@ class JudgeResponse {
       'commentary': commentary,
       'hint': hint,
       'mood_emoji': moodEmoji,
+      'score_delta': scoreDelta,
     };
   }
 }

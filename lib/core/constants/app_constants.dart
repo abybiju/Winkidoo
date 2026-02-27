@@ -44,6 +44,12 @@ class AppConstants {
   static const int difficultyMedium = 100;
   static const int difficultyHard = 130;
 
+  /// Resistance points subtracted per seeker message (fatigue decay). Used in effectiveResistance.
+  static const int fatigueDecayPerLevel = 2;
+
+  /// Max seeker persuasion score (clamp ceiling). Must be >= max possible effective resistance (~180) so duel is not artificially capped.
+  static const int seekerScoreMax = 200;
+
   /// Auto-delete options (hours). 0 = after viewing only.
   static const List<int> autoDeleteHoursOptions = [0, 24, 48];
 
@@ -58,4 +64,10 @@ class AppConstants {
 
   /// Supabase Storage bucket for surprise media (photo, voice, etc.)
   static const String surpriseStorageBucket = 'surprises';
+
+  /// Debounce: don't repeat the same battle system message within this many seconds.
+  static const int battleSystemMessageDebounceSeconds = 5;
+
+  /// Minimum effective resistance drop (points) to show "Resistance weakened..." (avoids noise from tiny drops).
+  static const int fatigueWeakenedMinDrop = 3;
 }

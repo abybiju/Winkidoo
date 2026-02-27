@@ -36,6 +36,9 @@ build/
 .env.local
 *.env
 
+# Supabase
+supabase/.temp/
+
 # iOS
 ios/Pods/
 ios/.symlinks/
@@ -49,3 +52,7 @@ android/gradlew
 android/gradlew.bat
 android/local.properties
 android/**/GeneratedPluginRegistrant.java
+android/app/google-services.json
+
+# Firebase (per-device; download from Firebase Console for Winkidoo project)
+ios/Runner/GoogleService-Info.plist

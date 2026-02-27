@@ -14,6 +14,7 @@ class Surprise {
     this.surpriseType = 'text',
     this.contentStoragePath,
     this.battleStatus = 'active',
+    this.resolvedAt,
     this.archivedFlag = false,
     this.seekerScore = 0,
     this.resistanceScore,
@@ -38,6 +39,8 @@ class Surprise {
   final String? contentStoragePath;
   /// active = battle in progress; resolved = ended
   final String battleStatus;
+  /// When battle_status was set to resolved (null while active).
+  final DateTime? resolvedAt;
   final bool archivedFlag;
   final int seekerScore;
   final int? resistanceScore;
@@ -69,6 +72,9 @@ class Surprise {
       surpriseType: (json['surprise_type'] as String?) ?? 'text',
       contentStoragePath: json['content_storage_path'] as String?,
       battleStatus: (json['battle_status'] as String?) ?? 'active',
+      resolvedAt: json['resolved_at'] != null
+          ? DateTime.parse(json['resolved_at'] as String)
+          : null,
       archivedFlag: json['archived_flag'] as bool? ?? false,
       seekerScore: json['seeker_score'] as int? ?? 0,
       resistanceScore: json['resistance_score'] as int?,
@@ -97,6 +103,7 @@ class Surprise {
       'surprise_type': surpriseType,
       'content_storage_path': contentStoragePath,
       'battle_status': battleStatus,
+      'resolved_at': resolvedAt?.toIso8601String(),
       'archived_flag': archivedFlag,
       'seeker_score': seekerScore,
       'resistance_score': resistanceScore,

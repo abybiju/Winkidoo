@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
-import 'package:winkidoo/features/auth/login_screen.dart';
 
 const double _kPillRadius = 999.0;
 
@@ -201,11 +201,7 @@ class WelcomeScreen extends ConsumerWidget {
   }
 
   void _navigateToLogin(BuildContext context) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => const LoginScreen(),
-      ),
-    );
+    context.go('/login');
   }
 }
 

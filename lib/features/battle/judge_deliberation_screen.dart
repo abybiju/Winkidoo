@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
-import 'package:winkidoo/features/battle/reveal_screen.dart';
 import 'package:winkidoo/models/judge_response.dart';
-import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class JudgeDeliberationScreen extends ConsumerStatefulWidget {
@@ -34,14 +33,12 @@ class _JudgeDeliberationScreenState extends ConsumerState<JudgeDeliberationScree
   }
 
   void _navigateToReveal() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => RevealScreen(
-          surpriseId: widget.surpriseId,
-          judgeResponse: widget.judgeResponse,
-          creatorId: widget.creatorId,
-        ),
-      ),
+    context.go(
+      '/shell/reveal/${widget.surpriseId}',
+      extra: {
+        'response': widget.judgeResponse,
+        'creatorId': widget.creatorId,
+      },
     );
   }
 

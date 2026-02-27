@@ -1,0 +1,255 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/features/auth/couple_link_screen.dart';
+import 'package:winkidoo/features/auth/login_screen.dart';
+import 'package:winkidoo/features/auth/welcome_screen.dart';
+import 'package:winkidoo/features/battle/battle_chat_screen.dart';
+import 'package:winkidoo/features/battle/judge_deliberation_screen.dart';
+import 'package:winkidoo/features/battle/reveal_screen.dart';
+import 'package:winkidoo/features/home/home_screen.dart';
+import 'package:winkidoo/features/onboarding/onboarding_screen.dart';
+import 'package:winkidoo/features/profile/profile_screen.dart';
+import 'package:winkidoo/features/treasure/treasure_archive_screen.dart';
+import 'package:winkidoo/features/vault/create_surprise_screen.dart';
+import 'package:winkidoo/features/vault/realtime_surprises_subscription.dart';
+import 'package:winkidoo/features/vault/wink_plus_screen.dart';
+import 'package:winkidoo/features/winks/winks_tab_screen.dart';
+import 'package:winkidoo/core/layout/responsive_vault_shell.dart';
+import 'package:winkidoo/models/judge_response.dart';
+import 'package:winkidoo/providers/onboarding_provider.dart';
+
+/// Notifier for go_router redirect: updated when auth/couple/onboarding changes.
+class RouterRefreshNotifier extends ChangeNotifier {
+  bool _authLoading = true;
+  bool? _authenticated;
+  bool _onboardingComplete = false;
+  bool? _hasCouple;
+
+  bool get isAuthLoading => _authLoading;
+  bool? get isAuthenticated => _authenticated;
+  bool get onboardingComplete => _onboardingComplete;
+  bool? get hasCouple => _hasCouple;
+
+  void update(bool authLoading, bool? authenticated, bool onboardingComplete, bool? hasCouple) {
+    if (_authLoading != authLoading ||
+        _authenticated != authenticated ||
+        _onboardingComplete != onboardingComplete ||
+        _hasCouple != hasCouple) {
+      _authLoading = authLoading;
+      _authenticated = authenticated;
+      _onboardingComplete = onboardingComplete;
+      _hasCouple = hasCouple;
+      notifyListeners();
+    }
+  }
+}
+
+final routerRefreshNotifier = RouterRefreshNotifier();
+
+final goRouterProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: '/',
+    refreshListenable: routerRefreshNotifier,
+    redirect: (context, state) {
+      final loc = state.matchedLocation;
+      if (routerRefreshNotifier.isAuthLoading) return null;
+      if (routerRefreshNotifier.isAuthenticated != true) {
+        if (loc != '/' && loc != '/login') return '/';
+        return null;
+      }
+      if (!routerRefreshNotifier.onboardingComplete) {
+        if (loc != '/onboarding') return '/onboarding';
+        return null;
+      }
+      if (routerRefreshNotifier.hasCouple == false) {
+        if (loc != '/couple-link') return '/couple-link';
+        return null;
+      }
+      if (routerRefreshNotifier.hasCouple == true) {
+        if (loc == '/' || loc == '/login' || loc == '/onboarding' || loc == '/couple-link') {
+          return '/shell/vault';
+        }
+        if (loc == '/shell') return '/shell/vault';
+      }
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, __) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, _) => Consumer(
+          builder: (context, ref, _) => OnboardingScreen(
+            onComplete: () {
+              ref.read(onboardingCompleteProvider.notifier).setComplete();
+              context.go('/shell/vault');
+            },
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/couple-link',
+        builder: (_, __) => const CoupleLinkScreen(),
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          final loc = state.matchedLocation;
+          int index = 0;
+          if (loc.startsWith('/shell/vault')) {
+            index = 1;
+          } else if (loc.startsWith('/shell/winks')) {
+            index = 2;
+          } else if (loc.startsWith('/shell/profile')) {
+            index = 3;
+          }
+          return Scaffold(
+            body: navigationShell,
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: index,
+              onTap: (i) {
+                switch (i) {
+                  case 0:
+                    context.go('/shell/home');
+                    break;
+                  case 1:
+                    context.go('/shell/vault');
+                    break;
+                  case 2:
+                    context.go('/shell/winks');
+                    break;
+                  case 3:
+                    context.go('/shell/profile');
+                    break;
+                }
+              },
+              backgroundColor: AppTheme.surface,
+              selectedItemColor: AppTheme.primary,
+              unselectedItemColor: AppTheme.textSecondary,
+              type: BottomNavigationBarType.fixed,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.inbox_rounded), label: 'Vault'),
+                BottomNavigationBarItem(icon: Icon(Icons.emoji_emotions_rounded), label: 'Winks'),
+                BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
+              ],
+            ),
+          );
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/shell/home',
+                builder: (_, __) => const HomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/shell/vault',
+                builder: (_, __) => const RealtimeSurprisesSubscription(
+                  child: ResponsiveVaultShell(isInsideShell: true),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/shell/winks',
+                builder: (_, __) => const WinksTabScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/shell/profile',
+                builder: (_, __) => const ProfileScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/shell/create',
+        builder: (_, __) => const CreateSurpriseScreen(),
+      ),
+      GoRoute(
+        path: '/shell/battle/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return BattleChatScreen(surpriseId: id);
+        },
+      ),
+      GoRoute(
+        path: '/shell/deliberation',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          if (extra == null) {
+            return const _PlaceholderScreen(title: 'Deliberation');
+          }
+          return JudgeDeliberationScreen(
+            surpriseId: extra['surpriseId']! as String,
+            judgeResponse: extra['response']! as JudgeResponse,
+            creatorId: extra['creatorId']! as String,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/shell/reveal/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          final extra = state.extra as Map<String, dynamic>?;
+          if (extra == null) {
+            return _PlaceholderScreen(title: 'Reveal $id');
+          }
+          return RevealScreen(
+            surpriseId: id,
+            judgeResponse: extra['response']! as JudgeResponse,
+            creatorId: extra['creatorId']! as String,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/shell/wink-plus',
+        builder: (_, __) => const WinkPlusScreen(),
+      ),
+      GoRoute(
+        path: '/shell/treasure-archive',
+        builder: (_, __) => const TreasureArchiveScreen(),
+      ),
+    ],
+  );
+});
+
+class _PlaceholderScreen extends StatelessWidget {
+  const _PlaceholderScreen({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: AppTheme.gradientColors(Theme.of(context).brightness),
+          ),
+        ),
+        child: Center(child: Text(title, style: const TextStyle(color: Colors.white))),
+      ),
+    );
+  }
+}

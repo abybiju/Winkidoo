@@ -11,7 +11,7 @@
 
 ## Next session: run locally + validate
 
-When you sit to work next, run the app locally and use **[LOCAL_VALIDATION.md](LOCAL_VALIDATION.md)** to:
+**Left for next time:** local run + validation. When you sit to work next, run the app locally and use **[LOCAL_VALIDATION.md](LOCAL_VALIDATION.md)** to:
 
 1. Confirm error screens (vault, battle chat), semantics (submission, send, create surprise), and loading skeletons.
 2. Spot-check judge tone (witty/warm, playful roasts).
@@ -47,6 +47,10 @@ After that, MVP1 is shippable; consider Phase 2 (push notifications or shareable
 4. **Realtime (optional)**
    - In Supabase Dashboard → Database → Replication, add `surprises` table to the publication so new surprises push to the app.
 
+5. **Push notifications (optional)**
+   - Firebase: **web** config is in **web/index.html** (Firebase SDK + `firebaseConfig`). For Android and iOS, each developer downloads **google-services.json** and **GoogleService-Info.plist** from Firebase Console (Winkidoo project) and places them in **android/app/** and **ios/Runner/** respectively; these paths are in `.gitignore`. Do not commit the Firebase service account key (set via `supabase secrets set FIREBASE_SERVICE_ACCOUNT=...`).
+   - Run migrations **009** and **010** for push tokens (multi-device). Deploy Edge Function `send_battle_notification` and create the Database Webhook on `surprises`; see **[supabase/migrations/README.md](supabase/migrations/README.md)**. Full checklist: **[docs/FIREBASE_AND_PUSH_SETUP.md](docs/FIREBASE_AND_PUSH_SETUP.md)**.
+
 ---
 
 ## Project structure
@@ -59,7 +63,7 @@ lib/
 │   ├── theme/               # Dual theme (Midnight Romance + Blush & Wink)
 │   ├── constants/           # App constants, persona IDs, costs, breakpoints
 │   ├── layout/              # ResponsiveVaultShell (desktop two-panel, mobile nav + FAB)
-│   └── widgets/              # ErrorScreen, SkeletonCard
+│   └── widgets/              # ErrorScreen, SkeletonCard, SkeletonMessageRow
 ├── features/
 │   ├── auth/                # Login, couple link (invite code)
 │   ├── onboarding/          # 3-screen onboarding (value prop, couple link, first surprise)
@@ -179,6 +183,19 @@ lib/
 
 - **What we built:** Schema and app aligned to [PRODUCT_BLUEPRINT.md](PRODUCT_BLUEPRINT.md). (1) **Migration 005:** Added to `surprises`: `battle_status`, `archived_flag`, `seeker_score`, `resistance_score`, `fatigue_level`, `last_activity_at`, `winner`, `creator_defense_count`. Created `treasure_archive` and `judges` (with seed rows). (2) **Surprise model:** Extended with new fields; create/update flows set `battle_status`. (3) **Difficulty:** Base values Easy 80, Medium 100, Hard 130 in `app_constants.dart` (plus Chaos variance). (4) **Vault copy:** Sections labeled **Waiting for You** (partner’s) and **Your Surprises** (yours). (5) **Models:** `TreasureArchive` and `Judge`; app ready for Result Summary and Keep in Treasure / Delete flows. Migrations 001–002 made idempotent (drop policy if exists, publication add only if not present) so re-runs are safe.
 - **Status:** Blueprint v1 Phase 1 schema and UX plan in place; docs (README, migrations README) updated. Manual smoke-test and Phase 2 (Result Summary UI, tug-of-war meter, seasonal judges) when ready.
+
+### February 26, 2026 – Realtime Sync Layer (before UI polish)
+
+- **What we built:** Realtime sync so the battle screen always reflects live state and navigates to reveal exactly once when a surprise is resolved (locally or by partner). Done before UI polish so animations use correct, up-to-date state. (1) **Migration 008:** `008_realtime_surprises.sql` adds `public.surprises` to `supabase_realtime` publication (idempotent, same pattern as 002) so the surprise row stream receives UPDATE events (e.g. `battle_status` → `resolved`). (2) **BattleRealtimeService:** Extended with a second `onPostgresChanges` on the same channel: table `surprises`, filter `id` = surpriseId, event UPDATE; optional callback `onSurpriseChanged(PostgresChangePayload)` so the UI can invalidate providers and auto-navigate. (3) **BattleChatScreen:** Subscribes with `onSurpriseChanged: _onSurpriseRowChanged`. Callback invalidates `surpriseByIdProvider`, `surprisesListProvider`, and `battleMessagesProvider`; when `payload.newRecord['battle_status'] == 'resolved'` and `!_navigatedToVerdict` and still on battle route, fetches verdict message, builds `JudgeResponse` from it, sets `_navigatedToVerdict = true`, then `context.go` to reveal with extra. (4) **Double-navigation guard:** `_navigatedToVerdict` set to `true` before `context.go` in: local seeker-win path in `_sendMessage`, instant-unlock path in `_buyInstantUnlock`, and realtime path in `_onSurpriseRowChanged`; verdict-in-messages path already set it before scheduling navigation.
+- **Workflow:** Migration 008 → BattleRealtimeService (surprise row stream + callback) → BattleChatScreen (onSurpriseChanged, invalidate, resolve detection, fetch verdict, single guard, context.go).
+- **Tech:** Supabase Flutter `onPostgresChanges` for `surprises` table filtered by row id; no new packages.
+- **Status:** Realtime sync layer complete. Battle screen auto-reacts to surprise row updates; partner sees auto-navigation to reveal when seeker resolves; local resolver does not double-navigate when surprise-row event arrives later.
+- **Next:** UI polish (animations, transitions); manual smoke-test with two devices to confirm realtime resolve flow.
+
+### February 25–26, 2026 – Documentation and project memory update
+
+- **What we did:** Updated project documentation and memory to reflect the full current state. (1) **README:** Project structure now lists `SkeletonMessageRow` in `core/widgets/`. Development log already contained smoke-test Part 2 (error screens, semantics, skeletons, judge tone), Blueprint v1 schema/vault/difficulty/treasure/judges, Phase 1 (responsive UI, dual theme, onboarding, photo/voice, quality), Wink+ and hint/instant-unlock, and Feb 26 realtime sync layer. (2) **Push notifications (Firebase/FCM):** Migrations 009 (`user_push_tokens`) and 010 (multi-device: `id` PK, `push_token` unique); Firebase project with Android/iOS/Web apps; configs in `android/app/google-services.json` and `ios/Runner/GoogleService-Info.plist` (gitignored); web config in `web/index.html`; `push_service.dart` upserts with `onConflict: 'push_token'`; Edge Function `send_battle_notification` (relevant-field check, idempotency). Full checklist: **docs/FIREBASE_AND_PUSH_SETUP.md**. (3) **Validation:** LOCAL_VALIDATION.md is the run-locally checklist (error paths, semantics, skeletons, judge tone, then Part 1 manual smoke-test). (4) **Memory:** Project state and “what’s done / what’s next” captured for future sessions.
+- **Status:** Docs and memory up to date. Next: run app locally, run LOCAL_VALIDATION checklist, then Part 1 manual smoke-test (two accounts); optionally deploy Edge Function and webhook for push.
 
 ---
 

@@ -31,6 +31,22 @@
 
   <title>Winkidoo</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Firebase for web (FCM). Must load and initialize before Flutter. -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+  <script>
+    var firebaseConfig = {
+      apiKey: "AIzaSyDoUV-diVRjK0xlDk_xFCo0s9XuC1y0Ysc",
+      authDomain: "winkidoo.firebaseapp.com",
+      projectId: "winkidoo",
+      storageBucket: "winkidoo.firebasestorage.app",
+      messagingSenderId: "356170729561",
+      appId: "1:356170729561:web:2cfedd49a213dc70ac4948",
+      measurementId: "G-M8EFJXVMWW"
+    };
+    if (typeof firebase !== 'undefined') firebase.initializeApp(firebaseConfig);
+  </script>
 </head>
 <body>
   <!--

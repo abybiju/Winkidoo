@@ -1,6 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:winkidoo/models/battle_message.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/services/battle_service.dart';
+
+final battleServiceProvider = Provider<BattleService>((ref) {
+  return BattleService(ref.watch(supabaseClientProvider));
+});
 
 final battleMessagesProvider =
     FutureProvider.family<List<BattleMessage>, String>((ref, surpriseId) async {

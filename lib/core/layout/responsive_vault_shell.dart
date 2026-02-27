@@ -7,8 +7,12 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/vault/vault_list_screen.dart';
 
 /// Wraps vault in responsive layout: desktop web = two-panel (sidebar + detail), mobile = single panel with bottom nav + FAB.
+/// When [isInsideShell] is true (e.g. from go_router 4-tab shell), the shell's bottom nav is shown; this flag only
+/// controls the vault's own duplicate bar so we do not show two navs. Deep routes (Create, Battle) are outside the shell.
 class ResponsiveVaultShell extends ConsumerStatefulWidget {
-  const ResponsiveVaultShell({super.key});
+  const ResponsiveVaultShell({super.key, this.isInsideShell = false});
+
+  final bool isInsideShell;
 
   @override
   ConsumerState<ResponsiveVaultShell> createState() =>
@@ -52,7 +56,7 @@ class _ResponsiveVaultShellState extends ConsumerState<ResponsiveVaultShell> {
           );
         }
         return VaultListScreen(
-          showBottomNav: true,
+          showBottomNav: !widget.isInsideShell,
           isDesktopSidebar: false,
         );
       },

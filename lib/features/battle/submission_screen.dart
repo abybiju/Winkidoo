@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
-import 'package:winkidoo/features/battle/judge_deliberation_screen.dart';
+import 'package:winkidoo/core/utils/battle_math.dart';
 import 'package:winkidoo/providers/ai_judge_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/services/ai_judge_service.dart';
 import 'package:uuid/uuid.dart';
@@ -89,14 +92,36 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
         'created_at': DateTime.now().toUtc().toIso8601String(),
       });
 
+      final now = DateTime.now().toUtc().toIso8601String();
+      final currentSeekerScore = surprise['seeker_score'] as int? ?? 0;
+      final newSeekerScore = (currentSeekerScore + judgeResponse.scoreDelta)
+          .clamp(0, AppConstants.seekerScoreMax);
+      final resistanceScore = BattleMath.effectiveResistance(
+        difficultyLevel: difficulty,
+        creatorDefenseCount: 0,
+        fatigueLevel: 1,
+      );
+      final battleService = ref.read(battleServiceProvider);
       if (judgeResponse.isUnlocked) {
-        await client.from('surprises').update({
-          'is_unlocked': true,
-          'unlocked_at': DateTime.now().toUtc().toIso8601String(),
-          'battle_status': 'resolved',
-          'winner': 'seeker',
-        }).eq('id', widget.surpriseId);
+        await battleService.resolveAsSeekerWin(
+          widget.surpriseId,
+          lastActivityAt: now,
+          seekerScore: newSeekerScore,
+          resistanceScore: resistanceScore,
+          fatigueLevel: 1,
+        );
+      } else {
+        final surpriseUpdate = <String, dynamic>{
+          'seeker_score': newSeekerScore,
+          'last_activity_at': now,
+          'resistance_score': resistanceScore,
+          'fatigue_level': 1,
+        };
+        await client.from('surprises').update(surpriseUpdate).eq('id', widget.surpriseId);
       }
+
+      ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+      ref.invalidate(surprisesListProvider);
 
       if (freeAttemptsLeft <= 0 && (winks?.balance ?? 0) >= 1) {
         await client.from('winks_balance').update({
@@ -116,14 +141,13 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
       ref.invalidate(winksBalanceProvider);
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => JudgeDeliberationScreen(
-            surpriseId: widget.surpriseId,
-            judgeResponse: judgeResponse,
-            creatorId: creatorId,
-          ),
-        ),
+      context.push(
+        '/shell/deliberation',
+        extra: {
+          'surpriseId': widget.surpriseId,
+          'response': judgeResponse,
+          'creatorId': creatorId,
+        },
       );
     } catch (e) {
       if (mounted) {
@@ -146,7 +170,7 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
         title: const Text('Convince the judge'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
       ),
       body: Container(

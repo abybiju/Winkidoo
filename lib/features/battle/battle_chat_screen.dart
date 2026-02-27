@@ -2,14 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/battle_math.dart';
 import 'package:winkidoo/core/widgets/error_screen.dart';
 import 'package:winkidoo/core/widgets/skeleton_message_row.dart';
-import 'package:winkidoo/features/battle/reveal_screen.dart';
 import 'package:winkidoo/models/battle_message.dart';
+import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/ai_judge_provider.dart';
@@ -18,7 +21,10 @@ import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
+import 'package:winkidoo/features/battle/persuasion_meter.dart';
+import 'package:winkidoo/features/battle/pre_battle_tease.dart';
 import 'package:winkidoo/services/battle_realtime_service.dart';
+import 'package:winkidoo/services/battle_sound_service.dart';
 
 class BattleChatScreen extends ConsumerStatefulWidget {
   const BattleChatScreen({super.key, required this.surpriseId});
@@ -32,16 +38,84 @@ class BattleChatScreen extends ConsumerStatefulWidget {
 class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
   final _textController = TextEditingController();
   BattleRealtimeService? _realtime;
+  BattleSoundService? _soundService;
   bool _isSending = false;
   bool _navigatedToVerdict = false;
+  bool _playedUnlockSound = false;
+
+  // For emotional UX: detect resistance increase (vault reinforced) and fatigue weakening
+  int? _lastResistanceScore;
+  int? _lastFatigueLevel;
+  int? _lastEffectiveResistance;
+  final List<String> _systemMessages = [];
+  int _pulseResistanceTrigger = 0;
+  int _flickerResistanceTrigger = 0;
+  String? _lastSystemMessageText;
+  DateTime? _lastSystemMessageAt;
+  bool _showTease = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _realtime = BattleRealtimeService(ref.read(supabaseClientProvider));
-      _realtime!.subscribe(widget.surpriseId, () {
-        ref.invalidate(battleMessagesProvider(widget.surpriseId));
+      if (_soundService == null) _soundService = BattleSoundService(); // Once per screen lifecycle; rebuilds do not recreate
+      _realtime!.subscribe(
+        widget.surpriseId,
+        () {
+          ref.invalidate(battleMessagesProvider(widget.surpriseId));
+        },
+        onSurpriseChanged: _onSurpriseRowChanged,
+      );
+    });
+  }
+
+  void _onSurpriseRowChanged(PostgresChangePayload payload) {
+    if (!mounted) return;
+    final newRecord = payload.newRecord;
+    if (newRecord == null) return;
+
+    ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+    ref.invalidate(surprisesListProvider);
+    ref.invalidate(battleMessagesProvider(widget.surpriseId));
+
+    final battleStatus = newRecord['battle_status'] as String?;
+    if (battleStatus != 'resolved') return;
+    if (_navigatedToVerdict) return;
+
+    final location = GoRouterState.of(context).matchedLocation;
+    if (location != '/shell/battle/${widget.surpriseId}') return;
+
+    _navigatedToVerdict = true;
+
+    ref.read(battleMessagesProvider(widget.surpriseId).future).then((messages) {
+      if (!mounted) return;
+      final verdict = _verdictMessage(messages);
+      if (verdict == null) return;
+
+      final creatorId = newRecord['creator_id'] as String? ?? '';
+      final isChaosJudge = newRecord['judge_persona'] == AppConstants.personaChaosGremlin;
+      final judgeResponse = JudgeResponse(
+        score: verdict.verdictScore ?? 0,
+        isUnlocked: verdict.verdictUnlocked ?? false,
+        commentary: verdict.content,
+        hint: null,
+        moodEmoji: '⚖️',
+        isVerdict: true,
+      );
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        if (!_playedUnlockSound) {
+          _playedUnlockSound = true;
+          _soundService?.playUnlock(heavierHaptic: isChaosJudge);
+        }
+      });
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (!mounted) return;
+        context.go(
+          '/shell/reveal/${widget.surpriseId}',
+          extra: {'response': judgeResponse, 'creatorId': creatorId},
+        );
       });
     });
   }
@@ -49,6 +123,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
   @override
   void dispose() {
     _realtime?.dispose();
+    _soundService?.dispose();
     _textController.dispose();
     super.dispose();
   }
@@ -86,6 +161,31 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         'is_verdict': false,
       });
 
+      if (senderType == 'creator') {
+        await client.rpc(
+          'increment_surprise_creator_defense',
+          params: {'p_surprise_id': widget.surpriseId},
+        );
+        final fetched = await client
+            .from('surprises')
+            .select()
+            .eq('id', widget.surpriseId)
+            .single() as Map<String, dynamic>;
+        final fetchedSurprise = Surprise.fromJson(fetched);
+        final now = DateTime.now().toUtc().toIso8601String();
+        await client.from('surprises').update({
+          'last_activity_at': now,
+          'resistance_score': BattleMath.effectiveResistance(
+            difficultyLevel: fetchedSurprise.difficultyLevel,
+            creatorDefenseCount: fetchedSurprise.creatorDefenseCount,
+            fatigueLevel: fetchedSurprise.fatigueLevel,
+          ),
+          'fatigue_level': fetchedSurprise.fatigueLevel,
+        }).eq('id', widget.surpriseId);
+        ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+        ref.invalidate(surprisesListProvider);
+      }
+
       ref.invalidate(battleMessagesProvider(widget.surpriseId));
       await Future.delayed(const Duration(milliseconds: 300));
 
@@ -116,29 +216,64 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         'verdict_unlocked': isVerdictNow ? judgeResponse.isUnlocked : null,
       });
 
-      if (isVerdictNow && judgeResponse.isUnlocked) {
-        await client.from('surprises').update({
-          'is_unlocked': true,
-          'unlocked_at': DateTime.now().toUtc().toIso8601String(),
-          'battle_status': 'resolved',
-          'winner': 'seeker',
-        }).eq('id', widget.surpriseId);
+      final now = DateTime.now().toUtc().toIso8601String();
+      final seekerMessageCount =
+          messages.where((m) => m.senderType == 'seeker').length + 1;
+      final latestSurpriseRow = await client
+          .from('surprises')
+          .select()
+          .eq('id', widget.surpriseId)
+          .single() as Map<String, dynamic>;
+      final latestSurprise = Surprise.fromJson(latestSurpriseRow);
+      final newSeekerScore = (latestSurprise.seekerScore + judgeResponse.scoreDelta)
+          .clamp(0, AppConstants.seekerScoreMax);
+      final effectiveRes = BattleMath.effectiveResistance(
+        difficultyLevel: latestSurprise.difficultyLevel,
+        creatorDefenseCount: latestSurprise.creatorDefenseCount,
+        fatigueLevel: seekerMessageCount,
+      );
+      final seekerWins =
+          (isVerdictNow && judgeResponse.isUnlocked) || effectiveRes == 0;
+      final battleService = ref.read(battleServiceProvider);
+      if (seekerWins) {
+        await battleService.resolveAsSeekerWin(
+          widget.surpriseId,
+          lastActivityAt: now,
+          seekerScore: newSeekerScore,
+          resistanceScore: effectiveRes,
+          fatigueLevel: seekerMessageCount,
+        );
+      } else {
+        final surpriseUpdate = <String, dynamic>{
+          'last_activity_at': now,
+          'seeker_score': newSeekerScore,
+          'resistance_score': effectiveRes,
+          'fatigue_level': seekerMessageCount,
+        };
+        await client.from('surprises').update(surpriseUpdate).eq('id', widget.surpriseId);
       }
 
       ref.invalidate(battleMessagesProvider(widget.surpriseId));
       ref.invalidate(surpriseByIdProvider(widget.surpriseId));
       ref.invalidate(surprisesListProvider);
 
-      if (isVerdictNow && mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => RevealScreen(
-              surpriseId: widget.surpriseId,
-              judgeResponse: judgeResponse,
-              creatorId: surprise.creatorId,
-            ),
-          ),
-        );
+      if (seekerWins && mounted) {
+        _navigatedToVerdict = true;
+        final isChaosJudge = surprise.judgePersona == AppConstants.personaChaosGremlin;
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (!mounted) return;
+          if (!_playedUnlockSound) {
+            _playedUnlockSound = true;
+            _soundService?.playUnlock(heavierHaptic: isChaosJudge);
+          }
+        });
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (!mounted) return;
+          context.go(
+            '/shell/reveal/${widget.surpriseId}',
+            extra: {'response': judgeResponse, 'creatorId': surprise.creatorId},
+          );
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -223,21 +358,26 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
       return;
     }
     try {
-      final client = ref.read(supabaseClientProvider);
-      await client.from('surprises').update({
-        'is_unlocked': true,
-        'unlocked_at': DateTime.now().toUtc().toIso8601String(),
-        'battle_status': 'resolved',
-        'winner': 'seeker',
-      }).eq('id', widget.surpriseId);
+      final battleService = ref.read(battleServiceProvider);
+      await battleService.resolveAsSeekerWin(widget.surpriseId);
       ref.invalidate(surpriseByIdProvider(widget.surpriseId));
       ref.invalidate(surprisesListProvider);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => RevealScreen(
-            surpriseId: widget.surpriseId,
-            judgeResponse: JudgeResponse(
+      _navigatedToVerdict = true;
+      final isChaosJudge = surprise.judgePersona == AppConstants.personaChaosGremlin;
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        if (!_playedUnlockSound) {
+          _playedUnlockSound = true;
+          _soundService?.playUnlock(heavierHaptic: isChaosJudge);
+        }
+      });
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (!mounted) return;
+        context.go(
+          '/shell/reveal/${widget.surpriseId}',
+          extra: {
+            'response': JudgeResponse(
               score: 0,
               isUnlocked: true,
               commentary: 'Unlocked with Winks! 🎉',
@@ -245,10 +385,10 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
               moodEmoji: '😉',
               isVerdict: true,
             ),
-            creatorId: surprise.creatorId,
-          ),
-        ),
-      );
+            'creatorId': surprise.creatorId,
+          },
+        );
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -301,14 +441,78 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
             body: const Center(child: Text('Surprise not found')),
           );
         }
+        if (_showTease) {
+          return PreBattleTease(
+            judge: Judge.forPersonaId(surprise.judgePersona),
+            surpriseId: widget.surpriseId,
+            onBegin: () => setState(() => _showTease = false),
+          );
+        }
         final isCreator = userId == surprise.creatorId;
+
+        // Detect resistance increase (vault reinforced) and fatigue weakening for emotional UX
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final curR = surprise.resistanceScore ?? 0;
+          final curF = surprise.fatigueLevel;
+          final curE = BattleMath.effectiveResistance(
+            difficultyLevel: surprise.difficultyLevel,
+            creatorDefenseCount: surprise.creatorDefenseCount,
+            fatigueLevel: surprise.fatigueLevel,
+          );
+          if (_lastResistanceScore == null) {
+            setState(() {
+              _lastResistanceScore = curR;
+              _lastFatigueLevel = curF;
+              _lastEffectiveResistance = curE;
+            });
+            return;
+          }
+          final resistanceIncreased = curR > _lastResistanceScore!;
+          final resistanceDrop = _lastEffectiveResistance! - curE;
+          final fatigueWeakened = curF > _lastFatigueLevel! &&
+              curE < _lastEffectiveResistance! &&
+              resistanceDrop >= AppConstants.fatigueWeakenedMinDrop;
+          if (resistanceIncreased || fatigueWeakened) {
+            final now = DateTime.now();
+            final vaultReinforced = 'The vault was reinforced.';
+            final resistanceWeakened = 'Resistance weakened...';
+            final debounceSecs = AppConstants.battleSystemMessageDebounceSeconds;
+            final canAddReinforced = resistanceIncreased &&
+                (_lastSystemMessageText != vaultReinforced ||
+                    _lastSystemMessageAt == null ||
+                    now.difference(_lastSystemMessageAt!).inSeconds >= debounceSecs);
+            final canAddWeakened = fatigueWeakened &&
+                (_lastSystemMessageText != resistanceWeakened ||
+                    _lastSystemMessageAt == null ||
+                    now.difference(_lastSystemMessageAt!).inSeconds >= debounceSecs);
+            setState(() {
+              _lastResistanceScore = curR;
+              _lastFatigueLevel = curF;
+              _lastEffectiveResistance = curE;
+              if (canAddReinforced) {
+                _systemMessages.add(vaultReinforced);
+                _lastSystemMessageText = vaultReinforced;
+                _lastSystemMessageAt = now;
+                _pulseResistanceTrigger++;
+              }
+              if (canAddWeakened) {
+                _systemMessages.add(resistanceWeakened);
+                _lastSystemMessageText = resistanceWeakened;
+                _lastSystemMessageAt = now;
+                _flickerResistanceTrigger++;
+              }
+            });
+            if (canAddReinforced) _soundService?.playPulse(); // Only when not debounced
+          }
+        });
 
         return Scaffold(
           appBar: AppBar(
             title: Text('Judge: ${_personaLabel(surprise.judgePersona)}'),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
             ),
           ),
           body: Container(
@@ -327,6 +531,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                       final verdict = _verdictMessage(messages);
                       if (verdict != null && mounted && !_navigatedToVerdict) {
                         _navigatedToVerdict = true;
+                        final isChaosJudge = surprise.judgePersona == AppConstants.personaChaosGremlin;
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (!mounted) return;
                           final judgeResponse = JudgeResponse(
@@ -336,14 +541,25 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                             hint: null,
                             moodEmoji: '⚖️',
                           );
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (_) => RevealScreen(
-                                surpriseId: widget.surpriseId,
-                                judgeResponse: judgeResponse,
-                                creatorId: surprise.creatorId,
-                              ),
-                            ),
+                          Future.delayed(
+                            const Duration(milliseconds: 300),
+                            () {
+                              if (!mounted) return;
+                              if (!_playedUnlockSound) {
+                                _playedUnlockSound = true;
+                                _soundService?.playUnlock(heavierHaptic: isChaosJudge);
+                              }
+                            },
+                          );
+                          Future.delayed(
+                            const Duration(milliseconds: 400),
+                            () {
+                              if (!mounted) return;
+                              context.go(
+                                '/shell/reveal/${widget.surpriseId}',
+                                extra: {'response': judgeResponse, 'creatorId': surprise.creatorId},
+                              );
+                            },
                           );
                         });
                       }
@@ -351,10 +567,23 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                       final status = verdict != null
                           ? 'Verdict in — tap Back to vault'
                           : 'Live — convince the judge!';
+                      final resistanceScore = surprise.resistanceScore ??
+                          BattleMath.effectiveResistance(
+                            difficultyLevel: surprise.difficultyLevel,
+                            creatorDefenseCount: surprise.creatorDefenseCount,
+                            fatigueLevel: surprise.fatigueLevel,
+                          );
 
                       return Expanded(
                         child: Column(
                           children: [
+                            PersuasionMeter(
+                              seekerScore: surprise.seekerScore,
+                              resistanceScore: resistanceScore,
+                              pulseResistanceTrigger: _pulseResistanceTrigger,
+                              flickerResistanceTrigger: _flickerResistanceTrigger,
+                              isResolved: verdict != null,
+                            ),
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -413,13 +642,18 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                                   horizontal: 16,
                                   vertical: 8,
                                 ),
-                                itemCount: messages.length,
+                                itemCount: messages.length + _systemMessages.length,
                                 itemBuilder: (_, i) {
-                                  final m = messages[i];
-                                  return _ChatBubble(
-                                    message: m,
-                                    isMe: (m.isFromSeeker && !isCreator) ||
-                                        (m.isFromCreator && isCreator),
+                                  if (i < messages.length) {
+                                    final m = messages[i];
+                                    return _ChatBubble(
+                                      message: m,
+                                      isMe: (m.isFromSeeker && !isCreator) ||
+                                          (m.isFromCreator && isCreator),
+                                    );
+                                  }
+                                  return _SystemBubble(
+                                    text: _systemMessages[i - messages.length],
                                   );
                                 },
                               ),
@@ -488,7 +722,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                         message: 'Could not load messages. Try again?',
                         onRetry: () => ref.invalidate(
                             battleMessagesProvider(widget.surpriseId)),
-                        onBack: () => Navigator.of(context).pop(),
+                        onBack: () => context.pop(),
                       ),
                     ),
                   ),
@@ -530,7 +764,37 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           ref.invalidate(surpriseByIdProvider(widget.surpriseId));
           ref.invalidate(battleMessagesProvider(widget.surpriseId));
         },
-        onBack: () => Navigator.of(context).pop(),
+        onBack: () => context.pop(),
+      ),
+    );
+  }
+}
+
+class _SystemBubble extends StatelessWidget {
+  const _SystemBubble({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.textSecondary.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
       ),
     );
   }

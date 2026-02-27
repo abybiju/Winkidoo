@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
@@ -29,6 +30,7 @@ class VaultListScreen extends ConsumerStatefulWidget {
   /// When set (desktop two-panel), push battle/create to this navigator instead of context.
   final GlobalKey<NavigatorState>? desktopDetailNavigatorKey;
   final bool isDesktopSidebar;
+  /// When false (e.g. inside 4-tab shell), only the shell's bottom nav is shown; this avoids duplicate bar.
   final bool showBottomNav;
 
   @override
@@ -89,11 +91,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
           ),
         );
       } else {
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => BattleChatScreen(surpriseId: surpriseId),
-          ),
-        );
+        context.push('/shell/battle/$surpriseId');
       }
     }
 
@@ -105,11 +103,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
           ),
         );
       } else {
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const CreateSurpriseScreen(),
-          ),
-        );
+        context.push('/shell/create');
       }
     }
 
@@ -121,11 +115,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
           ),
         );
       } else {
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const WinkPlusScreen(),
-          ),
-        );
+        context.push('/shell/wink-plus');
       }
     }
 
@@ -334,7 +324,11 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
       bottomNavigationBar: widget.showBottomNav
           ? BottomNavigationBar(
               currentIndex: 0,
-              onTap: (_) {},
+              onTap: (i) {
+                if (i == 1) {
+                  context.push('/shell/wink-plus');
+                }
+              },
               backgroundColor: AppTheme.surface,
               selectedItemColor: AppTheme.primary,
               unselectedItemColor: AppTheme.textSecondary,
@@ -342,6 +336,10 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                 BottomNavigationBarItem(
                   icon: Icon(Icons.inbox_rounded),
                   label: 'Vault',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.workspace_premium),
+                  label: 'Wink+',
                 ),
               ],
             )
