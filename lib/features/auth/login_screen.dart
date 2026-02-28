@@ -154,41 +154,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Center(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildTitle(),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Unlock the surprise.',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: AppTheme.textSecondary,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildTitle(),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Unlock the surprise.',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 48),
+                          _buildEmailField(),
+                          const SizedBox(height: 16),
+                          _buildPasswordField(),
+                          const SizedBox(height: 24),
+                          _buildSubmitButton(),
+                          const SizedBox(height: 20),
+                          _buildToggle(),
+                          const SizedBox(height: 32),
+                          _buildDivider(),
+                          const SizedBox(height: 20),
+                          _buildSocialButtons(),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 48),
-                    _buildEmailField(),
-                    const SizedBox(height: 16),
-                    _buildPasswordField(),
-                    const SizedBox(height: 24),
-                    _buildSubmitButton(),
-                    const SizedBox(height: 20),
-                    _buildToggle(),
-                    const SizedBox(height: 32),
-                    _buildDivider(),
-                    const SizedBox(height: 20),
-                    _buildSocialButtons(),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-    ),
     );
   }
 
