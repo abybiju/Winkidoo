@@ -2,17 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Midnight Romance (dark) + Blush & Wink (light) for Winkidoo.
+/// Phase 1 design system: brand and surface tokens are final authority.
 class AppTheme {
-  // Shared
-  static const Color primary = Color(0xFFFF6B9D);
-  static const Color secondary = Color(0xFFC44569);
-  static const Color accent = Color(0xFFF8B500);
+  // ─────────────────────────────────────────────────────────────────────────
+  // DESIGN SYSTEM — Final authority (do not hardcode these elsewhere)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Core brand
+  static const Color primaryPink = Color(0xFFE85D93);
+  static const Color plum = Color(0xFF6D2E8C);
+  static const Color premiumGold = Color(0xFFF5C76B);
+
+  /// Background gradient (midnight plum)
+  static const Color bgTop = Color(0xFF0F172A);
+  static const Color bgBottom = Color(0xFF1B1030);
+
+  /// Surface elevation: 1 = base cards, 2 = elevated, 3 = highlight (Judge spotlight, premium areas)
+  static const Color surface1 = Color(0xFF2A0F1F);
+  static const Color surface2 = Color(0xFF341226);
+  static const Color surface3 = Color(0xFF3E1630);
+
+  /// Standard glows — use pink for primary CTA, gold for Wink+
+  static BoxShadow get pinkGlow => BoxShadow(
+        color: primaryPink.withValues(alpha: 0.35),
+        blurRadius: 20,
+        spreadRadius: 2,
+      );
+  static BoxShadow get goldGlow => BoxShadow(
+        color: premiumGold.withValues(alpha: 0.4),
+        blurRadius: 22,
+        spreadRadius: 2,
+      );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Legacy / theme mapping (use design tokens above for new UI)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  static const Color primary = primaryPink;
+  static const Color secondary = plum;
+  static const Color accent = premiumGold;
   static const Color error = Color(0xFFE57373);
 
-  // Dark — Midnight Romance
-  static const Color backgroundStart = Color(0xFF1A0A0F);
-  static const Color backgroundEnd = Color(0xFF2D1420);
-  static const Color surface = Color(0xFF2D1A25);
+  /// Dark — Midnight Romance (backed by design system)
+  static const Color backgroundStart = bgTop;
+  static const Color backgroundEnd = bgBottom;
+  static const Color surface = surface1;
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFFFB8D0);
 

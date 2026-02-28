@@ -100,7 +100,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final extra = state.extra;
           final email = (extra is Map ? (extra['email'] as String?) : null);
-          return LoginScreen(initialEmail: email);
+          final mode = (extra is Map ? (extra['mode'] as String?) : null);
+          final initialSignUp = mode == 'signUp';
+          return LoginScreen(
+            initialEmail: email,
+            initialSignUp: mode != null ? initialSignUp : null,
+          );
         },
       ),
       GoRoute(

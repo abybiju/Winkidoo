@@ -11,7 +11,7 @@
 
 ## Next session: run locally + validate
 
-**Left for next time:** local run + validation. When you sit to work next, run the app locally and use **[LOCAL_VALIDATION.md](LOCAL_VALIDATION.md)** to:
+**Left for next time:** local run + validation. When you sit to work next, run the app locally and use **[docs/ANDROID_STUDIO_TEST.md](docs/ANDROID_STUDIO_TEST.md)** to:
 
 1. Confirm error screens (vault, battle chat), semantics (submission, send, create surprise), and loading skeletons.
 2. Spot-check judge tone (witty/warm, playful roasts).
@@ -249,6 +249,7 @@ lib/
 - **App store / Meta submission:** For store or Meta app review, ensure: App icon 1024×1024 (e.g. assets/images/app_icon_1024.png), Privacy policy URL, User data deletion URL, Category. Meta Basic settings completed with above; Apple/Google Play can be done later (Apple requires paid developer account).
 - **Status:** Creator flow and Vault Sealed UX in place; welcome and link-vault screens ready for auth wiring; season recap ready for caller; OAuth and domain documented without secrets. Repo pushed to GitHub.
 - **Next:** Wire Share/Copy on Vault Sealed (share_plus, Clipboard); optionally add “Enter Vault” or “Waiting for partner…” on same screen; connect LinkVaultScreen to router and couple create/join logic; run E2E with Google/Apple/Facebook OAuth when credentials are set.
+- **Design system (Phase 1) and Auth (Phase 2):** (1) **Tokens locked** in `app_theme.dart`: primaryPink, plum, premiumGold, bgTop/bgBottom, surface1/2/3, pinkGlow, goldGlow; legacy primary/surface map to these. (2) **Auth simplification:** Welcome = emotional only ("Winkidoo" + "Unlock the surprise.", Sign In | Create Account); single auth form with mode toggle (initialSignUp from route), plum 30% / primaryPink borders, OAuth (Google, Apple) on form, back to welcome. (3) **Tagline:** "Unlock the love." → "Unlock the surprise." app-wide (welcome, login, onboarding) for inclusive positioning (couples, friends, family). See **docs/DESIGN_REFINEMENT_PLAN.md**.
 
 ---
 

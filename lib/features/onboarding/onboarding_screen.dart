@@ -68,7 +68,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     _OnboardingPage(
                       icon: Icons.celebration,
-                      title: 'Unlock the love',
+                      title: 'Unlock the surprise',
                       body:
                           'Convince the judge with your words—or team up. When you win, the surprise is revealed.',
                     ),
