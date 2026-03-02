@@ -69,3 +69,18 @@ Key architectural and product decisions. Keep updated so we don’t repeat mista
 - **Design system (Phase 1):** Locked tokens in app_theme.dart: primaryPink, plum, premiumGold, bgTop, bgBottom, surface1/surface2/surface3, pinkGlow, goldGlow. Use these instead of hardcoded colors; legacy primary/surface/backgroundStart map to tokens.
 - **Auth simplification (Phase 2):** Welcome = emotional only (Winkidoo + tagline, Sign In | Create Account). Auth form = single screen with mode toggle (initialSignUp from route extra); plum 30% default border, primaryPink focus; toggle text 60% with action word 95%. OAuth (Google, Apple) on auth form; back to welcome via context.go('/').
 - **Tagline:** “Unlock the love.” replaced with “Unlock the surprise.” app-wide (welcome, login, onboarding) for inclusive positioning (couples, friends, family).
+
+## 2026-03-02
+
+- **UI refresh scope locked:** Implemented Home + Vault redesign first (mobile-first), high-fidelity to provided mockups in light theme, with dark mode kept functional as mapped fallback. No backend/schema changes.
+- **Design token expansion:** Added component-level token APIs in `app_theme.dart` (`topBarBg`, `cardGradientA/B`, `pillBg`, `pillBorder`, `navBg`, `navActive`, `navInactive`, `badgeBg`) and reusable toy-style elevation helpers (`toyCardShadow`, `toyPillShadow`).
+- **Shared UI primitives:** Added reusable widgets in `lib/core/widgets/`:
+  - `wink_card.dart` (rounded gradient shell + tokenized border/shadow)
+  - `pill_cta.dart` (glossy rounded CTA with icon/trailing variants)
+  - `avatar_chip_row.dart` (horizontal avatar chips with status badges)
+  - `winkidoo_top_bar.dart` (brand row with notification/profile actions)
+  - `wink_bottom_nav.dart` (custom bottom bar with center camera action)
+- **Shell navigation refresh:** In `app_router.dart`, replaced Material bottom nav with `WinkBottomNav`; preserved branch behavior and route mapping. Center action now routes to `/shell/create`.
+- **Home screen restructure:** `home_screen.dart` rebuilt to match target hierarchy: branded top bar, “Ready to play?” avatar rail, battle hero CTA, vault summary card, judge spotlight card, and recent wins strip. Existing season recap + achievement celebration sequence retained unchanged.
+- **Vault screen restructure:** `vault_list_screen.dart` rebuilt to match target hierarchy: branded top region with “My Vault”, linked-vault hero/streak CTA, search + action rows (“Add a Surprise”, “Uncover Memories”), chest callout with enter CTA, and refreshed waiting/own surprise cards. Existing realtime, waiting-for-partner banner, create/battle navigation, empty/loading/error behavior retained.
+- **Validation:** Ran targeted static analysis on all changed UI files; result: **No issues found**.

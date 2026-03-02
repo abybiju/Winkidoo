@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// Phase 1 design system: brand and surface tokens are final authority.
 class AppTheme {
   // ─────────────────────────────────────────────────────────────────────────
-  // DESIGN SYSTEM — Final authority (do not hardcode these elsewhere)
+  // DESIGN SYSTEM — Final authority
   // ─────────────────────────────────────────────────────────────────────────
 
   /// Core brand
@@ -17,12 +17,26 @@ class AppTheme {
   static const Color bgTop = Color(0xFF0F172A);
   static const Color bgBottom = Color(0xFF1B1030);
 
-  /// Surface elevation: 1 = base cards, 2 = elevated, 3 = highlight (Judge spotlight, premium areas)
+  /// Surface elevation: 1 = base cards, 2 = elevated, 3 = highlight
   static const Color surface1 = Color(0xFF2A0F1F);
   static const Color surface2 = Color(0xFF341226);
   static const Color surface3 = Color(0xFF3E1630);
 
-  /// Standard glows — use pink for primary CTA, gold for Wink+
+  /// Light-mode pastel expansion for mockup-driven UI.
+  static const Color lightSunTop = Color(0xFFFFF7A6);
+  static const Color lightSunBottom = Color(0xFFFFFDF6);
+  static const Color lightTopBar = Color(0xFFFDF58E);
+  static const Color lightCardA = Color(0xFFFFF5DF);
+  static const Color lightCardB = Color(0xFFEFE6FF);
+  static const Color lightPillBg = Color(0xFFFFE95A);
+  static const Color lightPillBorder = Color(0xFFF0CC45);
+  static const Color lightNavBg = Color(0xFFFDF9FF);
+  static const Color lightBadgeBg = Color(0xFFE85088);
+
+  static const Color darkCardA = Color(0xFF372039);
+  static const Color darkCardB = Color(0xFF23172F);
+
+  /// Standard glows
   static BoxShadow get pinkGlow => BoxShadow(
         color: primaryPink.withValues(alpha: 0.35),
         blurRadius: 20,
@@ -34,30 +48,95 @@ class AppTheme {
         spreadRadius: 2,
       );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Legacy / theme mapping (use design tokens above for new UI)
-  // ─────────────────────────────────────────────────────────────────────────
+  static List<BoxShadow> toyCardShadow(Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.35),
+          blurRadius: 24,
+          offset: const Offset(0, 10),
+        ),
+      ];
+    }
+    return const [
+      BoxShadow(
+        color: Color(0x28B99CCB),
+        blurRadius: 26,
+        spreadRadius: 1,
+        offset: Offset(0, 10),
+      ),
+      BoxShadow(
+        color: Color(0x22FFF4A5),
+        blurRadius: 12,
+        spreadRadius: 1,
+        offset: Offset(0, 3),
+      ),
+    ];
+  }
 
+  static List<BoxShadow> toyPillShadow(Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.25),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
+        ),
+      ];
+    }
+    return const [
+      BoxShadow(
+        color: Color(0x2EFFCF53),
+        blurRadius: 12,
+        spreadRadius: 1,
+        offset: Offset(0, 4),
+      ),
+    ];
+  }
+
+  // Legacy / theme mapping
   static const Color primary = primaryPink;
   static const Color secondary = plum;
   static const Color accent = premiumGold;
   static const Color error = Color(0xFFE57373);
 
-  /// Dark — Midnight Romance (backed by design system)
   static const Color backgroundStart = bgTop;
   static const Color backgroundEnd = bgBottom;
   static const Color surface = surface1;
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFFFB8D0);
 
-  // Light — Blush & Wink
-  static const Color lightBackgroundStart = Color(0xFFFFF5F8);
-  static const Color lightBackgroundEnd = Color(0xFFFFE4EC);
+  static const Color lightBackgroundStart = lightSunTop;
+  static const Color lightBackgroundEnd = lightSunBottom;
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightTextPrimary = Color(0xFF3D1A28);
-  static const Color lightTextSecondary = Color(0xFF8B5A6B);
+  static const Color lightTextSecondary = Color(0xFF74556A);
 
-  /// Gradient colors for background based on brightness (e.g. Theme.of(context).brightness).
+  static Color topBarBg(Brightness brightness) =>
+      brightness == Brightness.dark ? surface2 : lightTopBar;
+  static Color cardGradientA(Brightness brightness) =>
+      brightness == Brightness.dark ? darkCardA : lightCardA;
+  static Color cardGradientB(Brightness brightness) =>
+      brightness == Brightness.dark ? darkCardB : lightCardB;
+  static Color pillBg(Brightness brightness) =>
+      brightness == Brightness.dark ? premiumGold : lightPillBg;
+  static Color pillBorder(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? plum.withValues(alpha: 0.5)
+          : lightPillBorder;
+  static Color navBg(Brightness brightness) =>
+      brightness == Brightness.dark ? surface2 : lightNavBg;
+  static Color navActive(Brightness brightness) =>
+      brightness == Brightness.dark ? premiumGold : const Color(0xFF8C5D00);
+  static Color navInactive(Brightness brightness) =>
+      brightness == Brightness.dark ? textSecondary : const Color(0xFF8A7A9B);
+  static Color navTextStrong(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const Color(0xFF311300)
+          : const Color(0xFF5C3800);
+  static Color badgeBg(Brightness brightness) =>
+      brightness == Brightness.dark ? primaryPink : lightBadgeBg;
+
   static List<Color> gradientColors(Brightness brightness) {
     return brightness == Brightness.dark
         ? [backgroundStart, backgroundEnd]
@@ -68,7 +147,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: primary,
         secondary: secondary,
         surface: surface,
@@ -152,12 +231,11 @@ class AppTheme {
     );
   }
 
-  /// Blush & Wink — Light theme (soft pinks, readable text).
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: primary,
         secondary: secondary,
         surface: lightSurface,

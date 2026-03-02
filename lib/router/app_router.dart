@@ -19,6 +19,7 @@ import 'package:winkidoo/features/vault/realtime_surprises_subscription.dart';
 import 'package:winkidoo/features/vault/wink_plus_screen.dart';
 import 'package:winkidoo/features/winks/winks_tab_screen.dart';
 import 'package:winkidoo/core/layout/responsive_vault_shell.dart';
+import 'package:winkidoo/core/widgets/wink_bottom_nav.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
@@ -82,7 +83,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       }
       if (routerRefreshNotifier.hasCouple == true) {
         final isLinked = routerRefreshNotifier.isCoupleLinked == true;
-        if (loc == '/' || loc == '/login' || loc == '/onboarding' || loc == '/couple-link') {
+        if (loc == '/' ||
+            loc == '/login' ||
+            loc == '/onboarding' ||
+            loc == '/couple-link') {
           return isLinked ? '/shell/vault' : '/vault-sealed';
         }
         if (loc == '/vault-sealed' && isLinked) return '/shell/vault';
@@ -208,9 +212,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           }
           return Scaffold(
             body: navigationShell,
-            bottomNavigationBar: BottomNavigationBar(
+            bottomNavigationBar: WinkBottomNav(
               currentIndex: index,
-              onTap: (i) {
+              onIndexTap: (i) {
                 switch (i) {
                   case 0:
                     context.go('/shell/home');
@@ -226,16 +230,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                     break;
                 }
               },
-              backgroundColor: AppTheme.surface,
-              selectedItemColor: AppTheme.primary,
-              unselectedItemColor: AppTheme.textSecondary,
-              type: BottomNavigationBarType.fixed,
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.inbox_rounded), label: 'Vault'),
-                BottomNavigationBarItem(icon: Icon(Icons.emoji_emotions_rounded), label: 'Winks'),
-                BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-              ],
+              onCenterTap: () => context.push('/shell/create'),
             ),
           );
         },
@@ -351,7 +346,8 @@ class _PlaceholderScreen extends StatelessWidget {
             colors: AppTheme.gradientColors(Theme.of(context).brightness),
           ),
         ),
-        child: Center(child: Text(title, style: const TextStyle(color: Colors.white))),
+        child: Center(
+            child: Text(title, style: const TextStyle(color: Colors.white))),
       ),
     );
   }

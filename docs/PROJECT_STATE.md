@@ -4,7 +4,7 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ---
 
-## Implemented (as of Feb 2026)
+## Implemented (as of Mar 2026)
 
 ### Auth & couple
 - Email + OAuth (Google, Apple, Facebook) via Supabase; deep links for mobile callback.
@@ -15,6 +15,12 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - Vault list (Waiting for You / Your Surprises); realtime subscription.
 - Create surprise: judge selection 2.0 (full-screen aura, portrait, difficulty/chaos, tone tags, rotating quotes, vault sealing transition); type text/photo/voice; unlock method; difficulty; auto-delete; Lock it.
 - Data-driven judges: DB table `judges` (migrations 011–013); activeJudgesProvider, judgeByPersonaIdProvider; seasonal and "New" badges; premium gating via is_premium.
+- **UI refresh (Home + Vault, mobile-first):**
+  - New shared UI primitives in `lib/core/widgets/`: `WinkCard`, `PillCta`, `AvatarChipRow`, `WinkidooTopBar`, `WinkBottomNav`.
+  - Theme token expansion in `app_theme.dart` for light pastel brand layer + component tokens (`topBarBg`, `cardGradientA/B`, `pillBg`, `pillBorder`, `navBg`, `navActive`, `navInactive`, `badgeBg`) with dark-mode fallbacks.
+  - Home redesigned to mockup-aligned structure: branded top bar, avatar rail, battle hero, vault summary, judge spotlight, and recent wins.
+  - Vault redesigned to mockup-aligned structure: branded header, linked-vault hero, search/actions strip, chest callout, and refreshed list cards.
+  - Router shell bottom navigation replaced with branded custom nav and highlighted center camera action (`/shell/create`), while preserving route contracts.
 
 ### Battle & reveal
 - Submission → battle chat (AI judge, persuasion meter, creator defense); realtime surprise row for auto-navigate on resolve.
