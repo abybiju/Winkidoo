@@ -120,34 +120,47 @@ class _CenterAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          child: Ink(
-            width: 88,
-            height: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFFFEA6B), Color(0xFFFFCC31)],
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x55FFCD34),
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                  offset: Offset(0, 4),
+      child: Transform.translate(
+        offset: const Offset(0, -6),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(28),
+            child: Ink(
+              width: 114,
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppTheme.ctaBattleA, AppTheme.ctaBattleB],
                 ),
-              ],
+                border: Border.all(color: Colors.white.withValues(alpha: 0.36)),
+                boxShadow: [
+                  ...AppTheme.premiumElevation(brightness),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+                  const SizedBox(width: 2),
+                  Text(
+                    'Battle',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: const Icon(Icons.camera_alt_rounded,
-                color: Color(0xFF8C5D00), size: 28),
           ),
         ),
       ),

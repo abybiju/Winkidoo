@@ -8,5 +8,5 @@ final authStateProvider = StreamProvider<Session?>((ref) {
 });
 
 final currentUserProvider = Provider<User?>((ref) {
-  return ref.watch(authStateProvider).valueOrNull?.user;
+  return ref.watch(authStateProvider).value?.user;
 });

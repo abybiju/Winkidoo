@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
+import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/models/surprise.dart';
@@ -12,6 +13,7 @@ import 'package:winkidoo/models/treasure_archive.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/treasure_archive_provider.dart';
+import 'package:winkidoo/providers/user_profile_provider.dart';
 
 class TreasureArchiveScreen extends ConsumerWidget {
   const TreasureArchiveScreen({super.key});
@@ -127,7 +129,8 @@ class TreasureArchiveScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   FilledButton(
-                    onPressed: () => ref.invalidate(archiveWithSurprisesProvider),
+                    onPressed: () =>
+                        ref.invalidate(archiveWithSurprisesProvider),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -159,8 +162,10 @@ class _TreasureCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final judgeAsync = ref.watch(judgeByPersonaIdProvider(archive.judgePersona));
-    final judge = judgeAsync.valueOrNull ?? Judge.placeholder(archive.judgePersona);
+    final judgeAsync =
+        ref.watch(judgeByPersonaIdProvider(archive.judgePersona));
+    final userGender = ref.watch(userProfileMetaProvider).gender;
+    final judge = judgeAsync.value ?? Judge.placeholder(archive.judgePersona);
 
     final seekerScore = surprise?.seekerScore ?? 0;
     final resistanceScore = surprise?.resistanceScore ?? 0;
@@ -196,7 +201,7 @@ class _TreasureCard extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          _JudgePortrait(judge: judge),
+                          _JudgePortrait(judge: judge, userGender: userGender),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -207,11 +212,13 @@ class _TreasureCard extends ConsumerWidget {
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                _WinnerBadge(winner: archive.winner ?? surprise?.winner),
+                                _WinnerBadge(
+                                    winner: archive.winner ?? surprise?.winner),
                                 const SizedBox(height: 4),
                                 Text(
                                   '${formatDate(archive.archivedAt)} · ${difficultyLabel(difficultyLevel)}',
@@ -275,7 +282,8 @@ class _TreasureCard extends ConsumerWidget {
                                 Icon(
                                   Icons.lock_rounded,
                                   size: 40,
-                                  color: AppTheme.primary.withValues(alpha: 0.9),
+                                  color:
+                                      AppTheme.primary.withValues(alpha: 0.9),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -283,7 +291,8 @@ class _TreasureCard extends ConsumerWidget {
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -305,20 +314,25 @@ class _TreasureCard extends ConsumerWidget {
 }
 
 class _JudgePortrait extends StatelessWidget {
-  const _JudgePortrait({required this.judge});
+  const _JudgePortrait({required this.judge, required this.userGender});
 
   final Judge judge;
+  final String userGender;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAvatar = JudgeAssetResolver.resolveAvatarPath(
+      judge: judge,
+      userGender: userGender,
+    );
     return SizedBox(
       width: 56,
       height: 56,
-      child: judge.avatarAssetPath != null && judge.avatarAssetPath!.isNotEmpty
+      child: resolvedAvatar.isNotEmpty
           ? ClipRRect(
               borderRadius: BorderRadius.circular(28),
               child: Image.asset(
-                judge.avatarAssetPath!,
+                resolvedAvatar,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => _placeholder(context),
               ),

@@ -6,6 +6,9 @@ class AppConstants {
 
   static const String appName = 'Winkidoo';
 
+  /// OAuth callback URL for mobile (Google/Apple/Facebook). Must be added to Supabase → Auth → URL Configuration → Redirect URLs.
+  static const String oAuthRedirectUrl = 'winkidoo://auth/callback';
+
   /// When true (debug only), treat as Wink+ for testing: all personas + 10 free attempts. Must be false in release.
   static const bool forceWinkPlusForTesting = kDebugMode;
 

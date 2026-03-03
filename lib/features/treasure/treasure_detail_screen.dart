@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
+import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/treasure/replay_battle_view.dart';
 import 'package:winkidoo/models/battle_message.dart';
@@ -14,6 +15,7 @@ import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/user_profile_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 
 class TreasureDetailScreen extends ConsumerStatefulWidget {
@@ -22,7 +24,8 @@ class TreasureDetailScreen extends ConsumerStatefulWidget {
   final String surpriseId;
 
   @override
-  ConsumerState<TreasureDetailScreen> createState() => _TreasureDetailScreenState();
+  ConsumerState<TreasureDetailScreen> createState() =>
+      _TreasureDetailScreenState();
 }
 
 class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
@@ -35,7 +38,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadContentIfWinkPlus());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _loadContentIfWinkPlus());
   }
 
   Future<void> _loadContentIfWinkPlus() async {
@@ -144,6 +148,7 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
     final surpriseAsync = ref.watch(surpriseByIdProvider(widget.surpriseId));
     final messagesAsync = ref.watch(battleMessagesProvider(widget.surpriseId));
     final isWinkPlus = ref.watch(effectiveWinkPlusProvider);
+    final userGender = ref.watch(userProfileMetaProvider).gender;
 
     return surpriseAsync.when(
       data: (surprise) {
@@ -153,9 +158,15 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
             body: const Center(child: Text('Surprise not found')),
           );
         }
-        final judgeAsync = ref.watch(judgeByPersonaIdProvider(surprise.judgePersona));
-        final judge = judgeAsync.valueOrNull ?? Judge.placeholder(surprise.judgePersona);
-        final messages = messagesAsync.valueOrNull ?? [];
+        final judgeAsync =
+            ref.watch(judgeByPersonaIdProvider(surprise.judgePersona));
+        final judge =
+            judgeAsync.value ?? Judge.placeholder(surprise.judgePersona);
+        final judgeAsset = JudgeAssetResolver.resolveAvatarPath(
+          judge: judge,
+          userGender: userGender,
+        );
+        final messages = messagesAsync.value ?? [];
         final seekerAttempts = messages.where((m) => m.isFromSeeker).length;
         final winner = surprise.winner;
         final isSeekerWin = winner == 'seeker';
@@ -184,17 +195,49 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      judge.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    Row(
+                      children: [
+                        if (judgeAsset.isNotEmpty)
+                          Container(
+                            width: 44,
+                            height: 44,
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppTheme.primary.withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: Image.asset(
+                              judgeAsset,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.gavel_rounded),
+                            ),
+                          )
+                        else
+                          const CircleAvatar(
+                            radius: 22,
+                            child: Icon(Icons.gavel_rounded),
+                          ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            judge.name,
+                            style: GoogleFonts.inter(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      width: 120,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: isSeekerWin
                             ? AppTheme.primary.withValues(alpha: 0.2)
@@ -206,7 +249,9 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: isSeekerWin ? AppTheme.primary : AppTheme.secondary,
+                          color: isSeekerWin
+                              ? AppTheme.primary
+                              : AppTheme.secondary,
                         ),
                       ),
                     ),
@@ -220,7 +265,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: AppTheme.surface.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(12),
@@ -255,13 +301,15 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                         const Center(
                           child: Padding(
                             padding: EdgeInsets.all(24),
-                            child: CircularProgressIndicator(color: AppTheme.primary),
+                            child: CircularProgressIndicator(
+                                color: AppTheme.primary),
                           ),
                         )
                       else if (_contentError != null)
                         Text(
                           _contentError!,
-                          style: const TextStyle(color: AppTheme.error, fontSize: 14),
+                          style: const TextStyle(
+                              color: AppTheme.error, fontSize: 14),
                         )
                       else ...[
                         const Text(
@@ -279,7 +327,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                           Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppTheme.accent, width: 2),
+                              border:
+                                  Border.all(color: AppTheme.accent, width: 2),
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: Image.network(
@@ -298,7 +347,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                                         ),
                               errorBuilder: (_, __, ___) => const Padding(
                                 padding: EdgeInsets.all(24),
-                                child: Center(child: Text('Could not load image')),
+                                child:
+                                    Center(child: Text('Could not load image')),
                               ),
                             ),
                           )
@@ -308,7 +358,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                             decoration: BoxDecoration(
                               color: AppTheme.surface,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppTheme.accent, width: 2),
+                              border:
+                                  Border.all(color: AppTheme.accent, width: 2),
                             ),
                             child: Text(
                               _decryptedContent!,
@@ -344,7 +395,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: messages.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
                             itemBuilder: (context, i) => _DetailChatBubble(
                               message: messages[i],
                             ),
@@ -354,7 +406,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute<void>(
-                                builder: (_) => ReplayBattleView(surpriseId: widget.surpriseId),
+                                builder: (_) => ReplayBattleView(
+                                    surpriseId: widget.surpriseId),
                               ),
                             );
                           },
@@ -388,7 +441,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
               Text(e.toString(), style: const TextStyle(color: AppTheme.error)),
               const SizedBox(height: 12),
               FilledButton(
-                onPressed: () => ref.invalidate(surpriseByIdProvider(widget.surpriseId)),
+                onPressed: () =>
+                    ref.invalidate(surpriseByIdProvider(widget.surpriseId)),
                 child: const Text('Retry'),
               ),
             ],

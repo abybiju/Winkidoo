@@ -256,8 +256,8 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     final surpriseAsync = ref.watch(surpriseByIdProvider(widget.surpriseId));
     final messagesAsync = ref.watch(battleMessagesProvider(widget.surpriseId));
 
-    final surprise = surpriseAsync.valueOrNull;
-    final messages = messagesAsync.valueOrNull;
+    final surprise = surpriseAsync.value;
+    final messages = messagesAsync.value;
     final seekerAttempts = messages != null
         ? messages.where((m) => m.senderType == 'seeker').length
         : null;

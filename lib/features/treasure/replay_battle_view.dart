@@ -120,7 +120,7 @@ class _ReplayBattleViewState extends ConsumerState<ReplayBattleView> {
             body: const Center(child: Text('Surprise not found')),
           );
         }
-        final messages = messagesAsync.valueOrNull ?? [];
+        final messages = messagesAsync.value ?? [];
         final finalSeeker = surprise.seekerScore;
         final finalResistance = surprise.resistanceScore ?? 0;
 

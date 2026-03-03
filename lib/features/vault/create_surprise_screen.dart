@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/features/create/judge_selection_screen.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
@@ -44,6 +45,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   bool _showJudgeSelection = true;
   late AnimationController _formFadeController;
   late Animation<double> _formFadeAnimation;
+  bool _checkedProfileGate = false;
 
   @override
   void initState() {
@@ -56,6 +58,15 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       parent: _formFadeController,
       curve: Curves.easeOut,
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ok = await ensureProfileComplete(context, ref);
+      if (!mounted) return;
+      _checkedProfileGate = true;
+      if (!ok) {
+        context.pop();
+      }
+      setState(() {});
+    });
   }
 
   @override
@@ -69,10 +80,11 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   Future<void> _toggleVoiceRecord() async {
     if (_isRecording) {
       final path = await _recorder.stop();
-      if (mounted) setState(() {
-        _isRecording = false;
-        _voicePath = path;
-      });
+      if (mounted)
+        setState(() {
+          _isRecording = false;
+          _voicePath = path;
+        });
     } else {
       // request: true so Android shows the mic permission dialog if needed
       final hasPermission = await _recorder.hasPermission(request: true);
@@ -88,13 +100,16 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         return;
       }
       final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path =
+          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       try {
-        await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
-        if (mounted) setState(() {
-          _isRecording = true;
-          _voicePath = null;
-        });
+        await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc),
+            path: path);
+        if (mounted)
+          setState(() {
+            _isRecording = true;
+            _voicePath = null;
+          });
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -130,13 +145,15 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       ),
     );
     if (source == null || !mounted) return;
-    final file = await picker.pickImage(source: source, maxWidth: 1200, imageQuality: 85);
+    final file = await picker.pickImage(
+        source: source, maxWidth: 1200, imageQuality: 85);
     if (file != null && mounted) {
       final bytes = await file.readAsBytes();
-      if (mounted) setState(() {
-        _photoFile = file;
-        _photoBytes = Uint8List.fromList(bytes);
-      });
+      if (mounted)
+        setState(() {
+          _photoFile = file;
+          _photoBytes = Uint8List.fromList(bytes);
+        });
     }
   }
 
@@ -186,7 +203,8 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       final userId = ref.read(currentUserProvider)?.id;
       if (couple == null || userId == null) throw Exception('Not linked');
 
-      final encrypted = await EncryptionService.encrypt(content, coupleId: couple.id);
+      final encrypted =
+          await EncryptionService.encrypt(content, coupleId: couple.id);
       final id = const Uuid().v4();
       DateTime? autoDeleteAt;
       if (_autoDeleteHours > 0) {
@@ -242,7 +260,9 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       final id = const Uuid().v4();
       final path = '${couple.id}/$id.jpg';
       final bytes = _photoBytes ?? await _photoFile!.readAsBytes();
-      await client.storage.from(AppConstants.surpriseStorageBucket).uploadBinary(
+      await client.storage
+          .from(AppConstants.surpriseStorageBucket)
+          .uploadBinary(
             path,
             bytes,
           );
@@ -304,7 +324,9 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       final id = const Uuid().v4();
       final path = '${couple.id}/$id.m4a';
       final bytes = await file.readAsBytes();
-      await client.storage.from(AppConstants.surpriseStorageBucket).uploadBinary(
+      await client.storage
+          .from(AppConstants.surpriseStorageBucket)
+          .uploadBinary(
             path,
             bytes,
           );
@@ -355,6 +377,11 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (!_checkedProfileGate) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hide a surprise'),
@@ -368,8 +395,9 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
               isJudgeLocked: (personaId) {
                 final effectiveWinkPlus = ref.read(effectiveWinkPlusProvider);
                 if (effectiveWinkPlus) return false;
-                final list = ref.read(activeJudgesProvider).valueOrNull ?? [];
-                final judge = list.where((j) => j.personaId == personaId).firstOrNull;
+                final list = ref.read(activeJudgesProvider).value ?? [];
+                final judge =
+                    list.where((j) => j.personaId == personaId).firstOrNull;
                 return judge?.premiumFlag ?? true;
               },
               onSelect: (personaId, difficulty) {
@@ -384,280 +412,297 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
               },
             )
           : FadeTransition(
-        opacity: _formFadeAnimation,
-        child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppTheme.gradientColors(Theme.of(context).brightness),
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Surprise type',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+              opacity: _formFadeAnimation,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors:
+                        AppTheme.gradientColors(Theme.of(context).brightness),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Semantics(
-                  label:
-                      'Surprise type: Text, Photo, or Voice. ${_surpriseType == 'text' ? 'Text' : _surpriseType == 'photo' ? 'Photo' : 'Voice'} selected.',
-                  child: Row(
-                    children: [
-                      _ChoiceChip(
-                        label: 'Text',
-                        selected: _surpriseType == 'text',
-                        onSelected: () =>
-                            setState(() => _surpriseType = 'text'),
-                      ),
-                      const SizedBox(width: 12),
-                      _ChoiceChip(
-                        label: 'Photo',
-                        selected: _surpriseType == 'photo',
-                        onSelected: () =>
-                            setState(() => _surpriseType = 'photo'),
-                      ),
-                      const SizedBox(width: 12),
-                      _ChoiceChip(
-                        label: 'Voice',
-                        selected: _surpriseType == 'voice',
-                        onSelected: () =>
-                            setState(() => _surpriseType = 'voice'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (_surpriseType == 'text') ...[
-                  Text(
-                    'Your secret message',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _contentController,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: 'Write what you want to hide...',
-                    ),
-                  ),
-                ] else if (_surpriseType == 'photo') ...[
-                  Text(
-                    'Pick a photo to hide',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: _pickPhoto,
-                    child: Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: AppTheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary,
-                          width: 2,
-                        ),
-                      ),
-                      child: _photoFile == null
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.add_photo_alternate,
-                                    size: 48,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Tap to pick from gallery or camera',
-                                    style: GoogleFonts.inter(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
-                              child: _photoBytes != null
-                                  ? Image.memory(
-                                      _photoBytes!,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                    ),
-                  ),
-                  if (_photoFile != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: TextButton.icon(
-                        onPressed: _pickPhoto,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Change photo'),
-                      ),
-                    ),
-                ] else if (_surpriseType == 'voice') ...[
-                  Text(
-                    'Record a voice note to hide',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        IconButton.filled(
-                          onPressed: _isLoading ? null : _toggleVoiceRecord,
-                          icon: Icon(_isRecording ? Icons.stop : Icons.mic),
-                          style: IconButton.styleFrom(
-                            backgroundColor: _isRecording ? AppTheme.error : AppTheme.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.all(20),
+                        Text(
+                          'Surprise type',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
+                        Semantics(
+                          label:
+                              'Surprise type: Text, Photo, or Voice. ${_surpriseType == 'text' ? 'Text' : _surpriseType == 'photo' ? 'Photo' : 'Voice'} selected.',
+                          child: Row(
+                            children: [
+                              _ChoiceChip(
+                                label: 'Text',
+                                selected: _surpriseType == 'text',
+                                onSelected: () =>
+                                    setState(() => _surpriseType = 'text'),
+                              ),
+                              const SizedBox(width: 12),
+                              _ChoiceChip(
+                                label: 'Photo',
+                                selected: _surpriseType == 'photo',
+                                onSelected: () =>
+                                    setState(() => _surpriseType = 'photo'),
+                              ),
+                              const SizedBox(width: 12),
+                              _ChoiceChip(
+                                label: 'Voice',
+                                selected: _surpriseType == 'voice',
+                                onSelected: () =>
+                                    setState(() => _surpriseType = 'voice'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        if (_surpriseType == 'text') ...[
+                          Text(
+                            'Your secret message',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _contentController,
+                            maxLines: 4,
+                            decoration: const InputDecoration(
+                              hintText: 'Write what you want to hide...',
+                            ),
+                          ),
+                        ] else if (_surpriseType == 'photo') ...[
+                          Text(
+                            'Pick a photo to hide',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: _pickPhoto,
+                            child: Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: AppTheme.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 2,
+                                ),
+                              ),
+                              child: _photoFile == null
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.add_photo_alternate,
+                                            size: 48,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Tap to pick from gallery or camera',
+                                            style: GoogleFonts.inter(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: _photoBytes != null
+                                          ? Image.memory(
+                                              _photoBytes!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
+                            ),
+                          ),
+                          if (_photoFile != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: TextButton.icon(
+                                onPressed: _pickPhoto,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Change photo'),
+                              ),
+                            ),
+                        ] else if (_surpriseType == 'voice') ...[
+                          Text(
+                            'Record a voice note to hide',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: Column(
+                              children: [
+                                IconButton.filled(
+                                  onPressed:
+                                      _isLoading ? null : _toggleVoiceRecord,
+                                  icon: Icon(
+                                      _isRecording ? Icons.stop : Icons.mic),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: _isRecording
+                                        ? AppTheme.error
+                                        : AppTheme.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.all(20),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _isRecording
+                                      ? 'Recording... tap to stop'
+                                      : (_voicePath != null
+                                          ? 'Recorded! Tap mic to re-record'
+                                          : 'Tap mic to record'),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
                         Text(
-                          _isRecording ? 'Recording... tap to stop' : (_voicePath != null ? 'Recorded! Tap mic to re-record' : 'Tap mic to record'),
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                          'Unlock method',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _ChoiceChip(
+                              label: 'Persuade',
+                              selected:
+                                  _unlockMethod == AppConstants.unlockPersuade,
+                              onSelected: () => setState(() =>
+                                  _unlockMethod = AppConstants.unlockPersuade),
+                            ),
+                            const SizedBox(width: 12),
+                            _ChoiceChip(
+                              label: 'Collaborate',
+                              selected: _unlockMethod ==
+                                  AppConstants.unlockCollaborate,
+                              onSelected: () => setState(() => _unlockMethod =
+                                  AppConstants.unlockCollaborate),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Difficulty (affects score needed)',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: List.generate(5, (i) {
+                            final level = i + 1;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text('$level'),
+                                selected: _difficulty == level,
+                                onSelected: (v) =>
+                                    setState(() => _difficulty = level),
+                                selectedColor: AppTheme.primary,
+                              ),
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Auto-delete',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _ChoiceChip(
+                              label: 'After viewing',
+                              selected: _autoDeleteHours == 0,
+                              onSelected: () =>
+                                  setState(() => _autoDeleteHours = 0),
+                            ),
+                            _ChoiceChip(
+                              label: '24h',
+                              selected: _autoDeleteHours == 24,
+                              onSelected: () =>
+                                  setState(() => _autoDeleteHours = 24),
+                            ),
+                            _ChoiceChip(
+                              label: '48h',
+                              selected: _autoDeleteHours == 48,
+                              onSelected: () =>
+                                  setState(() => _autoDeleteHours = 48),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        Semantics(
+                          label: 'Create surprise',
+                          button: true,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submit,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Lock it!'),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-                const SizedBox(height: 24),
-                Text(
-                  'Unlock method',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _ChoiceChip(
-                      label: 'Persuade',
-                      selected: _unlockMethod == AppConstants.unlockPersuade,
-                      onSelected: () =>
-                          setState(() => _unlockMethod = AppConstants.unlockPersuade),
-                    ),
-                    const SizedBox(width: 12),
-                    _ChoiceChip(
-                      label: 'Collaborate',
-                      selected: _unlockMethod == AppConstants.unlockCollaborate,
-                      onSelected: () =>
-                          setState(() => _unlockMethod = AppConstants.unlockCollaborate),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Difficulty (affects score needed)',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: List.generate(5, (i) {
-                    final level = i + 1;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text('$level'),
-                        selected: _difficulty == level,
-                        onSelected: (v) =>
-                            setState(() => _difficulty = level),
-                        selectedColor: AppTheme.primary,
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Auto-delete',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _ChoiceChip(
-                      label: 'After viewing',
-                      selected: _autoDeleteHours == 0,
-                      onSelected: () => setState(() => _autoDeleteHours = 0),
-                    ),
-                    _ChoiceChip(
-                      label: '24h',
-                      selected: _autoDeleteHours == 24,
-                      onSelected: () => setState(() => _autoDeleteHours = 24),
-                    ),
-                    _ChoiceChip(
-                      label: '48h',
-                      selected: _autoDeleteHours == 48,
-                      onSelected: () => setState(() => _autoDeleteHours = 48),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Semantics(
-                  label: 'Create surprise',
-                  button: true,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Lock it!'),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    ),
     );
   }
 }
@@ -714,9 +759,7 @@ class _PersonaChip extends StatelessWidget {
         ],
       ),
       selected: selected,
-      onSelected: isWinkPlusLocked
-          ? null
-          : (_) => onSelected(),
+      onSelected: isWinkPlusLocked ? null : (_) => onSelected(),
       selectedColor: AppTheme.primary,
     );
   }

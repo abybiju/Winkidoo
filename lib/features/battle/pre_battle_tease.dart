@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/judge.dart';
 
@@ -14,11 +15,13 @@ class PreBattleTease extends StatefulWidget {
   const PreBattleTease({
     super.key,
     required this.judge,
+    required this.userGender,
     required this.surpriseId,
     required this.onBegin,
   });
 
   final Judge judge;
+  final String userGender;
   final String surpriseId;
   final void Function() onBegin;
 
@@ -84,7 +87,8 @@ class _PreBattleTeaseState extends State<PreBattleTease>
           child: Column(
             children: [
               const Spacer(flex: 2),
-              _TeasePortrait(judge: widget.judge),
+              _TeasePortrait(
+                  judge: widget.judge, userGender: widget.userGender),
               const SizedBox(height: 16),
               _TeaseLockPulse(animation: _lockPulseController),
               const SizedBox(height: 24),
@@ -173,19 +177,23 @@ class _TeaseAuraBackground extends StatelessWidget {
 
 /// Large centered judge portrait (placeholder circle + initial or avatar).
 class _TeasePortrait extends StatelessWidget {
-  const _TeasePortrait({required this.judge});
+  const _TeasePortrait({required this.judge, required this.userGender});
 
   final Judge judge;
+  final String userGender;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAvatar = JudgeAssetResolver.resolveAvatarPath(
+      judge: judge,
+      userGender: userGender,
+    );
     return SizedBox(
       height: 160,
       child: Center(
-        child: judge.avatarAssetPath != null &&
-                judge.avatarAssetPath!.isNotEmpty
+        child: resolvedAvatar.isNotEmpty
             ? Image.asset(
-                judge.avatarAssetPath!,
+                resolvedAvatar,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => _placeholder(),
               )

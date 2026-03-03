@@ -1,3 +1,4 @@
+import 'package:app_links/app_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,12 +35,28 @@ class _WinkidooAppState extends ConsumerState<WinkidooApp> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateRouterState());
     WidgetsBinding.instance.addPostFrameCallback((_) => _setupPush());
+    _setupOAuthDeepLinks();
+  }
+
+  /// Handle OAuth redirect (e.g. Google sign-in) when Supabase redirects to winkidoo://auth/callback.
+  void _setupOAuthDeepLinks() {
+    final appLinks = AppLinks();
+    appLinks.uriLinkStream.listen((Uri uri) {
+      if (uri.host == 'auth' && uri.pathSegments.contains('callback')) {
+        Supabase.instance.client.auth.getSessionFromUrl(uri);
+      }
+    });
+    appLinks.getInitialLink().then((Uri? uri) {
+      if (uri != null && uri.host == 'auth' && uri.pathSegments.contains('callback')) {
+        Supabase.instance.client.auth.getSessionFromUrl(uri);
+      }
+    });
   }
 
   void _setupPush() {
     final client = Supabase.instance.client;
     PushService.onTokenRefresh(client);
-    final session = ref.read(authStateProvider).valueOrNull;
+    final session = ref.read(authStateProvider).value;
     if (session != null) {
       PushService.register(client, session.user.id);
     }
@@ -66,7 +83,7 @@ class _WinkidooAppState extends ConsumerState<WinkidooApp> {
   Widget build(BuildContext context) {
     ref.listen(authStateProvider, (_, next) {
       _updateRouterState();
-      final session = next.valueOrNull;
+      final session = next.value;
       if (session != null) {
         PushService.register(Supabase.instance.client, session.user.id);
       }

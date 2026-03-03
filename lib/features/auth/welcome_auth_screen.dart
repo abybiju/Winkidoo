@@ -4,12 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 
-const String _kBackgroundAsset = 'assets/images/welcomepage_background.png';
-const double _kButtonHeight = 52.0;
-const double _kRadius = 16.0;
+const String _kBackgroundAsset = 'assets/images/background .png';
+const double _kButtonHeight = 76.0;
+const double _kButtonRadius = 999.0;
 
-/// Emotional welcome: Winkidoo + tagline. Two actions only — Sign In | Create Account.
-/// No email field. Auth form (with toggle) lives on /login.
+/// Premium first-screen hero with a single CTA.
+/// Flow remains unchanged: Get Started -> /login.
 class WelcomeAuthScreen extends ConsumerStatefulWidget {
   const WelcomeAuthScreen({super.key});
 
@@ -19,21 +19,19 @@ class WelcomeAuthScreen extends ConsumerStatefulWidget {
 
 class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen>
     with SingleTickerProviderStateMixin {
-  bool _signInPressed = false;
-  bool _createAccountPressed = false;
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 220),
+      duration: const Duration(milliseconds: 260),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
-      curve: Curves.easeOut,
+      curve: Curves.easeOutCubic,
     );
     _fadeController.forward();
   }
@@ -46,8 +44,11 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.sizeOf(context);
+    final isDesktop = media.width >= 900;
+    final horizontalPadding = isDesktop ? 56.0 : 24.0;
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -55,6 +56,9 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen>
             child: Image.asset(
               _kBackgroundAsset,
               fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              filterQuality: FilterQuality.none,
+              isAntiAlias: false,
               errorBuilder: (_, __, ___) => Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -66,47 +70,63 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen>
               ),
             ),
           ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.2,
-                  colors: [
-                    AppTheme.plum.withValues(alpha: 0.12),
-                    AppTheme.plum.withValues(alpha: 0.04),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
+          const Positioned.fill(child: _HeroOverlays()),
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: SingleChildScrollView(
+              child: Align(
+                alignment: Alignment.bottomCenter,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.sizeOf(context).height -
-                        MediaQuery.paddingOf(context).top -
-                        MediaQuery.paddingOf(context).bottom,
-                  ),
-                  child: IntrinsicHeight(
+                  constraints: const BoxConstraints(maxWidth: 640),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      0,
+                      horizontalPadding,
+                      isDesktop ? 42 : 22,
+                    ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(height: 80),
-                        _buildTitle(),
+                        Text(
+                          'Play Your Circle',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: isDesktop ? 74 : 44,
+                            fontWeight: FontWeight.w800,
+                            height: 1.0,
+                            color: Colors.white,
+                            letterSpacing: -0.25,
+                            shadows: const [
+                              Shadow(
+                                color: Color(0x55000000),
+                                blurRadius: 12,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 12),
-                        _buildSubtitle(),
-                        const SizedBox(height: 48),
-                        _buildSignInButton(),
-                        const SizedBox(height: 16),
-                        _buildCreateAccountButton(),
-                        const SizedBox(height: 40),
-                        _buildFooter(),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Play with friends, unlock vaults, collect wins.',
+                            maxLines: 1,
+                            softWrap: false,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: isDesktop ? 34 : 18,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                              color: Colors.white.withValues(alpha: 0.74),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 24),
+                        _GetStartedButton(
+                          onTap: () =>
+                              context.go('/login', extra: {'mode': 'signUp'}),
+                        ),
                       ],
                     ),
                   ),
@@ -118,163 +138,198 @@ class _WelcomeAuthScreenState extends ConsumerState<WelcomeAuthScreen>
       ),
     );
   }
+}
 
-  Widget _buildTitle() {
-    return Text(
-      'Winkidoo',
-      textAlign: TextAlign.center,
-      style: GoogleFonts.poppins(
-        fontSize: 42,
-        fontWeight: FontWeight.bold,
-        color: AppTheme.textPrimary,
-      ),
-    );
-  }
+class _HeroOverlays extends StatelessWidget {
+  const _HeroOverlays();
 
-  Widget _buildSubtitle() {
-    return Text(
-      'Unlock the surprise.',
-      textAlign: TextAlign.center,
-      style: GoogleFonts.inter(
-        fontSize: 18,
-        color: AppTheme.textSecondary,
-      ),
-    );
-  }
-
-  Widget _buildSignInButton() {
-    return _WelcomePrimaryButton(
-      label: 'Sign In',
-      pressed: _signInPressed,
-      onTapDown: () => setState(() => _signInPressed = true),
-      onTapUp: () => setState(() => _signInPressed = false),
-      onTapCancel: () => setState(() => _signInPressed = false),
-      onTap: () => context.go('/login', extra: {'mode': 'signIn'}),
-    );
-  }
-
-  Widget _buildCreateAccountButton() {
-    return _WelcomeOutlinedButton(
-      label: 'Create Account',
-      pressed: _createAccountPressed,
-      onTapDown: () => setState(() => _createAccountPressed = true),
-      onTapUp: () => setState(() => _createAccountPressed = false),
-      onTapCancel: () => setState(() => _createAccountPressed = false),
-      onTap: () => context.go('/login', extra: {'mode': 'signUp'}),
-    );
-  }
-
-  Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text(
-        'By continuing you agree to our Terms and Privacy Policy.',
-        textAlign: TextAlign.center,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          color: Colors.white.withValues(alpha: 0.6),
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.08),
+                  Colors.black.withValues(alpha: 0.26),
+                ],
+                stops: const [0.0, 0.55, 1.0],
+              ),
+            ),
+          ),
         ),
-      ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0, 0.2),
+                radius: 1.15,
+                colors: [
+                  AppTheme.primaryPink.withValues(alpha: 0.07),
+                  AppTheme.plum.withValues(alpha: 0.05),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 84,
+          child: IgnorePointer(
+            child: Center(
+              child: Container(
+                width: 380,
+                height: 108,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFFFF5CA8).withValues(alpha: 0.13),
+                      Colors.transparent,
+                    ],
+                    radius: 0.82,
+                  ),
+                ),
+                child: const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _WelcomePrimaryButton extends StatelessWidget {
-  const _WelcomePrimaryButton({
-    required this.label,
-    required this.pressed,
-    required this.onTapDown,
-    required this.onTapUp,
-    required this.onTapCancel,
-    required this.onTap,
-  });
+class _GetStartedButton extends StatefulWidget {
+  const _GetStartedButton({required this.onTap});
 
-  final String label;
-  final bool pressed;
-  final VoidCallback onTapDown;
-  final VoidCallback onTapUp;
-  final VoidCallback onTapCancel;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => onTapDown(),
-      onTapUp: (_) => onTapUp(),
-      onTapCancel: onTapCancel,
-      onTap: onTap,
-      child: AnimatedScale(
-        scale: pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          height: _kButtonHeight,
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryPink,
-            borderRadius: BorderRadius.circular(_kRadius),
-            boxShadow: [AppTheme.pinkGlow],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  State<_GetStartedButton> createState() => _GetStartedButtonState();
 }
 
-class _WelcomeOutlinedButton extends StatelessWidget {
-  const _WelcomeOutlinedButton({
-    required this.label,
-    required this.pressed,
-    required this.onTapDown,
-    required this.onTapUp,
-    required this.onTapCancel,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool pressed;
-  final VoidCallback onTapDown;
-  final VoidCallback onTapUp;
-  final VoidCallback onTapCancel;
-  final VoidCallback onTap;
+class _GetStartedButtonState extends State<_GetStartedButton> {
+  bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => onTapDown(),
-      onTapUp: (_) => onTapUp(),
-      onTapCancel: onTapCancel,
-      onTap: onTap,
-      child: AnimatedScale(
-        scale: pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          height: _kButtonHeight,
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(_kRadius),
-            border: Border.all(
-              color: AppTheme.plum.withValues(alpha: 0.5),
-              width: 1.5,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+    final scale = _pressed
+        ? 0.973
+        : _hovered
+            ? 1.012
+            : 1.0;
+    final translateY = _pressed
+        ? 1.0
+        : _hovered
+            ? -2.0
+            : 0.0;
+
+    return Semantics(
+      button: true,
+      label: 'Get started',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() {
+          _hovered = false;
+          _pressed = false;
+        }),
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: widget.onTap,
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 130),
+            curve: Curves.easeOutCubic,
+            scale: scale,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(0, translateY, 0),
+              height: _kButtonHeight,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(_kButtonRadius),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: _hovered
+                      ? const [Color(0xFFFFF18A), Color(0xFFFFD84D)]
+                      : const [Color(0xFFFFE96A), Color(0xFFFFCC31)],
+                ),
+                border: Border.all(
+                  color: const Color(0xFFFFF4B5)
+                      .withValues(alpha: _hovered ? 0.55 : 0.42),
+                  width: 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFFCF40).withValues(
+                      alpha: _hovered ? 0.56 : 0.46,
+                    ),
+                    blurRadius: _hovered ? 34 : 26,
+                    spreadRadius: _hovered ? 1.5 : 0,
+                    offset: const Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.20),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    top: 7,
+                    child: Container(
+                      height: 18,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(_kButtonRadius),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.25),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Text(
+                      'Get Started',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF5A3A00),
+                        letterSpacing: 0.2,
+                        shadows: const [
+                          Shadow(
+                            color: Color(0x33FFFFFF),
+                            blurRadius: 8,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

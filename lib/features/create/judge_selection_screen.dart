@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
+import 'package:winkidoo/providers/user_profile_provider.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
 
 /// Cinematic judge selection: swipeable cards, animated aura, difficulty/chaos meters,
@@ -36,6 +38,7 @@ class JudgeSelectionScreen extends ConsumerWidget {
         ),
       ),
       data: (judges) {
+        final userGender = ref.watch(userProfileMetaProvider).gender;
         if (judges.isEmpty) {
           return Center(
             child: Text(
@@ -46,6 +49,7 @@ class JudgeSelectionScreen extends ConsumerWidget {
         }
         return _JudgeSelectionContent(
           judges: judges,
+          userGender: userGender,
           isJudgeLocked: isJudgeLocked,
           onSelect: onSelect,
         );
@@ -57,11 +61,13 @@ class JudgeSelectionScreen extends ConsumerWidget {
 class _JudgeSelectionContent extends StatefulWidget {
   const _JudgeSelectionContent({
     required this.judges,
+    required this.userGender,
     required this.isJudgeLocked,
     required this.onSelect,
   });
 
   final List<Judge> judges;
+  final String userGender;
   final bool Function(String personaId) isJudgeLocked;
   final void Function(String personaId, int difficulty) onSelect;
 
@@ -85,7 +91,8 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _soundService == null) _soundService = BattleSoundService();
+      if (mounted && _soundService == null)
+        _soundService = BattleSoundService();
     });
     _pageController = PageController();
     _auraController = AnimationController(
@@ -179,6 +186,7 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
                   itemBuilder: (context, index) {
                     return _JudgeCard(
                       judge: widget.judges[index],
+                      userGender: widget.userGender,
                       portraitFloat: _portraitFloatController,
                       quoteIndex: index == _currentIndex ? _quoteIndex : 0,
                       sealingProgress:
@@ -279,12 +287,14 @@ class _VaultSealedOverlay extends StatelessWidget {
 class _JudgeCard extends StatelessWidget {
   const _JudgeCard({
     required this.judge,
+    required this.userGender,
     required this.portraitFloat,
     required this.quoteIndex,
     this.sealingProgress = 0,
   });
 
   final Judge judge;
+  final String userGender;
   final Animation<double> portraitFloat;
   final int quoteIndex;
   final double sealingProgress;
@@ -301,6 +311,7 @@ class _JudgeCard extends StatelessWidget {
             children: [
               JudgePortrait(
                 judge: judge,
+                userGender: userGender,
                 floatAnimation: portraitFloat,
                 sealingProgress: sealingProgress,
               ),
@@ -350,12 +361,10 @@ class _NewBadge extends StatelessWidget {
       return const SizedBox.shrink();
     }
     final now = DateTime.now().toUtc();
-    final withinSeason =
-        judge.seasonStart != null &&
-            now.difference(judge.seasonStart!.toUtc()).inDays <= _newDays;
-    final withinCreated =
-        judge.createdAt != null &&
-            now.difference(judge.createdAt!.toUtc()).inDays <= _newDays;
+    final withinSeason = judge.seasonStart != null &&
+        now.difference(judge.seasonStart!.toUtc()).inDays <= _newDays;
+    final withinCreated = judge.createdAt != null &&
+        now.difference(judge.createdAt!.toUtc()).inDays <= _newDays;
     if (!withinSeason && !withinCreated) {
       return const SizedBox.shrink();
     }
@@ -445,16 +454,22 @@ class JudgePortrait extends StatelessWidget {
   const JudgePortrait({
     super.key,
     required this.judge,
+    required this.userGender,
     required this.floatAnimation,
     this.sealingProgress = 0,
   });
 
   final Judge judge;
+  final String userGender;
   final Animation<double> floatAnimation;
   final double sealingProgress;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAvatar = JudgeAssetResolver.resolveAvatarPath(
+      judge: judge,
+      userGender: userGender,
+    );
     return AnimatedBuilder(
       animation: floatAnimation,
       builder: (context, child) {
@@ -469,10 +484,9 @@ class JudgePortrait extends StatelessWidget {
       child: SizedBox(
         height: 160,
         child: Center(
-          child: judge.avatarAssetPath != null &&
-                  judge.avatarAssetPath!.isNotEmpty
+          child: resolvedAvatar.isNotEmpty
               ? Image.asset(
-                  judge.avatarAssetPath!,
+                  resolvedAvatar,
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) => _placeholder(judge),
                 )
@@ -624,7 +638,8 @@ class _ChaosMeterState extends State<ChaosMeter>
     return AnimatedBuilder(
       animation: _jitterController,
       builder: (context, child) {
-        final offset = isHighChaos ? 2.0 * (_jitterController.value - 0.5) : 0.0;
+        final offset =
+            isHighChaos ? 2.0 * (_jitterController.value - 0.5) : 0.0;
         return Transform.translate(
           offset: Offset(offset, 0),
           child: child,
@@ -647,7 +662,8 @@ class _ChaosMeterState extends State<ChaosMeter>
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final w = constraints.maxWidth * (widget.level / 5).clamp(0.0, 1.0);
+                    final w = constraints.maxWidth *
+                        (widget.level / 5).clamp(0.0, 1.0);
                     return Stack(
                       children: [
                         Container(
@@ -700,7 +716,8 @@ class ToneTags extends StatelessWidget {
       runSpacing: 6,
       children: tags
           .map((t) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppTheme.surface.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(12),

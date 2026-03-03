@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
@@ -23,6 +26,9 @@ import 'package:winkidoo/core/widgets/wink_bottom_nav.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
+
+const Duration _kAndroidExitBackWindow = Duration(seconds: 2);
+const String _kAndroidExitBackPrompt = 'Press back again to exit';
 
 /// Notifier for go_router redirect: updated when auth/couple/onboarding changes.
 class RouterRefreshNotifier extends ChangeNotifier {
@@ -210,28 +216,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           } else if (loc.startsWith('/shell/profile')) {
             index = 3;
           }
-          return Scaffold(
-            body: navigationShell,
-            bottomNavigationBar: WinkBottomNav(
-              currentIndex: index,
-              onIndexTap: (i) {
-                switch (i) {
-                  case 0:
-                    context.go('/shell/home');
-                    break;
-                  case 1:
-                    context.go('/shell/vault');
-                    break;
-                  case 2:
-                    context.go('/shell/winks');
-                    break;
-                  case 3:
-                    context.go('/shell/profile');
-                    break;
-                }
-              },
-              onCenterTap: () => context.push('/shell/create'),
-            ),
+          return _ShellScaffold(
+            matchedLocation: loc,
+            currentIndex: index,
+            navigationShell: navigationShell,
           );
         },
         branches: [
@@ -329,6 +317,93 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+class _ShellScaffold extends StatefulWidget {
+  const _ShellScaffold({
+    required this.matchedLocation,
+    required this.currentIndex,
+    required this.navigationShell,
+  });
+
+  final String matchedLocation;
+  final int currentIndex;
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  State<_ShellScaffold> createState() => _ShellScaffoldState();
+}
+
+class _ShellScaffoldState extends State<_ShellScaffold> {
+  DateTime? _lastBackPressAt;
+
+  bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  bool get _isShellTabRoot {
+    final loc = widget.matchedLocation;
+    return loc == '/shell/home' ||
+        loc == '/shell/vault' ||
+        loc == '/shell/winks' ||
+        loc == '/shell/profile';
+  }
+
+  void _handleBackPress() {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final now = DateTime.now();
+    final shouldExit = _lastBackPressAt != null &&
+        now.difference(_lastBackPressAt!) <= _kAndroidExitBackWindow;
+
+    if (shouldExit) {
+      _lastBackPressAt = null;
+      SystemNavigator.pop();
+      return;
+    }
+
+    _lastBackPressAt = now;
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(
+      const SnackBar(
+        content: Text(_kAndroidExitBackPrompt),
+        duration: _kAndroidExitBackWindow,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final interceptRootBack = _isAndroid && _isShellTabRoot;
+    return PopScope(
+      canPop: !interceptRootBack,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !interceptRootBack) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        body: widget.navigationShell,
+        bottomNavigationBar: WinkBottomNav(
+          currentIndex: widget.currentIndex,
+          onIndexTap: (i) {
+            switch (i) {
+              case 0:
+                context.go('/shell/home');
+                break;
+              case 1:
+                context.go('/shell/vault');
+                break;
+              case 2:
+                context.go('/shell/winks');
+                break;
+              case 3:
+                context.go('/shell/profile');
+                break;
+            }
+          },
+          onCenterTap: () => context.push('/shell/create'),
+        ),
+      ),
+    );
+  }
+}
 
 class _PlaceholderScreen extends StatelessWidget {
   const _PlaceholderScreen({required this.title});

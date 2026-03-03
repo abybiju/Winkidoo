@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/constants/achievement_icons.dart';
+import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
 import 'package:winkidoo/models/achievement.dart';
@@ -16,6 +17,7 @@ import 'package:winkidoo/providers/couple_stats_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/user_profile_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -28,7 +30,8 @@ class ProfileScreen extends ConsumerWidget {
 
     final created = surprises.where((s) => s.creatorId == user?.id).length;
     final unlocked = surprises.where((s) => s.isUnlocked).length;
-    final interventions = surprises.fold<int>(0, (sum, s) => sum + s.creatorDefenseCount);
+    final interventions =
+        surprises.fold<int>(0, (sum, s) => sum + s.creatorDefenseCount);
 
     return Scaffold(
       body: Container(
@@ -47,6 +50,8 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _UserHeader(user: user),
                 const SizedBox(height: 24),
+                const _GameProfileCard(),
+                const SizedBox(height: 16),
                 _StatsCard(
                   created: created,
                   unlocked: unlocked,
@@ -59,7 +64,8 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 const _AchievementsSection(),
                 const SizedBox(height: 16),
-                _TreasureArchiveCard(onTap: () => context.push('/shell/treasure-archive')),
+                _TreasureArchiveCard(
+                    onTap: () => context.push('/shell/treasure-archive')),
                 const SizedBox(height: 16),
                 _SubscriptionCard(
                   isWinkPlus: effectiveWinkPlus,
@@ -178,6 +184,156 @@ class _StatsCard extends StatelessWidget {
   }
 }
 
+class _GameProfileCard extends ConsumerStatefulWidget {
+  const _GameProfileCard();
+
+  @override
+  ConsumerState<_GameProfileCard> createState() => _GameProfileCardState();
+}
+
+class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _ageController;
+  final _formKey = GlobalKey<FormState>();
+  String _gender = 'na';
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final meta = ref.read(userProfileMetaProvider);
+    _nameController = TextEditingController(text: meta.name);
+    _ageController = TextEditingController(text: meta.age?.toString() ?? '');
+    _gender = (meta.gender == 'male' ||
+            meta.gender == 'female' ||
+            meta.gender == 'na')
+        ? meta.gender
+        : 'na';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveProfile() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    setState(() => _saving = true);
+    try {
+      final age = int.parse(_ageController.text.trim());
+      final merged = Map<String, dynamic>.from(user.userMetadata ?? const {});
+      merged['name'] = _nameController.text.trim();
+      merged['age'] = age;
+      merged['gender'] = _gender;
+
+      await Supabase.instance.client.auth
+          .updateUser(UserAttributes(data: merged));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Game profile updated'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save profile'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final missing = ref.watch(missingProfileFieldsProvider);
+    return Card(
+      color: AppTheme.surface.withValues(alpha: 0.8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Game Profile',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (missing.isNotEmpty)
+                    Text(
+                      'Missing: ${missing.join(', ')}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.error,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? 'Enter name'
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _ageController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Age'),
+                validator: (value) {
+                  final age = int.tryParse((value ?? '').trim());
+                  if (age == null) return 'Enter valid age';
+                  if (age < 13 || age > 120) return 'Age must be 13-120';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: _gender,
+                decoration: const InputDecoration(labelText: 'Gender'),
+                items: const [
+                  DropdownMenuItem(value: 'male', child: Text('Male')),
+                  DropdownMenuItem(value: 'female', child: Text('Female')),
+                  DropdownMenuItem(
+                      value: 'na', child: Text('Prefer not to say')),
+                ],
+                onChanged: (value) => setState(() => _gender = value ?? 'na'),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _saveProfile,
+                  child: Text(_saving ? 'Saving...' : 'Save game profile'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StatRow extends StatelessWidget {
   const _StatRow({required this.label, required this.value});
 
@@ -224,7 +380,8 @@ class _YourDynamicSection extends ConsumerWidget {
         color: AppTheme.surface.withValues(alpha: 0.8),
         child: const Padding(
           padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+          child:
+              Center(child: CircularProgressIndicator(color: AppTheme.primary)),
         ),
       ),
       error: (_, __) => Card(
@@ -332,8 +489,8 @@ class _DynamicStatCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-              const SizedBox(height: 4),
-            ],
+            ),
+            const SizedBox(height: 4),
             Text(
               subtitle,
               style: GoogleFonts.inter(
@@ -359,35 +516,64 @@ class _ToughestJudgeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final judgeAsync = personaId.isEmpty
         ? null
-        : ref.watch(judgeByPersonaIdProvider(personaId)).valueOrNull;
-    final name = personaId.isEmpty
-        ? '—'
-        : (judgeAsync?.name ?? Judge.placeholder(personaId).name);
+        : ref.watch(judgeByPersonaIdProvider(personaId)).value;
+    final judge =
+        personaId.isEmpty ? null : (judgeAsync ?? Judge.placeholder(personaId));
+    final name = judge?.name ?? '—';
+    final gender = ref.watch(userProfileMetaProvider).gender;
+    final judgeAsset = judge == null
+        ? ''
+        : JudgeAssetResolver.resolveAvatarPath(
+            judge: judge, userGender: gender);
 
     return Card(
       color: AppTheme.primary.withValues(alpha: 0.12),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              name,
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              clipBehavior: Clip.antiAlias,
+              child: judgeAsset.isNotEmpty
+                  ? Image.asset(
+                      judgeAsset,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.gavel_rounded),
+                    )
+                  : const Icon(Icons.gavel_rounded),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Toughest Judge',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Toughest Judge',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -399,8 +585,18 @@ class _ToughestJudgeCard extends ConsumerWidget {
 
 /// Month abbreviations for chart labels.
 const _monthLabels = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 class _MonthlyBarChart extends StatelessWidget {
@@ -447,11 +643,11 @@ class _MonthlyBarChart extends StatelessWidget {
                   final height = maxCount > 0
                       ? (count / maxCount).clamp(0.0, 1.0) * maxBarHeight
                       : minBarHeight;
-                  final effectiveHeight = height >= minBarHeight ? height : minBarHeight;
+                  final effectiveHeight =
+                      height >= minBarHeight ? height : minBarHeight;
                   final parts = key.split('-');
-                  final monthIndex = parts.length >= 2
-                      ? (int.tryParse(parts[1]) ?? 1) - 1
-                      : 0;
+                  final monthIndex =
+                      parts.length >= 2 ? (int.tryParse(parts[1]) ?? 1) - 1 : 0;
                   final label = monthIndex >= 0 && monthIndex < 12
                       ? _monthLabels[monthIndex]
                       : key;
@@ -503,7 +699,8 @@ class _ConnectionStreakSection extends ConsumerWidget {
         color: AppTheme.surface.withValues(alpha: 0.8),
         child: const Padding(
           padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+          child:
+              Center(child: CircularProgressIndicator(color: AppTheme.primary)),
         ),
       ),
       error: (_, __) => Card(
@@ -635,26 +832,29 @@ class _AchievementsSection extends ConsumerStatefulWidget {
   const _AchievementsSection();
 
   @override
-  ConsumerState<_AchievementsSection> createState() => _AchievementsSectionState();
+  ConsumerState<_AchievementsSection> createState() =>
+      _AchievementsSectionState();
 }
 
 class _AchievementsSectionState extends ConsumerState<_AchievementsSection> {
   bool _checkedAchievements = false;
 
-  Future<void> _checkNewUnlocks(BuildContext context, List<Achievement> achievements) async {
+  Future<void> _checkNewUnlocks(
+      BuildContext context, List<Achievement> achievements) async {
     final seen = await AchievementStorageService.getSeenAchievements();
-    final newlyUnlocked = achievements
-        .where((a) => a.unlocked && !seen.contains(a.id))
-        .toList();
+    final newlyUnlocked =
+        achievements.where((a) => a.unlocked && !seen.contains(a.id)).toList();
     final firstNew = newlyUnlocked.isEmpty ? null : newlyUnlocked.first;
     if (firstNew == null || !context.mounted) return;
     final icon = achievementIcons[firstNew.id] ?? Icons.emoji_events_rounded;
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black54,
-      builder: (_) => AchievementUnlockedDialog(achievement: firstNew, icon: icon),
+      builder: (_) =>
+          AchievementUnlockedDialog(achievement: firstNew, icon: icon),
     );
-    if (context.mounted) await AchievementStorageService.markAsSeen(firstNew.id);
+    if (context.mounted)
+      await AchievementStorageService.markAsSeen(firstNew.id);
   }
 
   @override
@@ -666,7 +866,8 @@ class _AchievementsSectionState extends ConsumerState<_AchievementsSection> {
         color: AppTheme.surface.withValues(alpha: 0.8),
         child: const Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
-          child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+          child:
+              Center(child: CircularProgressIndicator(color: AppTheme.primary)),
         ),
       ),
       error: (_, __) => Card(
@@ -785,7 +986,9 @@ class _AchievementBadge extends StatelessWidget {
             ? AppTheme.primary.withValues(alpha: 0.2)
             : AppTheme.surface.withValues(alpha: 0.6),
         border: Border.all(
-          color: unlocked ? AppTheme.primary : AppTheme.textSecondary.withValues(alpha: 0.4),
+          color: unlocked
+              ? AppTheme.primary
+              : AppTheme.textSecondary.withValues(alpha: 0.4),
           width: unlocked ? 2 : 1,
         ),
         boxShadow: unlocked
@@ -801,7 +1004,9 @@ class _AchievementBadge extends StatelessWidget {
       child: Icon(
         icon,
         size: 28,
-        color: unlocked ? AppTheme.primary : AppTheme.textSecondary.withValues(alpha: 0.6),
+        color: unlocked
+            ? AppTheme.primary
+            : AppTheme.textSecondary.withValues(alpha: 0.6),
       ),
     );
 
@@ -842,7 +1047,8 @@ class _TreasureArchiveCard extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+        trailing: const Icon(Icons.chevron_right_rounded,
+            color: AppTheme.textSecondary),
         onTap: onTap,
       ),
     );
@@ -884,7 +1090,8 @@ class _SubscriptionCard extends StatelessWidget {
             color: AppTheme.textSecondary,
           ),
         ),
-        trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+        trailing: const Icon(Icons.chevron_right_rounded,
+            color: AppTheme.textSecondary),
         onTap: onTap,
       ),
     );
@@ -912,7 +1119,8 @@ class _SettingsCard extends StatelessWidget {
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.palette_outlined, color: AppTheme.textSecondary, size: 22),
+              leading: const Icon(Icons.palette_outlined,
+                  color: AppTheme.textSecondary, size: 22),
               title: Text(
                 'Theme',
                 style: GoogleFonts.inter(

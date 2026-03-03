@@ -22,7 +22,8 @@ class JudgeDeliberationScreen extends ConsumerStatefulWidget {
       _JudgeDeliberationScreenState();
 }
 
-class _JudgeDeliberationScreenState extends ConsumerState<JudgeDeliberationScreen> {
+class _JudgeDeliberationScreenState
+    extends ConsumerState<JudgeDeliberationScreen> {
   @override
   void initState() {
     super.initState();
@@ -33,7 +34,7 @@ class _JudgeDeliberationScreenState extends ConsumerState<JudgeDeliberationScree
   }
 
   void _navigateToReveal() {
-    context.go(
+    context.pushReplacement(
       '/shell/reveal/${widget.surpriseId}',
       extra: {
         'response': widget.judgeResponse,

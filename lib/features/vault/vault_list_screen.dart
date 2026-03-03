@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/core/widgets/error_screen.dart';
 import 'package:winkidoo/core/widgets/pill_cta.dart';
 import 'package:winkidoo/core/widgets/skeleton_card.dart';
@@ -80,7 +81,9 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     final showWaitingBanner = couple != null && !couple.isLinked;
     final isDesktop = widget.desktopDetailNavigatorKey != null;
 
-    void pushToBattle(String surpriseId) {
+    Future<void> pushToBattle(String surpriseId) async {
+      final ok = await ensureProfileComplete(context, ref);
+      if (!context.mounted || !ok) return;
       if (isDesktop) {
         widget.desktopDetailNavigatorKey?.currentState?.push(
           MaterialPageRoute<void>(
@@ -92,7 +95,9 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
       }
     }
 
-    void pushToCreate() {
+    Future<void> pushToCreate() async {
+      final ok = await ensureProfileComplete(context, ref);
+      if (!context.mounted || !ok) return;
       if (isDesktop) {
         widget.desktopDetailNavigatorKey?.currentState?.push(
           MaterialPageRoute<void>(

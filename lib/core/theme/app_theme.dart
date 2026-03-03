@@ -36,6 +36,32 @@ class AppTheme {
   static const Color darkCardA = Color(0xFF372039);
   static const Color darkCardB = Color(0xFF23172F);
 
+  /// Home premium palette (dark-first with light fallbacks).
+  static const Color homeBgTop = Color(0xFF120B33);
+  static const Color homeBgBottom = Color(0xFF2A1048);
+  static const Color homeGlowOrange = Color(0xFFFF8C3A);
+  static const Color homeGlowPink = Color(0xFFE85D93);
+  static const Color battleGradientA = Color(0xFFE85D93);
+  static const Color battleGradientB = Color(0xFFFF8E52);
+  static const Color vaultGradientA = Color(0xFF2B1849);
+  static const Color vaultGradientB = Color(0xFF3A1D5E);
+  static const Color spotlightGradientA = Color(0xFF2A1B4A);
+  static const Color spotlightGradientB = Color(0xFF341E58);
+  static const Color winsSurface = Color(0x331A1230);
+  static const Color orbitalLine = Color(0xFF8550A7);
+  static const Color sparkColor = Color(0xFFFFA046);
+  static const Color ctaBattleA = Color(0xFFE85D93);
+  static const Color ctaBattleB = Color(0xFFFF9554);
+  static const Color ctaGoldA = Color(0xFFFFE37B);
+  static const Color ctaGoldB = Color(0xFFF5C76B);
+  static const Color homeSurfaceMuted = Color(0x401C1533);
+  static const Color homeSurfaceCard = Color(0x4D231A3E);
+  static const Color homeDivider = Color(0x4D6D2E8C);
+  static const Color homeTextPrimary = Color(0xFFF2F0FF);
+  static const Color homeTextSecondary = Color(0xB3D2CAE6);
+  static const Color homeCtaNavyA = Color(0xFF2A3558);
+  static const Color homeCtaNavyB = Color(0xFF1E2743);
+
   /// Standard glows
   static BoxShadow get pinkGlow => BoxShadow(
         color: primaryPink.withValues(alpha: 0.35),
@@ -92,6 +118,81 @@ class AppTheme {
         offset: Offset(0, 4),
       ),
     ];
+  }
+
+  static Color premiumBorder30(Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return plum.withValues(alpha: 0.30);
+    }
+    return const Color(0x66A06DAF);
+  }
+
+  static BoxShadow shadowLayer1(Brightness brightness) => BoxShadow(
+        color: brightness == Brightness.dark
+            ? Colors.black.withValues(alpha: 0.30)
+            : const Color(0x22000000),
+        blurRadius: brightness == Brightness.dark ? 22 : 16,
+        offset: const Offset(0, 11),
+      );
+
+  static BoxShadow shadowLayer2(Brightness brightness) => BoxShadow(
+        color: brightness == Brightness.dark
+            ? homeGlowPink.withValues(alpha: 0.12)
+            : const Color(0x1AE85D93),
+        blurRadius: 15,
+        spreadRadius: 0,
+        offset: const Offset(0, 6),
+      );
+
+  static BoxShadow shadowLayer3(Brightness brightness) => BoxShadow(
+        color: brightness == Brightness.dark
+            ? homeGlowOrange.withValues(alpha: 0.11)
+            : const Color(0x1AF5C76B),
+        blurRadius: 10,
+        spreadRadius: -1,
+        offset: const Offset(0, 2),
+      );
+
+  static List<BoxShadow> premiumElevation(Brightness brightness) => [
+        shadowLayer1(brightness),
+        shadowLayer2(brightness),
+        shadowLayer3(brightness),
+      ];
+
+  static List<Color> homeBackgroundGradient(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const [homeBgTop, homeBgBottom]
+        : const [lightBackgroundStart, lightBackgroundEnd];
+  }
+
+  static List<Color> battleGradient(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const [homeSurfaceCard, homeSurfaceMuted]
+        : const [Color(0xFFF3EEF9), Color(0xFFECE6F7)];
+  }
+
+  static List<Color> vaultGradient(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const [homeSurfaceCard, homeSurfaceMuted]
+        : const [Color(0xFFF3EEF9), Color(0xFFECE6F7)];
+  }
+
+  static List<Color> spotlightGradient(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const [homeSurfaceCard, homeSurfaceMuted]
+        : const [Color(0xFFF3EEF9), Color(0xFFECE6F7)];
+  }
+
+  static List<Color> goldCtaGradient(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const [ctaGoldA, ctaGoldB]
+        : const [Color(0xFFFFE98F), Color(0xFFF6CD70)];
+  }
+
+  static List<Color> homeCtaNavyGradient(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const [homeCtaNavyA, homeCtaNavyB]
+        : const [Color(0xFF2D375B), Color(0xFF212A47)];
   }
 
   // Legacy / theme mapping

@@ -8,7 +8,7 @@ Step-by-step for Google, Apple, and Facebook (Meta) sign-in and app store readin
 
 - In **Supabase Dashboard → Authentication → Providers**, enable **Google**, **Apple**, and **Facebook** as needed.
 - Under **URL Configuration**, set **Site URL** (e.g. your production origin or `https://winkidoo.com`).
-- Add **Redirect URLs**: your site URL + any mobile callback URLs (e.g. `winkidoo://auth/callback` for deep link). Supabase will list the exact redirect URL to use for each provider (copy from there into the provider’s console).
+- Add **Redirect URLs**: your site URL **and** the mobile OAuth callback **`winkidoo://auth/callback`** (required for Google/Apple/Facebook sign-in on device). Without this, the browser will redirect to localhost or Site URL and “This site can’t be reached” on the phone.
 
 ---
 
