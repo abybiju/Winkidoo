@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/services/profile_avatar_service.dart';
 
 class UserProfileMeta {
   const UserProfileMeta({
@@ -55,4 +56,25 @@ final isProfileCompleteProvider = Provider<bool>((ref) {
 
 final missingProfileFieldsProvider = Provider<List<String>>((ref) {
   return ref.watch(userProfileMetaProvider).missingFields;
+});
+
+final userAvatarProfileProvider =
+    FutureProvider<UserAvatarProfile?>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return null;
+  return ref.watch(profileAvatarServiceProvider).fetchProfile(user.id);
+});
+
+final effectiveProfileAvatarProvider = Provider<String?>((ref) {
+  final avatar = ref.watch(userAvatarProfileProvider).value;
+  if (avatar == null) return null;
+  if (avatar.avatarMode == ProfileAvatarMode.upload &&
+      (avatar.avatarUrl ?? '').isNotEmpty) {
+    return avatar.avatarUrl;
+  }
+  if (avatar.avatarMode == ProfileAvatarMode.preset &&
+      (avatar.avatarAssetPath ?? '').isNotEmpty) {
+    return avatar.avatarAssetPath;
+  }
+  return null;
 });

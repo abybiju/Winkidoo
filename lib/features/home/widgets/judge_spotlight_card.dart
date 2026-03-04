@@ -1,42 +1,39 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:winkidoo/core/constants/judge_asset_map.dart';
+import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/judge.dart';
-import 'package:winkidoo/providers/user_profile_provider.dart';
 
-class JudgeSpotlightCard extends ConsumerStatefulWidget {
+class JudgeSpotlightCard extends StatefulWidget {
   const JudgeSpotlightCard({
     super.key,
     required this.judge,
+    required this.judges,
     required this.onExplore,
     this.height,
     this.compact = false,
   });
 
   final Judge judge;
+  final List<Judge> judges;
   final VoidCallback onExplore;
   final double? height;
   final bool compact;
 
   @override
-  ConsumerState<JudgeSpotlightCard> createState() => _JudgeSpotlightCardState();
+  State<JudgeSpotlightCard> createState() => _JudgeSpotlightCardState();
 }
 
-class _JudgeSpotlightCardState extends ConsumerState<JudgeSpotlightCard> {
+class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final targetHeight = widget.height ?? (widget.compact ? 176 : 196);
-    final gender = ref.watch(userProfileMetaProvider).gender;
-    final judgeAsset = JudgeAssetResolver.resolveAvatarPath(
-      judge: widget.judge,
-      userGender: gender,
-    );
+    final orderedJudges = _orderedJudges(widget.judges, widget.judge);
+    final topJudge = orderedJudges.first;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -52,7 +49,7 @@ class _JudgeSpotlightCardState extends ConsumerState<JudgeSpotlightCard> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: AppTheme.spotlightGradient(brightness),
+            colors: AppTheme.vaultHeroGradient(brightness),
           ),
           border: Border.all(color: AppTheme.premiumBorder30(brightness)),
           boxShadow: AppTheme.premiumElevation(brightness),
@@ -73,12 +70,31 @@ class _JudgeSpotlightCardState extends ConsumerState<JudgeSpotlightCard> {
                 ),
               ),
             ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(26),
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        AppTheme.vaultDramaVignette.withValues(
+                          alpha: brightness == Brightness.dark ? 0.42 : 0.22,
+                        ),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Row(
                 children: [
                   Expanded(
-                    flex: 11,
+                    flex: 12,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -94,18 +110,18 @@ class _JudgeSpotlightCardState extends ConsumerState<JudgeSpotlightCard> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Meet ${widget.judge.name}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          'Meet ${_judgeDisplayName(topJudge)}',
+                          maxLines: 2,
                           style: GoogleFonts.poppins(
-                            fontSize: widget.compact ? 20 : 22,
+                            fontSize: widget.compact ? 17 : 19,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.homeTextPrimary,
+                            height: 1.15,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          widget.judge.tagline ??
+                          topJudge.tagline ??
                               'Feeling magical. Feeling judgey.',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -127,9 +143,10 @@ class _JudgeSpotlightCardState extends ConsumerState<JudgeSpotlightCard> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    flex: 9,
-                    child: _JudgeGlyphBlock(
-                      assetPath: judgeAsset,
+                    flex: 8,
+                    child: _JudgeFanStack(
+                      judges: orderedJudges,
+                      compact: widget.compact,
                     ),
                   ),
                 ],
@@ -142,46 +159,183 @@ class _JudgeSpotlightCardState extends ConsumerState<JudgeSpotlightCard> {
   }
 }
 
-class _JudgeGlyphBlock extends StatelessWidget {
-  const _JudgeGlyphBlock({required this.assetPath});
+List<Judge> _orderedJudges(List<Judge> source, Judge fallback) {
+  final unique = <String, Judge>{};
+  for (final judge in source) {
+    unique[judge.personaId] = judge;
+  }
+  unique.putIfAbsent(fallback.personaId, () => fallback);
 
-  final String? assetPath;
+  const orderedPersonas = [
+    AppConstants.personaPoeticRomantic,
+    AppConstants.personaSassyCupid,
+    AppConstants.personaChaosGremlin,
+    AppConstants.personaTheEx,
+    AppConstants.personaDrLove,
+  ];
+
+  return orderedPersonas
+      .map((persona) => unique[persona] ?? Judge.placeholder(persona))
+      .toList(growable: false);
+}
+
+class _JudgeFanStack extends StatelessWidget {
+  const _JudgeFanStack({
+    required this.judges,
+    required this.compact,
+  });
+
+  final List<Judge> judges;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomRight,
-      child: Container(
-        width: 118,
-        height: 118,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          color: Colors.white.withValues(alpha: 0.05),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        ),
-        child: Center(
-          child: (assetPath ?? '').isNotEmpty
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Image.asset(
-                    assetPath!,
-                    fit: BoxFit.cover,
-                    width: 98,
-                    height: 98,
-                    errorBuilder: (_, __, ___) => _fallback(),
+      child: SizedBox(
+        width: compact ? 118 : 132,
+        height: compact ? 116 : 126,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            for (var i = judges.length - 1; i >= 0; i--)
+              Positioned(
+                right: 8 + (i * 8.0),
+                bottom: 6 + (i * 2.0),
+                child: Transform.rotate(
+                  angle: i == 0 ? 0.0 : (-0.12 + (i * 0.055)),
+                  child: _JudgePreviewCard(
+                    judge: judges[i],
+                    compact: compact,
+                    highlighted: i == 0,
                   ),
-                )
-              : _fallback(),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _fallback() => const Icon(
-        Icons.gavel_rounded,
-        color: Color(0xFFC9C4DB),
-        size: 42,
-      );
+class _JudgePreviewCard extends StatelessWidget {
+  const _JudgePreviewCard({
+    required this.judge,
+    required this.compact,
+    required this.highlighted,
+  });
+
+  final Judge judge;
+  final bool compact;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = compact ? 66.0 : 72.0;
+    final h = compact ? 88.0 : 96.0;
+    final imagePath = _imagePathForJudge(judge);
+
+    return Container(
+      width: w,
+      height: h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: highlighted
+              ? Colors.white.withValues(alpha: 0.72)
+              : Colors.white.withValues(alpha: 0.28),
+          width: highlighted ? 1.4 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: highlighted ? 0.30 : 0.20),
+            blurRadius: highlighted ? 12 : 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: highlighted
+                    ? const [Color(0xFF432062), Color(0xFF25123C)]
+                    : const [Color(0xFF392051), Color(0xFF1E1432)],
+              ),
+            ),
+          ),
+          if (imagePath != null && imagePath.isNotEmpty)
+            Image.asset(
+              imagePath,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.56),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 6,
+            right: 6,
+            bottom: 6,
+            child: Text(
+              _judgeDisplayName(judge),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: compact ? 8.5 : 9,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.homeTextPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String? _imagePathForJudge(Judge judge) {
+  final fromJudge = judge.avatarAssetPath?.trim();
+  if (fromJudge != null && fromJudge.isNotEmpty) {
+    return fromJudge;
+  }
+  switch (judge.personaId) {
+    case AppConstants.personaPoeticRomantic:
+      return 'assets/images/judge wizard .png';
+    case AppConstants.personaSassyCupid:
+      return 'assets/images/sassy judge - female.png';
+    case AppConstants.personaChaosGremlin:
+      return 'assets/images/Chaos Gremlin judge.png';
+    case AppConstants.personaTheEx:
+      return 'assets/images/The Ex female version.png';
+    case AppConstants.personaDrLove:
+      return 'assets/images/Dr. Love Female.png';
+    default:
+      return null;
+  }
+}
+
+String _judgeDisplayName(Judge judge) {
+  if (judge.personaId == AppConstants.personaPoeticRomantic) {
+    return 'Romantic Poet';
+  }
+  return judge.name;
 }
 
 class _OutlineButton extends StatefulWidget {

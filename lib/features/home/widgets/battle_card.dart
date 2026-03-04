@@ -26,7 +26,7 @@ class BattleCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppTheme.battleGradient(brightness),
+          colors: AppTheme.vaultHeroGradient(brightness),
         ),
         border: Border.all(color: AppTheme.premiumBorder30(brightness)),
         boxShadow: AppTheme.premiumElevation(brightness),
@@ -43,6 +43,25 @@ class BattleCard extends StatelessWidget {
                     AppTheme.homeGlowPink.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      AppTheme.vaultDramaVignette.withValues(
+                        alpha: brightness == Brightness.dark ? 0.46 : 0.22,
+                      ),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -112,7 +131,6 @@ class _BattleActionButtonState extends State<_BattleActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     final scale = _pressed ? 0.97 : (_hovered ? 1.015 : 1.0);
 
     return AnimatedScale(
@@ -130,11 +148,7 @@ class _BattleActionButtonState extends State<_BattleActionButton> {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppTheme.homeCtaNavyGradient(brightness),
-              ),
+              color: const Color(0xFFF5C76B),
               border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
               boxShadow: [
                 if (_hovered)
@@ -161,7 +175,7 @@ class _BattleActionButtonState extends State<_BattleActionButton> {
                     children: [
                       const Icon(
                         Icons.flash_on_rounded,
-                        color: Colors.white,
+                        color: Color(0xFF6E4500),
                         size: 16,
                       ),
                       const SizedBox(width: 8),
@@ -170,7 +184,7 @@ class _BattleActionButtonState extends State<_BattleActionButton> {
                         style: GoogleFonts.poppins(
                           fontSize: widget.compact ? 14 : 15,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: const Color(0xFF6E4500),
                         ),
                       ),
                     ],

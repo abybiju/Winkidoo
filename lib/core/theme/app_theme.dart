@@ -61,6 +61,25 @@ class AppTheme {
   static const Color homeTextSecondary = Color(0xB3D2CAE6);
   static const Color homeCtaNavyA = Color(0xFF2A3558);
   static const Color homeCtaNavyB = Color(0xFF1E2743);
+  static const Color footerBase = Color(0xFF1E2236);
+  static const Color footerStroke = Color(0x4D9A8AC3);
+  static const Color footerActive = Color(0xFFF5C76B);
+  static const Color footerInactive = Color(0xFFC8BCD9);
+  static const Color footerCenter = Color(0xFFD4A72C);
+  static const Color footerCenterOn = Color(0xFF2F2200);
+  static const Color vaultStatusLinked = Color(0xFF4DD7A5);
+  static const Color vaultStatusPending = Color(0xFFFFC86B);
+  static const Color vaultCardUrgent = Color(0xFFE85D93);
+  static const Color vaultCardOwned = Color(0xFFF5C76B);
+  static const Color vaultDramaSurfaceA = Color(0xFF2E1747);
+  static const Color vaultDramaSurfaceB = Color(0xFF170F2D);
+  static const Color vaultDramaVignette = Color(0x9911081D);
+  static const Color vaultCtaPrimaryA = Color(0xFFFFA064);
+  static const Color vaultCtaPrimaryB = Color(0xFFE85D93);
+  static const Color vaultCtaInnerGlow = Color(0x66FFD69A);
+  static const Color vaultCtaSecondaryStroke = Color(0x66E3D2FF);
+  static const Color vaultCtaSecondaryFill = Color(0x1FFFFFFF);
+  static const Color vaultHeroCharacterOverlay = Color(0x40E85D93);
 
   /// Standard glows
   static BoxShadow get pinkGlow => BoxShadow(
@@ -177,6 +196,26 @@ class AppTheme {
         : const [Color(0xFFF3EEF9), Color(0xFFECE6F7)];
   }
 
+  static List<Color> vaultHeroGradient(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? const [vaultDramaSurfaceA, vaultDramaSurfaceB]
+        : const [Color(0xFFFFF4DE), Color(0xFFF1E8FF)];
+  }
+
+  static List<Color> vaultHeroGlow(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? [
+            primaryPink.withValues(alpha: 0.18),
+            premiumGold.withValues(alpha: 0.12),
+            Colors.transparent,
+          ]
+        : [
+            primaryPink.withValues(alpha: 0.14),
+            premiumGold.withValues(alpha: 0.11),
+            Colors.transparent,
+          ];
+  }
+
   static List<Color> spotlightGradient(Brightness brightness) {
     return brightness == Brightness.dark
         ? const [homeSurfaceCard, homeSurfaceMuted]
@@ -226,11 +265,11 @@ class AppTheme {
           ? plum.withValues(alpha: 0.5)
           : lightPillBorder;
   static Color navBg(Brightness brightness) =>
-      brightness == Brightness.dark ? surface2 : lightNavBg;
+      brightness == Brightness.dark ? footerBase : const Color(0xFFE7EAF7);
   static Color navActive(Brightness brightness) =>
-      brightness == Brightness.dark ? premiumGold : const Color(0xFF8C5D00);
+      brightness == Brightness.dark ? footerActive : const Color(0xFF8C5D00);
   static Color navInactive(Brightness brightness) =>
-      brightness == Brightness.dark ? textSecondary : const Color(0xFF8A7A9B);
+      brightness == Brightness.dark ? footerInactive : const Color(0xFF8A7A9B);
   static Color navTextStrong(Brightness brightness) =>
       brightness == Brightness.dark
           ? const Color(0xFF311300)

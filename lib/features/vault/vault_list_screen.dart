@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
+import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/core/widgets/error_screen.dart';
@@ -20,8 +20,8 @@ import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
-import 'package:winkidoo/providers/onboarding_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/user_profile_provider.dart';
 
 class VaultListScreen extends ConsumerStatefulWidget {
   const VaultListScreen({
@@ -78,7 +78,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     final surprisesAsync = ref.watch(surprisesListProvider);
     final user = ref.watch(currentUserProvider);
     final couple = ref.watch(coupleProvider).value;
-    final showWaitingBanner = couple != null && !couple.isLinked;
+    final userGender = ref.watch(userProfileMetaProvider).gender;
     final isDesktop = widget.desktopDetailNavigatorKey != null;
 
     Future<void> pushToBattle(String surpriseId) async {
@@ -122,93 +122,128 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     }
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.gradientColors(Theme.of(context).brightness),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: AppTheme.homeBackgroundGradient(
+                    Theme.of(context).brightness,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: surprisesAsync.when(
-            data: (surprises) {
-              final waiting = surprises
-                  .where((s) => s.creatorId != user?.id && !s.isUnlocked)
-                  .toList();
-              final myVault =
-                  surprises.where((s) => s.creatorId == user?.id).toList();
-              final isEmpty = waiting.isEmpty && myVault.isEmpty;
-              final linkedAt = couple?.linkedAt;
-              final streakDays = linkedAt == null
-                  ? 0
-                  : DateTime.now().difference(linkedAt.toLocal()).inDays + 1;
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0, -0.25),
+                    radius: 1.1,
+                    colors: [
+                      AppTheme.homeGlowPink.withValues(alpha: 0.09),
+                      AppTheme.homeGlowOrange.withValues(alpha: 0.05),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: surprisesAsync.when(
+              data: (surprises) {
+                final waiting = surprises
+                    .where((s) => s.creatorId != user?.id && !s.isUnlocked)
+                    .toList();
+                final myVault =
+                    surprises.where((s) => s.creatorId == user?.id).toList();
+                final overlayPair = _selectVaultOverlayPersonas(
+                  waiting: waiting,
+                  myVault: myVault,
+                );
+                final heroOverlayAsset =
+                    JudgeAssetResolver.resolvePersonaAssetPath(
+                  personaId: overlayPair.$1,
+                  userGender: userGender,
+                );
+                final chestOverlayAsset =
+                    JudgeAssetResolver.resolvePersonaAssetPath(
+                  personaId: overlayPair.$2,
+                  userGender: userGender,
+                );
+                final isEmpty = waiting.isEmpty && myVault.isEmpty;
+                final linkedAt = couple?.linkedAt;
+                final streakDays = linkedAt == null
+                    ? 0
+                    : DateTime.now().difference(linkedAt.toLocal()).inDays + 1;
 
-              return CustomScrollView(
-                slivers: [
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                        widget.isDesktopSidebar ? 12 : 12,
-                        12,
-                        widget.isDesktopSidebar ? 12 : 12,
-                        10),
-                    sliver: SliverToBoxAdapter(
-                      child: WinkidooTopBar(
-                        showLogo: true,
-                        notificationCount: math.min(waiting.length, 9),
-                        trailing: InkWell(
-                          onTap: pushToWinkPlus,
-                          borderRadius: BorderRadius.circular(999),
-                          child: Ink(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFE86A),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              'Wink+',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF6A4300),
+                return CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                          widget.isDesktopSidebar ? 12 : 12,
+                          12,
+                          widget.isDesktopSidebar ? 12 : 12,
+                          10),
+                      sliver: SliverToBoxAdapter(
+                        child: WinkidooTopBar(
+                          showLogo: true,
+                          matchLogoToWordmark: true,
+                          logoSize: widget.isDesktopSidebar ? 40 : 42,
+                          logoTextSize: widget.isDesktopSidebar ? 22 : 24,
+                          notificationCount: math.min(waiting.length, 9),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (widget.isDesktopSidebar) ...[
+                                _TopBarCreateButton(onTap: pushToCreate),
+                                const SizedBox(width: 8),
+                              ],
+                              InkWell(
+                                onTap: pushToWinkPlus,
+                                borderRadius: BorderRadius.circular(999),
+                                child: Ink(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFE86A),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    'Wink+',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF6A4300),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: widget.isDesktopSidebar ? 12 : 14),
-                    sliver: SliverToBoxAdapter(
-                      child: Text(
-                        'My Vault',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: widget.isDesktopSidebar ? 24 : 44,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurface,
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: widget.isDesktopSidebar ? 12 : 14),
+                      sliver: SliverToBoxAdapter(
+                        child: Text(
+                          'My Vault',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: widget.isDesktopSidebar ? 23 : 31,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                        widget.isDesktopSidebar ? 12 : 14,
-                        10,
-                        widget.isDesktopSidebar ? 12 : 14,
-                        0),
-                    sliver: SliverToBoxAdapter(
-                      child: _LinkedVaultHero(
-                        streakDays: streakDays,
-                        waitingCount: waiting.length,
-                        linked: couple?.isLinked == true,
-                      ),
-                    ),
-                  ),
-                  if (showWaitingBanner)
                     SliverPadding(
                       padding: EdgeInsets.fromLTRB(
                           widget.isDesktopSidebar ? 12 : 14,
@@ -216,116 +251,107 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                           widget.isDesktopSidebar ? 12 : 14,
                           0),
                       sliver: SliverToBoxAdapter(
-                        child: _WaitingForPartnerBanner(
-                          inviteCode: couple.inviteCode,
+                        child: _LinkedVaultHero(
+                          streakDays: streakDays,
+                          waitingCount: waiting.length,
+                          overlayAssetPath: heroOverlayAsset,
                         ),
                       ),
                     ),
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                        widget.isDesktopSidebar ? 12 : 14,
-                        12,
-                        widget.isDesktopSidebar ? 12 : 14,
-                        0),
-                    sliver: SliverToBoxAdapter(
-                      child: _VaultSearchAndActions(
-                        onCreateTap: pushToCreate,
-                        onArchiveTap: () =>
-                            context.push('/shell/treasure-archive'),
-                      ),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                        widget.isDesktopSidebar ? 12 : 14,
-                        12,
-                        widget.isDesktopSidebar ? 12 : 14,
-                        0),
-                    sliver: SliverToBoxAdapter(
-                      child: _ChestCallout(
-                        onEnterVault: () {
-                          if (waiting.isNotEmpty) {
-                            pushToBattle(waiting.first.id);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  if (isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _EmptyVaultState(
-                        onCreateTap: pushToCreate,
-                        onMarkFirstPromptSeen: () => ref
-                            .read(
-                                createFirstSurprisePromptSeenProvider.notifier)
-                            .setSeen(),
-                        promptSeen:
-                            ref.watch(createFirstSurprisePromptSeenProvider),
-                      ),
-                    )
-                  else
                     SliverPadding(
                       padding: EdgeInsets.fromLTRB(
                           widget.isDesktopSidebar ? 12 : 14,
-                          14,
+                          12,
                           widget.isDesktopSidebar ? 12 : 14,
-                          120),
-                      sliver: SliverList.list(
-                        children: [
-                          if (waiting.isNotEmpty) ...[
-                            _SectionTitle(
-                              title: 'Waiting for You',
-                              actionLabel: 'see all',
-                              onActionTap: () {},
-                            ),
-                            const SizedBox(height: 8),
-                            ...waiting.map((s) => _SurpriseCard(
-                                  surprise: s,
-                                  isForMe: true,
-                                  onTap: () => pushToBattle(s.id),
-                                )),
-                            const SizedBox(height: 8),
-                          ],
-                          _SectionTitle(
-                              title: 'Your Surprises',
-                              actionLabel: 'see all',
-                              onActionTap: () {}),
-                          const SizedBox(height: 8),
-                          ...myVault.map((s) => _MyVaultCard(
-                              surprise: s, onTapBattle: pushToBattle)),
-                        ],
+                          0),
+                      sliver: SliverToBoxAdapter(
+                        child: _VaultSearchAndActions(
+                          onArchiveTap: () =>
+                              context.push('/shell/treasure-archive'),
+                        ),
                       ),
                     ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                          widget.isDesktopSidebar ? 12 : 14,
+                          12,
+                          widget.isDesktopSidebar ? 12 : 14,
+                          0),
+                      sliver: SliverToBoxAdapter(
+                        child: _ChestCallout(
+                          overlayAssetPath: chestOverlayAsset,
+                          onEnterVault: () {
+                            if (waiting.isNotEmpty) {
+                              pushToBattle(waiting.first.id);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    if (isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _EmptyVaultState(
+                          isDesktopSidebar: widget.isDesktopSidebar,
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                            widget.isDesktopSidebar ? 12 : 14,
+                            14,
+                            widget.isDesktopSidebar ? 12 : 14,
+                            120),
+                        sliver: SliverList.list(
+                          children: [
+                            if (waiting.isNotEmpty) ...[
+                              _SectionTitle(
+                                title: 'Waiting for You',
+                                actionLabel: 'View all',
+                                onActionTap: () {},
+                              ),
+                              const SizedBox(height: 8),
+                              ...waiting.map((s) => _SurpriseCard(
+                                    surprise: s,
+                                    isForMe: true,
+                                    onTap: () => pushToBattle(s.id),
+                                  )),
+                              const SizedBox(height: 8),
+                            ],
+                            _SectionTitle(
+                                title: 'Your Surprises',
+                                actionLabel: 'View all',
+                                onActionTap: () {}),
+                            const SizedBox(height: 8),
+                            ...myVault.map((s) => _MyVaultCard(
+                                surprise: s, onTapBattle: pushToBattle)),
+                          ],
+                        ),
+                      ),
+                  ],
+                );
+              },
+              loading: () => ListView(
+                padding: EdgeInsets.symmetric(
+                    horizontal: widget.isDesktopSidebar ? 12 : 20,
+                    vertical: 20),
+                children: const [
+                  SkeletonCard(),
+                  SizedBox(height: 12),
+                  SkeletonCard(),
+                  SizedBox(height: 12),
+                  SkeletonCard(),
                 ],
-              );
-            },
-            loading: () => ListView(
-              padding: EdgeInsets.symmetric(
-                  horizontal: widget.isDesktopSidebar ? 12 : 20, vertical: 20),
-              children: const [
-                SkeletonCard(),
-                SizedBox(height: 12),
-                SkeletonCard(),
-                SizedBox(height: 12),
-                SkeletonCard(),
-              ],
-            ),
-            error: (_, __) => ErrorScreen(
-              message: 'Could not load surprises. Try again?',
-              onRetry: () => ref.invalidate(surprisesListProvider),
+              ),
+              error: (_, __) => ErrorScreen(
+                message: 'Could not load surprises. Try again?',
+                onRetry: () => ref.invalidate(surprisesListProvider),
+              ),
             ),
           ),
-        ),
+        ],
       ),
-      floatingActionButton: widget.isDesktopSidebar
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: pushToCreate,
-              backgroundColor: AppTheme.primary,
-              icon: const Icon(Icons.card_giftcard_rounded),
-              label: const Text('Add Surprise'),
-            ),
+      floatingActionButton: null,
       bottomNavigationBar: widget.showBottomNav
           ? SafeArea(
               top: false,
@@ -343,84 +369,304 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
   }
 }
 
-class _LinkedVaultHero extends StatelessWidget {
+class _LinkedVaultHero extends StatefulWidget {
   const _LinkedVaultHero({
     required this.streakDays,
     required this.waitingCount,
-    required this.linked,
+    required this.overlayAssetPath,
   });
 
   final int streakDays;
   final int waitingCount;
-  final bool linked;
+  final String overlayAssetPath;
+
+  @override
+  State<_LinkedVaultHero> createState() => _LinkedVaultHeroState();
+}
+
+class _LinkedVaultHeroState extends State<_LinkedVaultHero>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerController;
+  bool _reducedMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 11),
+    )..repeat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncMotionPreference();
+  }
+
+  void _syncMotionPreference() {
+    final mediaDisable =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final platformDisable = WidgetsBinding
+        .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+    final shouldReduce = mediaDisable || platformDisable;
+    if (shouldReduce == _reducedMotion) return;
+    _reducedMotion = shouldReduce;
+    if (_reducedMotion) {
+      _shimmerController.stop();
+      _shimmerController.value = 0;
+    } else {
+      _shimmerController.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final statusText = linked
-        ? 'Vault linked with your partner'
-        : 'Vault waiting to be linked';
-    final streakText =
-        streakDays > 0 ? '$streakDays day streak' : 'Start your streak';
+    final brightness = Theme.of(context).brightness;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    const title = 'Your Vault';
+    final waitingText = widget.waitingCount > 0
+        ? '${widget.waitingCount} surprise${widget.waitingCount == 1 ? '' : 's'} waiting for you'
+        : 'No surprises waiting yet';
+    final streakText = widget.streakDays > 0
+        ? '${widget.streakDays} day streak'
+        : 'Start your streak';
 
-    return WinkCard(
-      borderRadius: 34,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(34),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: AppTheme.vaultHeroGradient(brightness),
+        ),
+        border: Border.all(color: AppTheme.premiumBorder30(brightness)),
+        boxShadow: AppTheme.premiumElevation(brightness),
+      ),
+      child: Stack(
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: const Color(0xFFFFC2D7),
-                child: Text(
-                  'W',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFFE85D93),
+          Positioned(
+            right: -8,
+            top: -14,
+            bottom: -8,
+            width: 180,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: brightness == Brightness.dark ? 0.24 : 0.16,
+                child: ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [Colors.transparent, Colors.black],
+                    stops: [0.0, 0.48],
+                  ).createShader(bounds),
+                  blendMode: BlendMode.dstIn,
+                  child: widget.overlayAssetPath.isEmpty
+                      ? const SizedBox.shrink()
+                      : Image.asset(
+                          widget.overlayAssetPath,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(34),
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.3, -0.9),
+                    radius: 1.25,
+                    colors: AppTheme.vaultHeroGlow(brightness),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      statusText,
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(34),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      AppTheme.vaultDramaVignette.withValues(
+                        alpha: brightness == Brightness.dark ? 0.74 : 0.40,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      waitingCount > 0
-                          ? '$waitingCount surprise${waitingCount == 1 ? '' : 's'} waiting for you'
-                          : 'No surprises waiting yet',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.73),
+                      Colors.transparent,
+                      AppTheme.vaultHeroCharacterOverlay.withValues(
+                        alpha: brightness == Brightness.dark ? 0.20 : 0.12,
                       ),
-                    ),
-                  ],
+                    ],
+                    stops: const [0.0, 0.58, 1.0],
+                  ),
                 ),
+              ),
+            ),
+          ),
+          if (!_reducedMotion)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _shimmerController,
+                  builder: (context, _) {
+                    final x = -1.35 + (2.7 * _shimmerController.value);
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(34),
+                        gradient: LinearGradient(
+                          begin: Alignment(x, -0.4),
+                          end: Alignment(x + 0.56, 0.45),
+                          colors: [
+                            Colors.transparent,
+                            Colors.white.withValues(
+                              alpha:
+                                  brightness == Brightness.dark ? 0.06 : 0.10,
+                            ),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.08),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.28),
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(9),
+                    child: Image.asset(
+                      'assets/images/winkidoo new logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.favorite_rounded,
+                        color: Color(0xFFF5C76B),
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                            color: onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          waitingText,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: onSurface.withValues(alpha: 0.76),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _InfoChip(
+                      icon: Icons.local_fire_department_rounded,
+                      label: streakText,
+                      expanded: true,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _InfoChip(
+                      icon: Icons.inventory_2_rounded,
+                      label: widget.waitingCount == 0
+                          ? 'No pending surprises'
+                          : '${widget.waitingCount} pending',
+                      tint: AppTheme.vaultStatusPending,
+                      expanded: true,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          PillCta(
-            label: streakText,
-            onTap: () {},
-            icon: Icons.local_fire_department_rounded,
-            trailing: true,
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _TopBarCreateButton extends StatelessWidget {
+  const _TopBarCreateButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Ink(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.primary,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.add_rounded,
+              size: 16,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Create',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -428,153 +674,277 @@ class _LinkedVaultHero extends StatelessWidget {
 
 class _VaultSearchAndActions extends StatelessWidget {
   const _VaultSearchAndActions({
-    required this.onCreateTap,
     required this.onArchiveTap,
   });
 
-  final VoidCallback onCreateTap;
   final VoidCallback onArchiveTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.86),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFFE8D7F2)),
+        Expanded(
+          child: PillCta(
+            label: 'Treasure Archive',
+            onTap: onArchiveTap,
+            icon: Icons.auto_awesome,
+            trailing: true,
+            filled: false,
+            style: PillCtaStyle.glass,
           ),
-          child: Row(
-            children: [
-              const Icon(Icons.search_rounded,
-                  size: 28, color: AppTheme.lightTextSecondary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Search memories...',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    color: AppTheme.lightTextSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Container(
-                width: 56,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE149),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(Icons.camera_alt_rounded,
-                    color: Color(0xFF805500)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: PillCta(
-                label: 'Add a Surprise',
-                onTap: onCreateTap,
-                icon: Icons.card_giftcard_rounded,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: PillCta(
-                label: 'Uncover Memories',
-                onTap: onArchiveTap,
-                icon: Icons.auto_awesome,
-                trailing: true,
-              ),
-            ),
-          ],
         ),
       ],
     );
   }
 }
 
-class _ChestCallout extends StatelessWidget {
-  const _ChestCallout({required this.onEnterVault});
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    this.tint,
+    this.expanded = false,
+  });
 
-  final VoidCallback onEnterVault;
+  final IconData icon;
+  final String label;
+  final Color? tint;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
+    final chipTint = tint ?? const Color(0xFFCA9E4D);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: Colors.white.withValues(alpha: 0.08),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.24),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment:
+            expanded ? MainAxisAlignment.center : MainAxisAlignment.start,
+        children: [
+          Icon(icon, size: 15, color: chipTint),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChestCallout extends StatelessWidget {
+  const _ChestCallout({
+    required this.onEnterVault,
+    required this.overlayAssetPath,
+  });
+
+  final VoidCallback onEnterVault;
+  final String overlayAssetPath;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return WinkCard(
       borderRadius: 32,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          AppTheme.cardGradientA(Theme.of(context).brightness),
-          AppTheme.cardGradientB(Theme.of(context).brightness),
-        ],
+        colors: brightness == Brightness.dark
+            ? const [AppTheme.vaultDramaSurfaceA, AppTheme.vaultDramaSurfaceB]
+            : [
+                AppTheme.cardGradientA(brightness),
+                AppTheme.cardGradientB(brightness)
+              ],
       ),
       child: Column(
         children: [
           Container(
-            height: 210,
+            height: 172,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFFFFEBA6), Color(0xFFE8DCFF)],
+                colors: brightness == Brightness.dark
+                    ? const [Color(0xFF2A1B45), Color(0xFF1A132D)]
+                    : const [Color(0xFFFFEBA6), Color(0xFFE8DCFF)],
               ),
             ),
-            alignment: Alignment.center,
-            child: const Text('🧰', style: TextStyle(fontSize: 92)),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded,
-                          color: AppTheme.lightTextSecondary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Search memories...',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.lightTextSecondary,
-                        ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: RadialGradient(
+                        center: const Alignment(0, -0.45),
+                        radius: 1.0,
+                        colors: AppTheme.vaultHeroGlow(brightness),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              PillCta(
-                label: 'Enter Vault',
-                onTap: onEnterVault,
-                icon: Icons.chevron_right_rounded,
-                trailing: true,
-              ),
-            ],
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            AppTheme.vaultDramaVignette.withValues(
+                              alpha:
+                                  brightness == Brightness.dark ? 0.58 : 0.28,
+                            ),
+                            Colors.transparent,
+                            AppTheme.vaultHeroCharacterOverlay.withValues(
+                              alpha:
+                                  brightness == Brightness.dark ? 0.16 : 0.08,
+                            ),
+                          ],
+                          stops: const [0.0, 0.6, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -6,
+                  top: 6,
+                  bottom: 6,
+                  width: 150,
+                  child: IgnorePointer(
+                    child: Opacity(
+                      opacity: brightness == Brightness.dark ? 0.20 : 0.12,
+                      child: ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [Colors.transparent, Colors.black],
+                          stops: [0.02, 0.56],
+                        ).createShader(bounds),
+                        blendMode: BlendMode.dstIn,
+                        child: overlayAssetPath.isEmpty
+                            ? const SizedBox.shrink()
+                            : Image.asset(
+                                overlayAssetPath,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox.shrink(),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 18),
+                      child: Container(
+                        width: 108,
+                        height: 108,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(26),
+                          color: const Color(0xFFF5C76B),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFF5C76B)
+                                  .withValues(alpha: 0.42),
+                              blurRadius: 18,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.lock_rounded,
+                          size: 52,
+                          color: Color(0xFF694100),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+                    child: Text(
+                      'Open your next surprise when it feels right.',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.clip,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(
+                                alpha: brightness == Brightness.dark
+                                    ? 0.84
+                                    : 0.74),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: PillCta(
+              label: 'Enter Vault',
+              onTap: onEnterVault,
+              icon: Icons.chevron_right_rounded,
+              trailing: true,
+              filled: false,
+              style: PillCtaStyle.glass,
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+(String, String) _selectVaultOverlayPersonas({
+  required List<Surprise> waiting,
+  required List<Surprise> myVault,
+}) {
+  final orderedCandidates = <String>[
+    ...waiting.map((s) => s.judgePersona),
+    ...myVault.map((s) => s.judgePersona),
+  ];
+  String primary = orderedCandidates.firstWhere(
+    (p) => p.trim().isNotEmpty,
+    orElse: () => AppConstants.personaTheEx,
+  );
+  String secondary = orderedCandidates.firstWhere(
+    (p) => p.trim().isNotEmpty && p != primary,
+    orElse: () => AppConstants.personaSassyCupid,
+  );
+  if (secondary == primary) {
+    secondary = AppConstants.personaDrLove;
+  }
+  return (primary, secondary);
 }
 
 class _MyVaultCard extends ConsumerWidget {
@@ -606,15 +976,9 @@ class _MyVaultCard extends ConsumerWidget {
 }
 
 class _EmptyVaultState extends StatelessWidget {
-  const _EmptyVaultState({
-    required this.onCreateTap,
-    required this.onMarkFirstPromptSeen,
-    required this.promptSeen,
-  });
+  const _EmptyVaultState({required this.isDesktopSidebar});
 
-  final VoidCallback onCreateTap;
-  final VoidCallback onMarkFirstPromptSeen;
-  final bool promptSeen;
+  final bool isDesktopSidebar;
 
   @override
   Widget build(BuildContext context) {
@@ -631,7 +995,7 @@ class _EmptyVaultState extends StatelessWidget {
               Text(
                 'Nothing here yet',
                 style: GoogleFonts.poppins(
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.w800,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -639,7 +1003,7 @@ class _EmptyVaultState extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Create a surprise for your partner, or wait for them to send one.',
+                'Start by creating your first surprise. Once your partner responds, this vault becomes your shared archive of moments.',
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
@@ -650,98 +1014,24 @@ class _EmptyVaultState extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              PillCta(
-                label: promptSeen
-                    ? 'Create Surprise'
-                    : 'Create your first surprise',
-                onTap: () {
-                  onMarkFirstPromptSeen();
-                  onCreateTap();
-                },
-                icon: Icons.add_rounded,
+              const SizedBox(height: 14),
+              Text(
+                isDesktopSidebar
+                    ? 'Use Create in the top bar to add your first surprise.'
+                    : 'Use the + Battle button to add your first surprise.',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.72),
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _WaitingForPartnerBanner extends StatelessWidget {
-  const _WaitingForPartnerBanner({required this.inviteCode});
-
-  final String inviteCode;
-
-  @override
-  Widget build(BuildContext context) {
-    return WinkCard(
-      borderRadius: 26,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Waiting for your partner',
-            style: GoogleFonts.poppins(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Share this code with your partner:',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    inviteCode,
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2,
-                      color: AppTheme.primary,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              IconButton.filled(
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: inviteCode));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Code copied to clipboard'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.copy_rounded),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -759,14 +1049,15 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Row(
       children: [
         Text(
           title,
           style: GoogleFonts.poppins(
-            fontSize: 28,
+            fontSize: 22,
             fontWeight: FontWeight.w800,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: onSurface,
           ),
         ),
         const Spacer(),
@@ -775,12 +1066,9 @@ class _SectionTitle extends StatelessWidget {
           child: Text(
             actionLabel,
             style: GoogleFonts.poppins(
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.75),
+              color: onSurface.withValues(alpha: 0.7),
             ),
           ),
         ),
@@ -805,10 +1093,12 @@ class _SurpriseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final personaLabel = _personaLabel(surprise.judgePersona);
+    final accent = isForMe ? AppTheme.vaultCardUrgent : AppTheme.vaultCardOwned;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: WinkCard(
         borderRadius: 24,
+        borderColor: accent.withValues(alpha: 0.38),
         onTap: onTap,
         child: Row(
           children: [
@@ -817,8 +1107,9 @@ class _SurpriseCard extends StatelessWidget {
               height: 54,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEAB0),
+                color: accent.withValues(alpha: 0.17),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: accent.withValues(alpha: 0.44)),
               ),
               child: Text(
                 isForMe ? '💌' : '🔒',
@@ -854,7 +1145,7 @@ class _SurpriseCard extends StatelessWidget {
               ),
             ),
             if (isForMe || subtitle != null)
-              const Icon(Icons.chevron_right_rounded, color: AppTheme.primary),
+              Icon(Icons.chevron_right_rounded, color: accent),
           ],
         ),
       ),

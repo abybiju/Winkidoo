@@ -111,15 +111,21 @@ class _WinCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Container(
       height: height,
       padding:
           EdgeInsets.symmetric(horizontal: compact ? 10 : 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        color: AppTheme.homeSurfaceMuted,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: AppTheme.vaultHeroGradient(brightness),
+        ),
         border: Border.all(
-            color: AppTheme.premiumBorder30(Theme.of(context).brightness)),
+          color: AppTheme.premiumBorder30(brightness),
+        ),
       ),
       child: Row(
         children: [

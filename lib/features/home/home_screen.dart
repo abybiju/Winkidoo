@@ -13,7 +13,6 @@ import 'package:winkidoo/features/home/widgets/battle_card.dart';
 import 'package:winkidoo/features/home/widgets/hero_section.dart';
 import 'package:winkidoo/features/home/widgets/judge_spotlight_card.dart';
 import 'package:winkidoo/features/home/widgets/recent_wins_section.dart';
-import 'package:winkidoo/features/home/widgets/vault_card.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
 import 'package:winkidoo/features/season/season_recap_screen.dart';
 import 'package:winkidoo/models/achievement.dart';
@@ -194,6 +193,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final judge = judgesAsync.value?.isNotEmpty == true
         ? judgesAsync.value!.first
         : fallbackJudge;
+    final spotlightJudges = judgesAsync.value?.isNotEmpty == true
+        ? judgesAsync.value!
+        : const [fallbackJudge];
 
     final width = MediaQuery.sizeOf(context).width;
     final isCompact = width < 380;
@@ -203,7 +205,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final heroHeight = _clamped(contentWidth, 0.22, 132, 170);
     final battleHeight = _clamped(contentWidth, 0.37, 188, 232);
-    final vaultHeight = _clamped(contentWidth, 0.25, 132, 170);
     final judgeHeight = _clamped(contentWidth, 0.33, 168, 214);
     final recentItemHeight = _clamped(contentWidth, 0.14, 88, 108);
 
@@ -244,6 +245,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         WinkidooTopBar(
+                          matchLogoToWordmark: true,
                           notificationCount: math.min(waitingForMe.length, 9),
                           streakCount: streakWeeks,
                           onNotificationTap: () => context.go('/shell/vault'),
@@ -262,16 +264,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           height: battleHeight,
                         ),
                         SizedBox(height: gap),
-                        VaultCard(
-                          currentStreakWeeks: streakWeeks,
-                          waitingCount: waitingForMe.length,
-                          onEnterVault: () => context.go('/shell/vault'),
-                          compact: isCompact,
-                          height: vaultHeight,
-                        ),
-                        SizedBox(height: gap),
                         JudgeSpotlightCard(
                           judge: judge,
+                          judges: spotlightJudges,
                           onExplore: _goToCreateWithProfileGate,
                           compact: isCompact,
                           height: judgeHeight,

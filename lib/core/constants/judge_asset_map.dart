@@ -1,49 +1,36 @@
-import 'dart:math';
-
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/models/judge.dart';
 
 class JudgeAssetResolver {
   JudgeAssetResolver._();
 
-  static final Random _random = Random();
-  static final Map<String, bool> _sessionRandomUseFemale = {};
-
   static String resolveAvatarPath({
     required Judge judge,
     required String userGender,
   }) {
-    final persona = judge.personaId;
-    final variants = _personaAssets[persona];
-    if (variants == null) {
-      return _normalizeAsset(judge.avatarAssetPath);
-    }
+    final resolved = resolvePersonaAssetPath(
+      personaId: judge.personaId,
+      userGender: userGender,
+    );
+    return resolved.isNotEmpty
+        ? resolved
+        : _normalizeAsset(judge.avatarAssetPath);
+  }
 
+  static String resolvePersonaAssetPath({
+    required String personaId,
+    required String userGender,
+  }) {
+    final variants = _personaAssets[personaId];
+    if (variants == null) return '';
     final g = userGender.toLowerCase();
     if (g == 'male') {
-      return variants.female ??
-          variants.male ??
-          variants.neutral ??
-          _normalizeAsset(judge.avatarAssetPath);
+      return variants.female ?? variants.male ?? variants.neutral ?? '';
     }
     if (g == 'female') {
-      return variants.male ??
-          variants.female ??
-          variants.neutral ??
-          _normalizeAsset(judge.avatarAssetPath);
+      return variants.male ?? variants.female ?? variants.neutral ?? '';
     }
-
-    final useFemale =
-        _sessionRandomUseFemale.putIfAbsent(persona, () => _random.nextBool());
-    return useFemale
-        ? (variants.female ??
-            variants.male ??
-            variants.neutral ??
-            _normalizeAsset(judge.avatarAssetPath))
-        : (variants.male ??
-            variants.female ??
-            variants.neutral ??
-            _normalizeAsset(judge.avatarAssetPath));
+    return variants.neutral ?? variants.female ?? variants.male ?? '';
   }
 
   static String _normalizeAsset(String? path) => (path ?? '').trim();

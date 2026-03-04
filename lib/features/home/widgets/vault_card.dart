@@ -30,7 +30,7 @@ class VaultCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppTheme.vaultGradient(brightness),
+          colors: AppTheme.vaultHeroGradient(brightness),
         ),
         border: Border.all(color: AppTheme.premiumBorder30(brightness)),
         boxShadow: AppTheme.premiumElevation(brightness),
@@ -47,6 +47,25 @@ class VaultCard extends StatelessWidget {
                     AppTheme.homeGlowOrange.withValues(alpha: 0.06),
                     Colors.transparent,
                   ],
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      AppTheme.vaultDramaVignette.withValues(
+                        alpha: brightness == Brightness.dark ? 0.44 : 0.2,
+                      ),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),

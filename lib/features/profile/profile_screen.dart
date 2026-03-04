@@ -1,11 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:winkidoo/core/constants/avatar_presets.dart';
 import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
 import 'package:winkidoo/models/achievement.dart';
 import 'package:winkidoo/models/judge.dart';
@@ -18,6 +23,7 @@ import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
+import 'package:winkidoo/services/profile_avatar_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -34,86 +40,139 @@ class ProfileScreen extends ConsumerWidget {
         surprises.fold<int>(0, (sum, s) => sum + s.creatorDefenseCount);
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppTheme.gradientColors(Theme.of(context).brightness),
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _UserHeader(user: user),
-                const SizedBox(height: 24),
-                const _GameProfileCard(),
-                const SizedBox(height: 16),
-                _StatsCard(
-                  created: created,
-                  unlocked: unlocked,
-                  interventions: interventions,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: AppTheme.homeBackgroundGradient(
+                      Theme.of(context).brightness),
                 ),
-                const SizedBox(height: 16),
-                const _YourDynamicSection(),
-                const SizedBox(height: 16),
-                const _ConnectionStreakSection(),
-                const SizedBox(height: 16),
-                const _AchievementsSection(),
-                const SizedBox(height: 16),
-                _TreasureArchiveCard(
-                    onTap: () => context.push('/shell/treasure-archive')),
-                const SizedBox(height: 16),
-                _SubscriptionCard(
-                  isWinkPlus: effectiveWinkPlus,
-                  onTap: () => context.push('/shell/wink-plus'),
-                ),
-                const SizedBox(height: 16),
-                _SettingsCard(),
-                const SizedBox(height: 24),
-                _LogoutButton(
-                  onPressed: () async {
-                    await Supabase.instance.client.auth.signOut();
-                    if (context.mounted) {
-                      context.go('/');
-                    }
-                  },
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0, -0.25),
+                    radius: 1.1,
+                    colors: [
+                      AppTheme.homeGlowPink.withValues(alpha: 0.09),
+                      AppTheme.homeGlowOrange.withValues(alpha: 0.05),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const WinkidooTopBar(
+                    matchLogoToWordmark: true,
+                    showLogo: true,
+                  ),
+                  const SizedBox(height: 14),
+                  _UserHeader(user: user),
+                  const SizedBox(height: 24),
+                  const _GameProfileCard(),
+                  const SizedBox(height: 16),
+                  _StatsCard(
+                    created: created,
+                    unlocked: unlocked,
+                    interventions: interventions,
+                  ),
+                  const SizedBox(height: 16),
+                  const _YourDynamicSection(),
+                  const SizedBox(height: 16),
+                  const _ConnectionStreakSection(),
+                  const SizedBox(height: 16),
+                  const _AchievementsSection(),
+                  const SizedBox(height: 16),
+                  _TreasureArchiveCard(
+                      onTap: () => context.push('/shell/treasure-archive')),
+                  const SizedBox(height: 16),
+                  _SubscriptionCard(
+                    isWinkPlus: effectiveWinkPlus,
+                    onTap: () => context.push('/shell/wink-plus'),
+                  ),
+                  const SizedBox(height: 16),
+                  _SettingsCard(),
+                  const SizedBox(height: 24),
+                  _LogoutButton(
+                    onPressed: () async {
+                      await Supabase.instance.client.auth.signOut();
+                      if (context.mounted) {
+                        context.go('/');
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _UserHeader extends StatelessWidget {
+class _UserHeader extends ConsumerWidget {
   const _UserHeader({this.user});
 
   final User? user;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final email = user?.email ?? '';
     final initial = email.isNotEmpty ? email[0].toUpperCase() : '?';
+    final avatarPath = ref.watch(effectiveProfileAvatarProvider);
+    final hasNetwork = avatarPath != null && avatarPath.startsWith('http');
 
     return Row(
       children: [
-        CircleAvatar(
-          radius: 36,
-          backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
-          child: Text(
-            initial,
-            style: GoogleFonts.inter(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primary,
-            ),
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+            boxShadow: AppTheme.premiumElevation(Theme.of(context).brightness),
           ),
+          clipBehavior: Clip.antiAlias,
+          child: avatarPath == null
+              ? CircleAvatar(
+                  radius: 36,
+                  backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
+                  child: Text(
+                    initial,
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                )
+              : hasNetwork
+                  ? Image.network(
+                      avatarPath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.person),
+                    )
+                  : Image.asset(
+                      avatarPath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.person),
+                    ),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -159,7 +218,7 @@ class _StatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: AppTheme.surface.withValues(alpha: 0.8),
+      color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -197,6 +256,8 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
   final _formKey = GlobalKey<FormState>();
   String _gender = 'na';
   bool _saving = false;
+  String? _selectedPreset;
+  Uint8List? _pickedAvatarBytes;
 
   @override
   void initState() {
@@ -209,6 +270,10 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
             meta.gender == 'na')
         ? meta.gender
         : 'na';
+    final avatar = ref.read(userAvatarProfileProvider).value;
+    if (avatar?.avatarMode == ProfileAvatarMode.preset) {
+      _selectedPreset = avatar?.avatarAssetPath;
+    }
   }
 
   @override
@@ -233,6 +298,18 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
 
       await Supabase.instance.client.auth
           .updateUser(UserAttributes(data: merged));
+      if (_pickedAvatarBytes != null) {
+        await ref.read(profileAvatarServiceProvider).uploadAvatar(
+              userId: user.id,
+              bytes: _pickedAvatarBytes!,
+            );
+      } else if (_selectedPreset != null) {
+        await ref.read(profileAvatarServiceProvider).setPresetAvatar(
+              userId: user.id,
+              assetPath: _selectedPreset!,
+            );
+      }
+      ref.invalidate(userAvatarProfileProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -257,7 +334,7 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
   Widget build(BuildContext context) {
     final missing = ref.watch(missingProfileFieldsProvider);
     return Card(
-      color: AppTheme.surface.withValues(alpha: 0.8),
+      color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -318,6 +395,115 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
                 ],
                 onChanged: (value) => setState(() => _gender = value ?? 'na'),
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _saving
+                          ? null
+                          : () async {
+                              final file = await ref
+                                  .read(imagePickerProvider)
+                                  .pickImage(source: ImageSource.gallery);
+                              if (file == null) return;
+                              final bytes = await file.readAsBytes();
+                              if (!mounted) return;
+                              setState(() {
+                                _pickedAvatarBytes = bytes;
+                                _selectedPreset = null;
+                              });
+                            },
+                      icon: const Icon(Icons.photo_library_rounded),
+                      label: const Text('Upload avatar'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (_pickedAvatarBytes != null || _selectedPreset != null)
+                    IconButton(
+                      onPressed: _saving
+                          ? null
+                          : () => setState(() {
+                                _pickedAvatarBytes = null;
+                                _selectedPreset = null;
+                              }),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 74,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: kAvatarPresetAssets.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final asset = kAvatarPresetAssets[i];
+                    final selected = _selectedPreset == asset;
+                    return GestureDetector(
+                      onTap: _saving
+                          ? null
+                          : () => setState(() {
+                                _selectedPreset = asset;
+                                _pickedAvatarBytes = null;
+                              }),
+                      child: Container(
+                        width: 66,
+                        height: 66,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: selected
+                                ? AppTheme.primaryPink
+                                : Colors.white.withValues(alpha: 0.26),
+                            width: selected ? 2 : 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          asset,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.person_rounded),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (_pickedAvatarBytes != null || _selectedPreset != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2)),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: _pickedAvatarBytes != null
+                          ? Image.memory(_pickedAvatarBytes!, fit: BoxFit.cover)
+                          : Image.asset(_selectedPreset!, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Avatar selected',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.78),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -377,7 +563,7 @@ class _YourDynamicSection extends ConsumerWidget {
 
     return statsAsync.when(
       loading: () => Card(
-        color: AppTheme.surface.withValues(alpha: 0.8),
+        color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
         child: const Padding(
           padding: EdgeInsets.all(24),
           child:
@@ -385,7 +571,7 @@ class _YourDynamicSection extends ConsumerWidget {
         ),
       ),
       error: (_, __) => Card(
-        color: AppTheme.surface.withValues(alpha: 0.8),
+        color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
@@ -400,7 +586,7 @@ class _YourDynamicSection extends ConsumerWidget {
       data: (stats) {
         if (stats.totalBattles == 0) {
           return Card(
-            color: AppTheme.surface.withValues(alpha: 0.8),
+            color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
@@ -618,7 +804,7 @@ class _MonthlyBarChart extends StatelessWidget {
     );
 
     return Card(
-      color: AppTheme.surface.withValues(alpha: 0.8),
+      color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -696,7 +882,7 @@ class _ConnectionStreakSection extends ConsumerWidget {
 
     return streakAsync.when(
       loading: () => Card(
-        color: AppTheme.surface.withValues(alpha: 0.8),
+        color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
         child: const Padding(
           padding: EdgeInsets.all(24),
           child:
@@ -704,7 +890,7 @@ class _ConnectionStreakSection extends ConsumerWidget {
         ),
       ),
       error: (_, __) => Card(
-        color: AppTheme.surface.withValues(alpha: 0.8),
+        color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
@@ -853,8 +1039,9 @@ class _AchievementsSectionState extends ConsumerState<_AchievementsSection> {
       builder: (_) =>
           AchievementUnlockedDialog(achievement: firstNew, icon: icon),
     );
-    if (context.mounted)
+    if (context.mounted) {
       await AchievementStorageService.markAsSeen(firstNew.id);
+    }
   }
 
   @override
@@ -863,7 +1050,7 @@ class _AchievementsSectionState extends ConsumerState<_AchievementsSection> {
 
     return achievementsAsync.when(
       loading: () => Card(
-        color: AppTheme.surface.withValues(alpha: 0.8),
+        color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
         child: const Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
           child:
@@ -871,7 +1058,7 @@ class _AchievementsSectionState extends ConsumerState<_AchievementsSection> {
         ),
       ),
       error: (_, __) => Card(
-        color: AppTheme.surface.withValues(alpha: 0.8),
+        color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
@@ -1036,7 +1223,7 @@ class _TreasureArchiveCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: AppTheme.surface.withValues(alpha: 0.8),
+      color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
       child: ListTile(
         leading: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accent),
         title: Text(
@@ -1069,7 +1256,7 @@ class _SubscriptionCard extends StatelessWidget {
     return Card(
       color: isWinkPlus
           ? AppTheme.primary.withValues(alpha: 0.2)
-          : AppTheme.surface.withValues(alpha: 0.8),
+          : AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
       child: ListTile(
         leading: Icon(
           isWinkPlus ? Icons.star_rounded : Icons.star_outline_rounded,
@@ -1102,7 +1289,7 @@ class _SettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: AppTheme.surface.withValues(alpha: 0.8),
+      color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

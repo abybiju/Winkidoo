@@ -1,10 +1,15 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:winkidoo/core/constants/avatar_presets.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
+import 'package:winkidoo/services/profile_avatar_service.dart';
 
 class ProfileCompletionSheet extends ConsumerStatefulWidget {
   const ProfileCompletionSheet({super.key});
@@ -21,6 +26,8 @@ class _ProfileCompletionSheetState
   final _formKey = GlobalKey<FormState>();
   String _gender = 'na';
   bool _saving = false;
+  String? _selectedPreset;
+  Uint8List? _pickedAvatarBytes;
 
   @override
   void initState() {
@@ -61,6 +68,18 @@ class _ProfileCompletionSheetState
 
       await Supabase.instance.client.auth
           .updateUser(UserAttributes(data: merged));
+      if (_pickedAvatarBytes != null) {
+        await ref.read(profileAvatarServiceProvider).uploadAvatar(
+              userId: user.id,
+              bytes: _pickedAvatarBytes!,
+            );
+      } else if (_selectedPreset != null) {
+        await ref.read(profileAvatarServiceProvider).setPresetAvatar(
+              userId: user.id,
+              assetPath: _selectedPreset!,
+            );
+      }
+      ref.invalidate(userAvatarProfileProvider);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (_) {
@@ -78,6 +97,7 @@ class _ProfileCompletionSheetState
 
   @override
   Widget build(BuildContext context) {
+    final previewPath = _selectedPreset;
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -116,8 +136,9 @@ class _ProfileCompletionSheetState
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Name'),
               validator: (value) {
-                if (value == null || value.trim().isEmpty)
+                if (value == null || value.trim().isEmpty) {
                   return 'Enter your name';
+                }
                 return null;
               },
             ),
@@ -129,8 +150,9 @@ class _ProfileCompletionSheetState
               validator: (value) {
                 final age = int.tryParse((value ?? '').trim());
                 if (age == null) return 'Enter a valid age';
-                if (age < 13 || age > 120)
+                if (age < 13 || age > 120) {
                   return 'Age must be between 13 and 120';
+                }
                 return null;
               },
             ),
@@ -145,6 +167,114 @@ class _ProfileCompletionSheetState
               ],
               onChanged: (value) => setState(() => _gender = value ?? 'na'),
             ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _saving
+                        ? null
+                        : () async {
+                            final file = await ref
+                                .read(imagePickerProvider)
+                                .pickImage(source: ImageSource.gallery);
+                            if (file == null) return;
+                            final bytes = await file.readAsBytes();
+                            if (!mounted) return;
+                            setState(() {
+                              _pickedAvatarBytes = bytes;
+                              _selectedPreset = null;
+                            });
+                          },
+                    icon: const Icon(Icons.add_photo_alternate_rounded),
+                    label: const Text('Upload photo'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (_pickedAvatarBytes != null || _selectedPreset != null)
+                  IconButton(
+                    onPressed: _saving
+                        ? null
+                        : () => setState(() {
+                              _pickedAvatarBytes = null;
+                              _selectedPreset = null;
+                            }),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 74,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: kAvatarPresetAssets.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final asset = kAvatarPresetAssets[i];
+                  final selected = _selectedPreset == asset;
+                  return GestureDetector(
+                    onTap: _saving
+                        ? null
+                        : () => setState(() {
+                              _selectedPreset = asset;
+                              _pickedAvatarBytes = null;
+                            }),
+                    child: Container(
+                      width: 66,
+                      height: 66,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: selected
+                              ? AppTheme.primaryPink
+                              : Colors.white.withValues(alpha: 0.26),
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(
+                        asset,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.person),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (_pickedAvatarBytes != null || previewPath != null) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25)),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _pickedAvatarBytes != null
+                        ? Image.memory(_pickedAvatarBytes!, fit: BoxFit.cover)
+                        : Image.asset(previewPath!, fit: BoxFit.cover),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Avatar selected',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _saving ? null : _save,

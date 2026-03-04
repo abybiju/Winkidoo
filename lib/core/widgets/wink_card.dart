@@ -9,6 +9,8 @@ class WinkCard extends StatelessWidget {
     this.borderRadius = 28,
     this.onTap,
     this.gradient,
+    this.borderColor,
+    this.boxShadow,
   });
 
   final Widget child;
@@ -16,6 +18,8 @@ class WinkCard extends StatelessWidget {
   final double borderRadius;
   final VoidCallback? onTap;
   final Gradient? gradient;
+  final Color? borderColor;
+  final List<BoxShadow>? boxShadow;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +36,10 @@ class WinkCard extends StatelessWidget {
           ),
       borderRadius: BorderRadius.circular(borderRadius),
       border: Border.all(
-        color: AppTheme.pillBorder(brightness).withValues(alpha: 0.55),
+        color: borderColor ??
+            AppTheme.pillBorder(brightness).withValues(alpha: 0.55),
       ),
-      boxShadow: AppTheme.toyCardShadow(brightness),
+      boxShadow: boxShadow ?? AppTheme.toyCardShadow(brightness),
     );
 
     final content = Padding(padding: padding, child: child);

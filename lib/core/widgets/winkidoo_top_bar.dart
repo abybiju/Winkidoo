@@ -7,6 +7,9 @@ class WinkidooTopBar extends StatelessWidget {
     super.key,
     this.title,
     this.showLogo = true,
+    this.logoSize = 32,
+    this.logoTextSize = 20,
+    this.matchLogoToWordmark = false,
     this.notificationCount = 0,
     this.streakCount = 0,
     this.onNotificationTap,
@@ -17,6 +20,9 @@ class WinkidooTopBar extends StatelessWidget {
 
   final String? title;
   final bool showLogo;
+  final double logoSize;
+  final double logoTextSize;
+  final bool matchLogoToWordmark;
   final int notificationCount;
   final int streakCount;
   final VoidCallback? onNotificationTap;
@@ -27,8 +33,13 @@ class WinkidooTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final width = MediaQuery.sizeOf(context).width;
+    final compact = width < 380;
+    final computedLogoSize = matchLogoToWordmark
+        ? (logoTextSize * 1.04).clamp(20.0, 44.0).toDouble()
+        : logoSize;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 2 : 4, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white
             .withValues(alpha: brightness == Brightness.dark ? 0.03 : 0.6),
@@ -48,10 +59,10 @@ class WinkidooTopBar extends StatelessWidget {
           if (showLogo)
             Row(
               children: [
-                const SizedBox(width: 8),
+                SizedBox(width: compact ? 6 : 8),
                 SizedBox(
-                  height: 32,
-                  width: 32,
+                  height: computedLogoSize,
+                  width: computedLogoSize,
                   child: Image.asset(
                     'assets/images/winkidoo new logo.png',
                     fit: BoxFit.contain,
@@ -62,12 +73,13 @@ class WinkidooTopBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: compact ? 8 : 10),
                 Text(
                   'Winkidoo',
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w800,
-                    fontSize: 20,
+                    fontSize: logoTextSize,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),

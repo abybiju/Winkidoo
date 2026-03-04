@@ -6,6 +6,33 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of Mar 2026)
 
+### March 4, 2026 – Home/Vault/Footer redesign + avatar profiles + visual parity pass
+- **Top bar parity:** `WinkidooTopBar` adds `matchLogoToWordmark` so logo scales to wordmark presence on Home/Vault.
+- **Vault UX cleanup polish:** Featured chest copy is now a single-line sentence ("Open your next surprise when it feels right.") and no longer overlaps icon lock treatment.
+- **Persona/gender overlays (Vault):**
+  - New deterministic resolver `resolvePersonaAssetPath({personaId, userGender})` in `judge_asset_map.dart`.
+  - Vault hero/chest now resolve overlays from surprise personas + profile gender and force distinct overlays for top-zone cards.
+- **Footer/nav redesign (global shell):**
+  - `WinkBottomNav` now has style and icon abstractions (`WinkBottomNavStyle`, `WinkNavIconSet`).
+  - New color direction: blue-charcoal base + solid amber center Battle CTA (non-gradient).
+  - Switched to `phosphor_flutter` icons for unique visual identity.
+- **Profile avatar system (new users + existing users):**
+  - New constants/service/providers:
+    - `core/constants/avatar_presets.dart`
+    - `services/profile_avatar_service.dart`
+    - `userAvatarProfileProvider`, `effectiveProfileAvatarProvider`
+  - Avatar selection available in both profile completion sheet and profile editor:
+    - upload from device gallery
+    - select from Wink avatar preset assets
+  - Profile header now renders uploaded URL or preset asset fallback.
+- **Supabase data/storage update:**
+  - Added migration `010_profiles_avatar.sql`:
+    - `public.profiles` (avatar_mode, avatar_asset_path, avatar_storage_path, avatar_url, timestamps)
+    - RLS policies (own row select/insert/update)
+    - `updated_at` trigger
+    - storage bucket and policies for `profile-avatars`.
+- **Visual parity extension:** Winks and Profile pages now use Home/Vault background glow language and card surfaces.
+
 ### March 3, 2026 – Premium auth refresh + Home realignment + profile gating + judge assets
 - **Welcome/Get Started screen:** `WelcomeAuthScreen` updated to premium hero style with full background image (`assets/images/background .png`), headline/subheadline, and single CTA `Get Started` routed to `/login`; removed unwanted blur and refined spacing/alignment.
 - **Auth screen redesign (`/login`):** Minimal premium signup/login mode on one screen with updated logo treatment (`winkidoo new logo.png`), polished inputs/buttons, show/hide password, forgot password on login mode, and social stack for Google/Apple/Facebook using local PNG assets.
@@ -63,6 +90,7 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 ### Migrations (run in order)
 - 001–008: schema, battle_messages, wink_plus, surprise type/photo, blueprint v1, resolved_at, creator_defense RPC, realtime.
 - 009–010: user_push_tokens, multi-device.
+- 010: profiles avatar persistence + profile-avatars storage policies.
 - 011: judges data-driven (tagline, difficulty, chaos, tone_tags, preview_quotes, primary_color_hex, is_premium, season_start/end).
 - 012: judges.is_new.
 - 013: judges.season_push_sent.

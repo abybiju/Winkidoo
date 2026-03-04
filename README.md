@@ -47,6 +47,11 @@ After that, MVP1 is shippable; consider Phase 2 (push notifications or shareable
 4. **Storage (for photo/voice surprises)**
    - Create a Storage bucket named **`surprises`** in Supabase Dashboard → Storage, and add policies so authenticated users can upload and read. See **[docs/STORAGE_SETUP.md](docs/STORAGE_SETUP.md)**.
 
+4.1 **Profile avatars (new)**
+   - Run migration **010_profiles_avatar.sql** to create `public.profiles` and avatar storage policies.
+   - Ensure Storage bucket **`profile-avatars`** exists (migration creates it with public-read and owner-write/update policies).
+   - Avatar source supports device upload + local preset avatars in profile completion and profile editor.
+
 5. **Realtime (optional)**
    - In Supabase Dashboard → Database → Replication, add `surprises` table to the publication so new surprises push to the app.
 
