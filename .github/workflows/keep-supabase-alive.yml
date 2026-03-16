@@ -26,7 +26,7 @@ jobs:
               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Content-Type: application/json" \
-              -d '{"id":"00000000-0000-0000-0000-000000000000"}' \
+              -d '{}' \
               -w "%{http_code}" \
               -o /tmp/keepalive-response
           )
