@@ -21,8 +21,14 @@ jobs:
             exit 1
           fi
 
-          curl -sSf -X POST "${SUPABASE_URL}/rest/v1/keepalive" \
-            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"id":"00000000-0000-0000-0000-000000000000"}'
+          response=$(
+            curl -S -X POST "${SUPABASE_URL}/rest/v1/keepalive" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"id":"00000000-0000-0000-0000-000000000000"}' \
+              -w "%{http_code}" \
+              -o /tmp/keepalive-response
+          )
+          echo "Supabase keepalive response was: $response"
+          cat /tmp/keepalive-response
