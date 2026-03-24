@@ -37,6 +37,7 @@ class Quest {
   bool get isActive => status == 'active';
   bool get isCompleted => status == 'completed';
   bool get isBossBattle => currentStep == totalSteps - 1;
+  bool get isEmpty => id.isEmpty;
 
   /// Progress as a fraction 0.0–1.0.
   double get progress =>
@@ -48,6 +49,16 @@ class Quest {
     final t = currentStep / (totalSteps - 1);
     return (difficultyStart + (difficultyEnd - difficultyStart) * t).round().clamp(1, 5);
   }
+
+  factory Quest.empty() => Quest(
+    id: '',
+    coupleId: '',
+    creatorId: '',
+    title: '',
+    totalSteps: 0,
+    judgePersona: '',
+    createdAt: DateTime.now(),
+  );
 
   factory Quest.fromJson(Map<String, dynamic> json) {
     return Quest(

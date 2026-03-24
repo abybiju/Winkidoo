@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:winkidoo/models/quest.dart';
 import 'package:go_router/go_router.dart';
 import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
@@ -20,6 +21,7 @@ import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/achievements_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
+import 'package:winkidoo/providers/quest_provider.dart';
 import 'package:winkidoo/providers/season_recap_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
@@ -160,6 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final achievementsAsync = ref.watch(achievementsProvider);
     final seasonRecapAsync = ref.watch(seasonRecapProvider);
     final streakAsync = ref.watch(streakProvider);
+    final questsAsync = ref.watch(activeQuestsProvider);
 
     if (!_checkedHomeCelebrations &&
         achievementsAsync.hasValue &&
@@ -272,6 +275,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           height: judgeHeight,
                         ),
                         SizedBox(height: gap),
+                        _QuestSection(questsAsync: questsAsync),
+                        SizedBox(height: gap),
                         RecentWins(
                           surprises: recent,
                           judgeNameForPersona: HomeScreen.personaDisplayName,
@@ -287,6 +292,198 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _QuestSection extends StatelessWidget {
+  const _QuestSection({required this.questsAsync});
+
+  final AsyncValue<List<Quest>> questsAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return questsAsync.when(
+      data: (quests) {
+        final activeQuest = quests.firstWhere(
+          (q) => q.status == AppConstants.questStatusActive,
+          orElse: () => Quest.empty(),
+        );
+
+        if (activeQuest.isEmpty) {
+          // No active quest - show CTA
+          return GestureDetector(
+            onTap: () => context.push('/shell/quest/create'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.primaryPink.withValues(alpha: 0.15),
+                    AppTheme.primaryPink.withValues(alpha: 0.05),
+                  ],
+                ),
+                border: Border.all(
+                  color: AppTheme.primaryPink.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🗺️ Love Quest',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primaryPink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create a co-op surprise chain. Build together, unlock together.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: AppTheme.primaryPink.withValues(alpha: 0.2),
+                    ),
+                    child: const Text(
+                      'Start Love Quest ⚔️',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryPink,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Active quest - show progress
+        final progress = (activeQuest.currentStep / activeQuest.totalSteps * 100)
+            .toStringAsFixed(0);
+        return GestureDetector(
+          onTap: () => context.push('/shell/quest/${activeQuest.id}'),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryPink.withValues(alpha: 0.2),
+                  AppTheme.primaryPink.withValues(alpha: 0.08),
+                ],
+              ),
+              border: Border.all(
+                color: AppTheme.primaryPink.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        activeQuest.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryPink,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: AppTheme.primaryPink.withValues(alpha: 0.2),
+                      ),
+                      child: Text(
+                        'Step ${activeQuest.currentStep}/${activeQuest.totalSteps}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryPink,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: activeQuest.currentStep / activeQuest.totalSteps,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppTheme.primaryPink,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$progress% complete',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
+        child: const SizedBox(
+          height: 60,
+          child: Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }
