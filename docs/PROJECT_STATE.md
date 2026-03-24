@@ -109,6 +109,9 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - Couple Leaderboard: anonymous global ranking by XP, top 50, "You" highlight
 - Relationship Timeline: milestone map from existing surprise history (no new DB)
 - Home Screen Widget: iOS WidgetKit + Android App Widget — streak, pending surprises, daily prompt
+  - iOS: `WinkidooWidgetExtension` target in Xcode; App Group `group.com.winkidoo.app` added to both Runner and WinkidooWidgetExtension targets; entitlements wired; deployment target iOS 16; pending physical-device test
+  - Android: `WinkidooWidgetProvider.kt`, layout + info XML, registered in `AndroidManifest.xml`
+  - Flutter bridge: `lib/services/widget_service.dart` via `home_widget ^0.7.0`; called from `VaultListScreen` and `RevealScreen`
 
 ### Migrations (run in order)
 - 001–008: schema, battle_messages, wink_plus, surprise type/photo, blueprint v1, resolved_at, creator_defense RPC, realtime.
@@ -129,10 +132,16 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Next / optional
 
-- Complete iOS widget setup: add App Group `group.com.winkidoo.app` to Runner + WinkidooWidget targets in Xcode → Signing & Capabilities.
+- iOS widget: connect physical device → Cmd+R → long-press home → add Winkidoo widget to verify data bridge.
 - IAP/Stripe for Wink+ (wink_plus_until set by backend).
 - AI Love Coach (opt-in relationship insights from surprise patterns).
 - Push: filter tokens by updated_at last 90 days or users in a couple (scale).
+
+### March 24, 2026 — Phase 4 iOS widget Xcode wiring
+- App Group `group.com.winkidoo.app` added to Runner + WinkidooWidgetExtension targets (Signing & Capabilities).
+- Entitlements files committed: `ios/Runner/Runner.entitlements`, `ios/WinkidooWidgetExtension.entitlements`.
+- Widget deployment target set to iOS 16 in `project.pbxproj`.
+- Flutter code (all Phases 1–4) committed; all routes, services, providers, screens complete.
 
 ---
 
