@@ -27,6 +27,8 @@ import 'package:winkidoo/features/battle/persuasion_meter.dart';
 import 'package:winkidoo/features/battle/pre_battle_tease.dart';
 import 'package:winkidoo/services/battle_realtime_service.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
+import 'package:winkidoo/services/judge_memory_service.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
 
 class BattleChatScreen extends ConsumerStatefulWidget {
   const BattleChatScreen({super.key, required this.surpriseId});
@@ -202,12 +204,24 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           ? 'Surprise type: ${surprise.unlockMethod}'
           : 'romantic surprise';
       final howToImpressHint = _howToImpressHintForSurprise(surprise);
+      // Fetch judge memories so the AI remembers past battles
+      final couple = ref.read(coupleProvider).value;
+      List<String> judgeMemories = [];
+      if (couple != null) {
+        judgeMemories = await JudgeMemoryService.getMemories(
+          client,
+          couple.id,
+          surprise.judgePersona,
+        );
+      }
+
       final judgeResponse = await ai.judgeChat(
         persona: surprise.judgePersona,
         difficultyLevel: surprise.difficultyLevel,
         messages: messages,
         surpriseContextHint: surpriseContextHint,
         howToImpressHint: howToImpressHint,
+        judgeMemories: judgeMemories.isNotEmpty ? judgeMemories : null,
       );
 
       final isVerdictNow = judgeResponse.isVerdict;

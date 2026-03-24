@@ -25,6 +25,7 @@ import 'package:winkidoo/providers/quest_provider.dart';
 import 'package:winkidoo/providers/season_recap_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/xp_provider.dart';
 import 'package:winkidoo/services/achievement_storage_service.dart';
 import 'package:winkidoo/services/season_recap_storage_service.dart';
 
@@ -163,6 +164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final seasonRecapAsync = ref.watch(seasonRecapProvider);
     final streakAsync = ref.watch(streakProvider);
     final questsAsync = ref.watch(activeQuestsProvider);
+    final xpAsync = ref.watch(coupleXpProvider);
 
     if (!_checkedHomeCelebrations &&
         achievementsAsync.hasValue &&
@@ -186,6 +188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final recent = resolved.take(8).toList();
 
     final streakWeeks = streakAsync.value?.currentStreak ?? 0;
+    final levelCount = xpAsync.value?.currentLevel ?? 0;
 
     const fallbackJudge = Judge(
       id: 'fallback',
@@ -251,6 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           matchLogoToWordmark: true,
                           notificationCount: math.min(waitingForMe.length, 9),
                           streakCount: streakWeeks,
+                          levelCount: levelCount,
                           onNotificationTap: () => context.go('/shell/vault'),
                           onStreakTap: () => context.go('/shell/profile'),
                         ),

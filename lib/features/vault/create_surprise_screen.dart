@@ -18,6 +18,8 @@ import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
+import 'package:winkidoo/services/xp_service.dart';
+import 'package:winkidoo/providers/xp_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateSurpriseScreen extends ConsumerStatefulWidget {
@@ -230,6 +232,9 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       });
 
       ref.invalidate(surprisesListProvider);
+      // Award XP for creating a surprise
+      await XpService.awardXp(client, couple.id, AppConstants.xpPerSurpriseCreated);
+      ref.invalidate(coupleXpProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

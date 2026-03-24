@@ -192,6 +192,22 @@ Respond with JSON only, no markdown:
   /// the seeker has met the convincing threshold and returns a verdict (score + is_unlocked).
   /// [surpriseContextHint] optional non-revealing hint (e.g. "romantic message") so the judge can reference it.
   /// [howToImpressHint] optional extra guidance for "how to impress" answers (e.g. from game_mode or surprise_type).
+  /// Returns a mood context string based on time of day and weekday.
+  static String _buildMoodContext() {
+    final hour = DateTime.now().hour;
+    final weekday = DateTime.now().weekday;
+    if (hour >= 22 || hour < 6) {
+      return 'It\'s late night — love is sweeter after midnight. Be a little more lenient and dreamy tonight.';
+    }
+    if (weekday == DateTime.friday) {
+      return 'It\'s Friday! You\'re in a particularly generous, celebratory mood.';
+    }
+    if (weekday == DateTime.saturday || weekday == DateTime.sunday) {
+      return 'Weekend vibes — you\'re relaxed, playful, and slightly more forgiving.';
+    }
+    return '';
+  }
+
   Future<JudgeResponse> judgeChat({
     required String persona,
     required int difficultyLevel,
@@ -199,6 +215,7 @@ Respond with JSON only, no markdown:
     String? surpriseContextHint,
     String? howToImpressHint,
     List<String>? questBattleSummaries,
+    List<String>? judgeMemories,
   }) async {
     if (_apiKey.trim().isEmpty) {
       throw GeminiApiKeyMissingException();
@@ -261,11 +278,18 @@ Example (another persona — poetic nudge): {"commentary": "Thy words ring famil
         ? buildQuestContext(questBattleSummaries)
         : '';
 
+    final memoriesBlock = judgeMemories != null && judgeMemories.isNotEmpty
+        ? '\nYour memories of past battles with this couple:\n${judgeMemories.map((m) => '- $m').join('\n')}\nDraw on these naturally — reference past tactics if relevant, but don\'t repeat yourself.\n'
+        : '';
+
+    final moodContext = _buildMoodContext();
+    final moodBlock = moodContext.isNotEmpty ? '\nCurrent mood modifier: $moodContext\n' : '';
+
     final prompt = '''
 $_winkidooJudgeSystemPrompt
 
 $personaPrompt
-
+$memoriesBlock$moodBlock
 When the seeker or creator asks what they should do to impress you, or how to win, answer helpfully in character: give 1–3 concrete ideas. Do not refuse or only say "the magic comes from you" without adding actual suggestions. Use the guidance below to tailor your answer.
 
 Guidance for how-to-impress answers: $howToImpressBlock

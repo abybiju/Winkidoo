@@ -14,6 +14,7 @@ class WinkidooTopBar extends StatelessWidget {
     this.notificationCount = 0,
     this.streakCount = 0,
     this.streakTier = StreakTier.none,
+    this.levelCount = 0,
     this.onNotificationTap,
     this.onStreakTap,
     this.onProfileTap,
@@ -28,6 +29,7 @@ class WinkidooTopBar extends StatelessWidget {
   final int notificationCount;
   final int streakCount;
   final StreakTier streakTier;
+  final int levelCount;
   final VoidCallback? onNotificationTap;
   final VoidCallback? onStreakTap;
   final VoidCallback? onProfileTap;
@@ -100,6 +102,10 @@ class WinkidooTopBar extends StatelessWidget {
           const Spacer(),
           if (trailing != null) ...[
             trailing!,
+            const SizedBox(width: 8),
+          ],
+          if (levelCount > 0) ...[
+            _LevelBadge(level: levelCount),
             const SizedBox(width: 8),
           ],
           _ActionBubble(
@@ -258,6 +264,42 @@ class _StreakBubble extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _LevelBadge extends StatelessWidget {
+  const _LevelBadge({required this.level});
+
+  final int level;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF5C76B), Color(0xFFFF9A3E)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF9A3E).withValues(alpha: 0.3),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        'Lv $level',
+        style: GoogleFonts.poppins(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+        ),
+      ),
     );
   }
 }

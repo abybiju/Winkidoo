@@ -19,6 +19,9 @@ import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 import 'package:winkidoo/features/battle/widgets/battle_share_card.dart';
 import 'package:winkidoo/services/share_card_service.dart';
+import 'package:winkidoo/services/xp_service.dart';
+import 'package:winkidoo/services/judge_memory_service.dart';
+import 'package:winkidoo/providers/xp_provider.dart';
 
 class RevealScreen extends ConsumerStatefulWidget {
   const RevealScreen({
@@ -54,6 +57,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     );
     if (widget.judgeResponse.isUnlocked) {
       _loadContent();
+      _awardBattleRewards();
       if (!kIsWeb) {
         HapticFeedback.mediumImpact();
       }
@@ -62,6 +66,39 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       });
     } else {
       setState(() => _loading = false);
+    }
+  }
+
+  /// Awards XP and saves judge memory after a battle win. Non-critical.
+  Future<void> _awardBattleRewards() async {
+    final client = ref.read(supabaseClientProvider);
+    final couple = ref.read(coupleProvider).value;
+    if (couple == null) return;
+
+    // Award XP for winning a battle
+    await XpService.awardXp(client, couple.id, AppConstants.xpPerBattleWon);
+    ref.invalidate(coupleXpProvider);
+
+    // Save judge memory in background (get messages from DB then summarise)
+    const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+    if (apiKey.isNotEmpty) {
+      try {
+        final messages = await ref.read(
+          battleMessagesProvider(widget.surpriseId).future,
+        );
+        final surprise = await ref.read(
+          surpriseByIdProvider(widget.surpriseId).future,
+        );
+        if (surprise != null) {
+          await JudgeMemoryService.saveMemory(
+            client,
+            apiKey,
+            couple.id,
+            surprise.judgePersona,
+            messages,
+          );
+        }
+      } catch (_) {}
     }
   }
 
