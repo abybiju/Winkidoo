@@ -25,6 +25,9 @@ class Surprise {
     this.questId,
     this.questStep,
     this.unlockAfter,
+    this.isCollaborative = false,
+    this.collabPartnerPieceEncrypted,
+    this.collabPartnerStatus = 'pending',
   });
 
   final String id;
@@ -40,9 +43,7 @@ class Surprise {
   final DateTime createdAt;
   final String surpriseType;
   final String? contentStoragePath;
-  /// active = battle in progress; resolved = ended
   final String battleStatus;
-  /// When battle_status was set to resolved (null while active).
   final DateTime? resolvedAt;
   final bool archivedFlag;
   final int seekerScore;
@@ -51,25 +52,23 @@ class Surprise {
   final DateTime? lastActivityAt;
   final String? winner;
   final int creatorDefenseCount;
-
-  /// Quest link: null for standalone surprises.
   final String? questId;
-
-  /// Step index within the quest (0-based).
   final int? questStep;
-
-  /// Time Capsule: surprise cannot be unlocked before this date.
   final DateTime? unlockAfter;
+
+  /// Collaborative vault fields
+  final bool isCollaborative;
+  final String? collabPartnerPieceEncrypted;
+  /// pending = partner hasn't added piece yet; added = ready for battle
+  final String collabPartnerStatus;
 
   bool get isPhoto => surpriseType == 'photo';
   bool get isVoice => surpriseType == 'voice';
-
-  /// True if this surprise is part of a Love Quest.
   bool get isQuestSurprise => questId != null;
-
-  /// True if this is a time capsule that hasn't reached its unlock date yet.
   bool get isTimeLocked =>
       unlockAfter != null && unlockAfter!.isAfter(DateTime.now());
+  bool get isAwaitingCollabPiece =>
+      isCollaborative && collabPartnerStatus == 'pending';
 
   factory Surprise.fromJson(Map<String, dynamic> json) {
     return Surprise(
@@ -108,6 +107,11 @@ class Surprise {
       unlockAfter: json['unlock_after'] != null
           ? DateTime.parse(json['unlock_after'] as String)
           : null,
+      isCollaborative: json['is_collaborative'] as bool? ?? false,
+      collabPartnerPieceEncrypted:
+          json['collab_partner_piece_encrypted'] as String?,
+      collabPartnerStatus:
+          (json['collab_partner_status'] as String?) ?? 'pending',
     );
   }
 
@@ -138,6 +142,9 @@ class Surprise {
       'quest_id': questId,
       'quest_step': questStep,
       'unlock_after': unlockAfter?.toIso8601String(),
+      'is_collaborative': isCollaborative,
+      'collab_partner_piece_encrypted': collabPartnerPieceEncrypted,
+      'collab_partner_status': collabPartnerStatus,
     };
   }
 }

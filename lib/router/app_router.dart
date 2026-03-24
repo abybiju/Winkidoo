@@ -26,6 +26,12 @@ import 'package:winkidoo/core/widgets/wink_bottom_nav.dart';
 import 'package:winkidoo/features/quest/quest_create_screen.dart';
 import 'package:winkidoo/features/quest/quest_progress_screen.dart';
 import 'package:winkidoo/features/quest/quest_complete_screen.dart';
+import 'package:winkidoo/features/battlepass/battle_pass_screen.dart';
+import 'package:winkidoo/features/referral/referral_screen.dart';
+import 'package:winkidoo/features/vault/add_collab_piece_screen.dart';
+import 'package:winkidoo/features/collection/collection_screen.dart';
+import 'package:winkidoo/features/leaderboard/leaderboard_screen.dart';
+import 'package:winkidoo/features/timeline/timeline_screen.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
@@ -323,6 +329,33 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           return QuestProgressScreen(questId: id);
         },
+      ),
+      GoRoute(
+        path: '/shell/battle-pass',
+        builder: (_, __) => const BattlePassScreen(),
+      ),
+      GoRoute(
+        path: '/shell/referral',
+        builder: (_, __) => const ReferralScreen(),
+      ),
+      GoRoute(
+        path: '/shell/collab-piece/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return AddCollabPieceScreen(surpriseId: id);
+        },
+      ),
+      GoRoute(
+        path: '/shell/collection',
+        builder: (_, __) => const CollectionScreen(),
+      ),
+      GoRoute(
+        path: '/shell/leaderboard',
+        builder: (_, __) => const LeaderboardScreen(),
+      ),
+      GoRoute(
+        path: '/shell/timeline',
+        builder: (_, __) => const TimelineScreen(),
       ),
       GoRoute(
         path: '/shell/treasure-archive',

@@ -21,6 +21,9 @@ import 'package:winkidoo/features/battle/widgets/battle_share_card.dart';
 import 'package:winkidoo/services/share_card_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
 import 'package:winkidoo/services/judge_memory_service.dart';
+import 'package:winkidoo/services/battle_pass_service.dart';
+import 'package:winkidoo/services/collectible_service.dart';
+import 'package:winkidoo/providers/collectible_provider.dart';
 import 'package:winkidoo/providers/xp_provider.dart';
 
 class RevealScreen extends ConsumerStatefulWidget {
@@ -43,6 +46,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
   final _shareCardKey = GlobalKey();
   late ConfettiController _confettiController;
   String? _decryptedContent;
+  String? _partnerPiece;
   String? _photoUrl;
   String? _voiceUrl;
   bool _loading = true;
@@ -78,6 +82,26 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     // Award XP for winning a battle
     await XpService.awardXp(client, couple.id, AppConstants.xpPerBattleWon);
     ref.invalidate(coupleXpProvider);
+
+    // Award Battle Pass points for winning
+    await BattlePassService.awardPoints(client, couple.id, 10);
+
+    // Award collectible card
+    try {
+      final surprise = await ref.read(
+        surpriseByIdProvider(widget.surpriseId).future,
+      );
+      if (surprise != null) {
+        await CollectibleService.awardCard(
+          client,
+          coupleId: couple.id,
+          judgePersona: surprise.judgePersona,
+          battleId: widget.surpriseId,
+          seekerScore: surprise.seekerScore,
+        );
+        ref.invalidate(collectiblesProvider);
+      }
+    } catch (_) {}
 
     // Save judge memory in background (get messages from DB then summarise)
     const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
@@ -259,8 +283,21 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
         contentEncrypted,
         coupleId: couple?.id,
       );
+
+      // Decrypt collab partner piece if present
+      final collabEncrypted =
+          res['collab_partner_piece_encrypted'] as String?;
+      String? partnerPiece;
+      if (collabEncrypted != null && collabEncrypted.isNotEmpty) {
+        partnerPiece = await EncryptionService.decrypt(
+          collabEncrypted,
+          coupleId: couple?.id,
+        );
+      }
+
       setState(() {
         _decryptedContent = decrypted;
+        _partnerPiece = partnerPiece;
         _loading = false;
       });
     } catch (e) {
@@ -421,22 +458,102 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                             ),
                           ),
                         )
-                      else if (_decryptedContent != null)
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppTheme.accent, width: 2),
+                      else if (_decryptedContent != null) ...[
+                        if (_partnerPiece != null) ...[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Creator\'s piece',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.surface,
+                                        borderRadius:
+                                            BorderRadius.circular(14),
+                                        border: Border.all(
+                                            color: AppTheme.accent,
+                                            width: 2),
+                                      ),
+                                      child: Text(
+                                        _decryptedContent!,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Partner\'s piece',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.surface,
+                                        borderRadius:
+                                            BorderRadius.circular(14),
+                                        border: Border.all(
+                                            color: AppTheme.primaryPink,
+                                            width: 2),
+                                      ),
+                                      child: Text(
+                                        _partnerPiece!,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Text(
-                            _decryptedContent!,
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              color: AppTheme.textPrimary,
+                        ] else
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border:
+                                  Border.all(color: AppTheme.accent, width: 2),
+                            ),
+                            child: Text(
+                              _decryptedContent!,
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                color: AppTheme.textPrimary,
+                              ),
                             ),
                           ),
-                        ),
+                      ],
                     ] else if (widget.judgeResponse.hint != null) ...[
                       const SizedBox(height: 16),
                       Text(

@@ -19,6 +19,7 @@ import 'package:winkidoo/features/vault/wink_plus_screen.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/services/widget_service.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
@@ -50,7 +51,10 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _subscribePresence());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _subscribePresence();
+      WidgetService.init();
+    });
   }
 
   void _subscribePresence() {
@@ -62,10 +66,8 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     _presenceChannel!
       ..onPresenceSync((_) {
         final state = _presenceChannel!.presenceState();
-        final partnerCrafting = state.entries.any((e) =>
-            e.value.any((p) =>
-                p.payload['crafting'] == true &&
-                p.payload['user_id'] != myId));
+        final partnerCrafting = state.any((entry) =>
+            entry.presences.any((p) => p.payload['crafting'] == true));
         if (mounted) setState(() => _partnerCrafting = partnerCrafting);
       })
       ..subscribe();
@@ -182,8 +184,17 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
           SafeArea(
             child: surprisesAsync.when(
               data: (surprises) {
+                final collabAwaitingMe = surprises
+                    .where((s) =>
+                        s.isCollaborative &&
+                        s.isAwaitingCollabPiece &&
+                        s.creatorId != user?.id)
+                    .toList();
                 final waiting = surprises
-                    .where((s) => s.creatorId != user?.id && !s.isUnlocked)
+                    .where((s) =>
+                        s.creatorId != user?.id &&
+                        !s.isUnlocked &&
+                        !(s.isCollaborative && s.isAwaitingCollabPiece))
                     .toList();
                 final myVault =
                     surprises.where((s) => s.creatorId == user?.id).toList();
@@ -199,11 +210,20 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                   personaId: overlayPair.$2,
                   userGender: userGender,
                 );
-                final isEmpty = waiting.isEmpty && myVault.isEmpty;
+                final isEmpty =
+                    collabAwaitingMe.isEmpty && waiting.isEmpty && myVault.isEmpty;
                 final linkedAt = couple?.linkedAt;
                 final streakDays = linkedAt == null
                     ? 0
                     : DateTime.now().difference(linkedAt.toLocal()).inDays + 1;
+
+                // Update home screen widget
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  WidgetService.update(
+                    streak: streakDays,
+                    pendingSurprises: waiting.length + collabAwaitingMe.length,
+                  );
+                });
 
                 return CustomScrollView(
                   slivers: [
@@ -345,6 +365,20 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                             120),
                         sliver: SliverList.list(
                           children: [
+                            if (collabAwaitingMe.isNotEmpty) ...[
+                              _SectionTitle(
+                                title: 'Add Your Piece',
+                                actionLabel: '',
+                                onActionTap: () {},
+                              ),
+                              const SizedBox(height: 8),
+                              ...collabAwaitingMe.map((s) => _CollabPieceCard(
+                                    surprise: s,
+                                    onTap: () => context
+                                        .push('/shell/collab-piece/${s.id}'),
+                                  )),
+                              const SizedBox(height: 8),
+                            ],
                             if (waiting.isNotEmpty) ...[
                               _SectionTitle(
                                 title: 'Waiting for You',
@@ -1259,5 +1293,69 @@ class _SurpriseCard extends StatelessWidget {
       default:
         return id;
     }
+  }
+}
+
+class _CollabPieceCard extends StatelessWidget {
+  const _CollabPieceCard({required this.surprise, required this.onTap});
+
+  final Surprise surprise;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: WinkCard(
+        borderRadius: 24,
+        borderColor: AppTheme.primaryPink.withValues(alpha: 0.5),
+        onTap: onTap,
+        child: Row(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryPink.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: AppTheme.primaryPink.withValues(alpha: 0.4)),
+              ),
+              child: const Text('🤝', style: TextStyle(fontSize: 24)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Add your piece',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Your partner is waiting for your contribution',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: AppTheme.primaryPink.withValues(alpha: 0.8)),
+          ],
+        ),
+      ),
+    );
   }
 }

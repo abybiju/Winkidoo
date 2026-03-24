@@ -98,6 +98,41 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   const _AchievementsSection(),
                   const SizedBox(height: 16),
+                  _ProfileActionCard(
+                    icon: Icons.style_rounded,
+                    label: 'Judge Collection',
+                    subtitle: 'Collectible cards earned in battle',
+                    onTap: () => context.push('/shell/collection'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ProfileActionCard(
+                    icon: Icons.leaderboard_rounded,
+                    label: 'Leaderboard',
+                    subtitle: 'See how you rank globally',
+                    onTap: () => context.push('/shell/leaderboard'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ProfileActionCard(
+                    icon: Icons.timeline_rounded,
+                    label: 'Our Journey',
+                    subtitle: 'Milestones of your relationship',
+                    onTap: () => context.push('/shell/timeline'),
+                  ),
+                  const SizedBox(height: 16),
+                  _ProfileActionCard(
+                    icon: Icons.military_tech_rounded,
+                    label: 'Battle Pass',
+                    subtitle: 'Track your seasonal progress',
+                    onTap: () => context.push('/shell/battle-pass'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ProfileActionCard(
+                    icon: Icons.people_rounded,
+                    label: 'Invite a Couple',
+                    subtitle: 'Earn +50 Winks for each referral',
+                    onTap: () => context.push('/shell/referral'),
+                  ),
+                  const SizedBox(height: 16),
                   _TreasureArchiveCard(
                       onTap: () => context.push('/shell/treasure-archive')),
                   const SizedBox(height: 16),
@@ -1211,6 +1246,48 @@ class _AchievementBadge extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: circle,
+    );
+  }
+}
+
+class _ProfileActionCard extends StatelessWidget {
+  const _ProfileActionCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
+      child: ListTile(
+        leading: Icon(icon, color: AppTheme.primaryPink),
+        title: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded,
+            color: AppTheme.textSecondary),
+        onTap: onTap,
+      ),
     );
   }
 }

@@ -19,6 +19,7 @@ import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
+import 'package:winkidoo/services/battle_pass_service.dart';
 import 'package:winkidoo/providers/xp_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -46,6 +47,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   int _autoDeleteHours = 0;
   DateTime? _unlockAfter;
   bool _isTimeCapsule = false;
+  bool _isCollaborative = false;
   bool _isLoading = false;
   bool _showJudgeSelection = true;
   late AnimationController _formFadeController;
@@ -246,14 +248,16 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'is_unlocked': false,
         'battle_status': 'active',
         'surprise_type': 'text',
+        'is_collaborative': _isCollaborative,
         if (_unlockAfter != null)
           'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
       });
 
       ref.invalidate(surprisesListProvider);
-      // Award XP for creating a surprise
+      // Award XP and Battle Pass points for creating a surprise
       await XpService.awardXp(client, couple.id, AppConstants.xpPerSurpriseCreated);
       ref.invalidate(coupleXpProvider);
+      await BattlePassService.awardPoints(client, couple.id, 5);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -797,6 +801,42 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                             ),
                           ),
                         ],
+                        const SizedBox(height: 16),
+                        // Collaborative toggle
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Collaborative',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Your partner adds their piece too',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: _isCollaborative,
+                              activeColor: AppTheme.primaryPink,
+                              onChanged: (v) =>
+                                  setState(() => _isCollaborative = v),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 32),
                         Semantics(
                           label: 'Create surprise',
