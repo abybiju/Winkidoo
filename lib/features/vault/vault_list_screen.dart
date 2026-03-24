@@ -166,13 +166,11 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                   waiting: waiting,
                   myVault: myVault,
                 );
-                final heroOverlayAsset =
-                    JudgeAssetResolver.resolvePersonaAssetPath(
+                final heroOverlayAsset = _resolveOverlayAssetPath(
                   personaId: overlayPair.$1,
                   userGender: userGender,
                 );
-                final chestOverlayAsset =
-                    JudgeAssetResolver.resolvePersonaAssetPath(
+                final chestOverlayAsset = _resolveOverlayAssetPath(
                   personaId: overlayPair.$2,
                   userGender: userGender,
                 );
@@ -225,21 +223,6 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: widget.isDesktopSidebar ? 12 : 14),
-                      sliver: SliverToBoxAdapter(
-                        child: Text(
-                          'My Vault',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: widget.isDesktopSidebar ? 23 : 31,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -939,12 +922,25 @@ class _ChestCallout extends StatelessWidget {
   );
   String secondary = orderedCandidates.firstWhere(
     (p) => p.trim().isNotEmpty && p != primary,
-    orElse: () => AppConstants.personaSassyCupid,
+    orElse: () => AppConstants.personaChaosGremlin,
   );
   if (secondary == primary) {
-    secondary = AppConstants.personaDrLove;
+    secondary = AppConstants.personaChaosGremlin;
   }
   return (primary, secondary);
+}
+
+String _resolveOverlayAssetPath({
+  required String personaId,
+  required String userGender,
+}) {
+  final personaForOverlay = personaId == AppConstants.personaDrLove
+      ? AppConstants.personaTheEx
+      : personaId;
+  return JudgeAssetResolver.resolvePersonaAssetPath(
+    personaId: personaForOverlay,
+    userGender: userGender,
+  );
 }
 
 class _MyVaultCard extends ConsumerWidget {
@@ -1093,13 +1089,18 @@ class _SurpriseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final personaLabel = _personaLabel(surprise.judgePersona);
-    final accent = isForMe ? AppTheme.vaultCardUrgent : AppTheme.vaultCardOwned;
+    final isTimeLocked = surprise.isTimeLocked;
+    final accent = isTimeLocked
+        ? AppTheme.premiumGold
+        : isForMe
+            ? AppTheme.vaultCardUrgent
+            : AppTheme.vaultCardOwned;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: WinkCard(
         borderRadius: 24,
         borderColor: accent.withValues(alpha: 0.38),
-        onTap: onTap,
+        onTap: isTimeLocked ? null : onTap,
         child: Row(
           children: [
             Container(
@@ -1112,7 +1113,11 @@ class _SurpriseCard extends StatelessWidget {
                 border: Border.all(color: accent.withValues(alpha: 0.44)),
               ),
               child: Text(
-                isForMe ? '💌' : '🔒',
+                isTimeLocked
+                    ? '\u{231B}'
+                    : isForMe
+                        ? '\u{1F48C}'
+                        : '\u{1F512}',
                 style: const TextStyle(fontSize: 24),
               ),
             ),
@@ -1122,7 +1127,11 @@ class _SurpriseCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isForMe ? 'Unlock this surprise' : 'Your sealed surprise',
+                    isTimeLocked
+                        ? 'Time Capsule'
+                        : isForMe
+                            ? 'Unlock this surprise'
+                            : 'Your sealed surprise',
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
@@ -1130,26 +1139,51 @@ class _SurpriseCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    subtitle ?? 'Judge: $personaLabel',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
+                  if (isTimeLocked)
+                    Text(
+                      _countdownText(surprise.unlockAfter!),
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.premiumGold,
+                      ),
+                    )
+                  else
+                    Text(
+                      subtitle ?? 'Judge: $personaLabel',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.7),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
-            if (isForMe || subtitle != null)
+            if (isTimeLocked)
+              Icon(Icons.hourglass_top_rounded,
+                  color: AppTheme.premiumGold.withValues(alpha: 0.6), size: 20)
+            else if (isForMe || subtitle != null)
               Icon(Icons.chevron_right_rounded, color: accent),
           ],
         ),
       ),
     );
+  }
+
+  String _countdownText(DateTime unlockAt) {
+    final diff = unlockAt.difference(DateTime.now());
+    if (diff.inDays > 0) {
+      return 'Unlocks in ${diff.inDays} day${diff.inDays == 1 ? '' : 's'}';
+    } else if (diff.inHours > 0) {
+      return 'Unlocks in ${diff.inHours} hour${diff.inHours == 1 ? '' : 's'}';
+    } else if (diff.inMinutes > 0) {
+      return 'Unlocks in ${diff.inMinutes} min';
+    }
+    return 'Unlocking soon...';
   }
 
   String _personaLabel(String id) {

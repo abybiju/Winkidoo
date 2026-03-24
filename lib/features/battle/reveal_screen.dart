@@ -17,6 +17,8 @@ import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
+import 'package:winkidoo/features/battle/widgets/battle_share_card.dart';
+import 'package:winkidoo/services/share_card_service.dart';
 
 class RevealScreen extends ConsumerStatefulWidget {
   const RevealScreen({
@@ -35,6 +37,7 @@ class RevealScreen extends ConsumerStatefulWidget {
 }
 
 class _RevealScreenState extends ConsumerState<RevealScreen> {
+  final _shareCardKey = GlobalKey();
   late ConfettiController _confettiController;
   String? _decryptedContent;
   String? _photoUrl;
@@ -443,6 +446,47 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                       ),
                     ],
                     const Spacer(),
+                    // Share battle highlight card
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await showDialog(
+                            context: context,
+                            builder: (ctx) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  RepaintBoundary(
+                                    key: _shareCardKey,
+                                    child: BattleShareCard(
+                                      judgePersona: surprise?.judgePersona ?? AppConstants.personaSassyCupid,
+                                      bestQuote: widget.judgeResponse.commentary,
+                                      won: widget.judgeResponse.isUnlocked,
+                                      difficulty: surprise?.difficultyLevel ?? 2,
+                                      seekerScore: widget.judgeResponse.score,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      ShareCardService.shareCard(_shareCardKey);
+                                      Navigator.pop(ctx);
+                                    },
+                                    icon: const Icon(Icons.share_rounded),
+                                    label: const Text('Share'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.share_rounded),
+                        label: const Text('Share Battle Card'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

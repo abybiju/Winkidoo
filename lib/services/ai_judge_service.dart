@@ -198,6 +198,7 @@ Respond with JSON only, no markdown:
     required List<BattleMessage> messages,
     String? surpriseContextHint,
     String? howToImpressHint,
+    List<String>? questBattleSummaries,
   }) async {
     if (_apiKey.trim().isEmpty) {
       throw GeminiApiKeyMissingException();
@@ -256,6 +257,10 @@ Example when a message sounds like a web quote (nudge, different opener): {"comm
 Example (another persona — poetic nudge): {"commentary": "Thy words ring familiar, as if borrowed from another's quill. Pray, let thy own heart speak — I would hear what only thou couldst say.", "mood_emoji": "🌸"}
 ''';
 
+    final questContext = questBattleSummaries != null && questBattleSummaries.isNotEmpty
+        ? buildQuestContext(questBattleSummaries)
+        : '';
+
     final prompt = '''
 $_winkidooJudgeSystemPrompt
 
@@ -267,6 +272,7 @@ Guidance for how-to-impress answers: $howToImpressBlock
 
 You are the judge in a live battle. The seeker wants to unlock a hidden romantic surprise; the creator argues to keep it locked. There are NO fixed rounds — you decide when the seeker has earned a verdict. Required score to unlock: $required.
 ${surpriseContextHint != null ? '\nContext (do not reveal): $surpriseContextHint' : ''}
+$questContext
 
 Conversation so far:
 ---
@@ -414,6 +420,77 @@ Your previous reply had no commentary. You must respond with your actual in-char
       howToImpressHint: null,
     );
     return response.commentary;
+  }
+
+  /// Generates a personalized surprise prompt/idea for the creator.
+  /// Uses couple stats to suggest varied and relevant surprise types.
+  Future<String> generateSurprisePrompt({
+    int totalSurprises = 0,
+    int textCount = 0,
+    int photoCount = 0,
+    int voiceCount = 0,
+    String? partnerName,
+  }) async {
+    if (_apiKey.trim().isEmpty) {
+      throw GeminiApiKeyMissingException();
+    }
+
+    final statsContext = StringBuffer();
+    if (totalSurprises > 0) {
+      statsContext.writeln('The couple has created $totalSurprises surprises so far ($textCount text, $photoCount photo, $voiceCount voice).');
+    }
+    if (partnerName != null && partnerName.isNotEmpty) {
+      statsContext.writeln("The partner's name is $partnerName.");
+    }
+
+    // Suggest under-used types
+    final suggestions = <String>[];
+    if (photoCount == 0) suggestions.add('They have never sent a photo surprise — suggest one.');
+    if (voiceCount == 0) suggestions.add('They have never sent a voice note — suggest one.');
+
+    final prompt = '''
+You are Winkidoo's surprise idea generator. Generate ONE creative, specific, actionable surprise idea for a couple. The idea should be romantic, fun, and personal.
+
+$statsContext
+${suggestions.isNotEmpty ? 'Suggestions: ${suggestions.join(' ')}' : ''}
+
+Rules:
+- Return a JSON object with: {"title": "<short catchy title, 3-6 words>", "description": "<1-2 sentence description of what to create>", "type": "<text|photo|voice>"}
+- Make it specific and personal, not generic
+- Vary between romantic, playful, nostalgic, and adventurous themes
+- Keep it PG-13 and wholesome
+- Be creative — think date memories, inside jokes, future plans, appreciations, challenges
+
+Respond with JSON only, no markdown.
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      final json = _parseJsonFromResponse(text);
+      final title = json['title'] as String? ?? 'A surprise for your partner';
+      final desc = json['description'] as String? ?? 'Create something special for your partner.';
+      final type = json['type'] as String? ?? 'text';
+      return '$title|$desc|$type';
+    } catch (e) {
+      debugPrint('generateSurprisePrompt error: $e');
+      return 'Memory Lane|Write about a favorite memory with your partner — something that still makes you smile.|text';
+    }
+  }
+
+  /// Generates quest-aware judge context from previous battle summaries.
+  /// Returns a prompt snippet to inject into the judge system prompt.
+  static String buildQuestContext(List<String> previousBattleSummaries) {
+    if (previousBattleSummaries.isEmpty) return '';
+    final buffer = StringBuffer();
+    buffer.writeln('\n--- QUEST MEMORY ---');
+    buffer.writeln('This battle is part of a Love Quest chain. You have judged this couple before in earlier steps:');
+    for (var i = 0; i < previousBattleSummaries.length; i++) {
+      buffer.writeln('Step ${i + 1}: ${previousBattleSummaries[i]}');
+    }
+    buffer.writeln('Reference these past interactions naturally. Build on what happened before. Escalate your expectations.');
+    buffer.writeln('--- END QUEST MEMORY ---');
+    return buffer.toString();
   }
 
   /// Parses JSON from model output. Tolerates markdown code fences and surrounding text.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/providers/streak_provider.dart';
 
 class WinkidooTopBar extends StatelessWidget {
   const WinkidooTopBar({
@@ -12,6 +13,7 @@ class WinkidooTopBar extends StatelessWidget {
     this.matchLogoToWordmark = false,
     this.notificationCount = 0,
     this.streakCount = 0,
+    this.streakTier = StreakTier.none,
     this.onNotificationTap,
     this.onStreakTap,
     this.onProfileTap,
@@ -25,6 +27,7 @@ class WinkidooTopBar extends StatelessWidget {
   final bool matchLogoToWordmark;
   final int notificationCount;
   final int streakCount;
+  final StreakTier streakTier;
   final VoidCallback? onNotificationTap;
   final VoidCallback? onStreakTap;
   final VoidCallback? onProfileTap;
@@ -105,10 +108,10 @@ class WinkidooTopBar extends StatelessWidget {
             badgeCount: notificationCount,
           ),
           const SizedBox(width: 10),
-          _ActionBubble(
-            icon: Icons.local_fire_department_rounded,
+          _StreakBubble(
+            streakCount: streakCount,
+            streakTier: streakTier,
             onTap: onStreakTap ?? onProfileTap,
-            badgeCount: streakCount,
           ),
           const SizedBox(width: 8),
         ],
@@ -168,6 +171,88 @@ class _ActionBubble extends StatelessWidget {
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
                   fontSize: badgeCount > 99 ? 8 : 10,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Streak-tier-aware fire bubble with color escalation.
+class _StreakBubble extends StatelessWidget {
+  const _StreakBubble({
+    required this.streakCount,
+    required this.streakTier,
+    required this.onTap,
+  });
+
+  final int streakCount;
+  final StreakTier streakTier;
+  final VoidCallback? onTap;
+
+  (List<Color>, Color) _tierColors() {
+    switch (streakTier) {
+      case StreakTier.none:
+        return ([const Color(0xFFFFF2A2), const Color(0xFFFFD645)], const Color(0xFF8C5D00));
+      case StreakTier.flame:
+        return ([const Color(0xFFFF9A3E), const Color(0xFFFF6B2C)], Colors.white);
+      case StreakTier.doubleFlame:
+        return ([const Color(0xFFFF6B2C), const Color(0xFFE85D93)], Colors.white);
+      case StreakTier.blueFlame:
+        return ([const Color(0xFF3B82F6), const Color(0xFF8B5CF6)], Colors.white);
+      case StreakTier.legendary:
+        return ([const Color(0xFFF5C76B), const Color(0xFFFF6B2C)], Colors.white);
+    }
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    final (gradientColors, iconColor) = _tierColors();
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Ink(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: gradientColors,
+              ),
+            ),
+            child: Icon(
+              Icons.local_fire_department_rounded,
+              color: iconColor,
+              size: 22,
+            ),
+          ),
+        ),
+        if (streakCount > 0)
+          Positioned(
+            right: -4,
+            top: -4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFE85D93),
+              ),
+              child: Text(
+                streakCount > 99 ? '99+' : '$streakCount',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: streakCount > 99 ? 8 : 10,
                 ),
               ),
             ),

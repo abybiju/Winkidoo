@@ -22,6 +22,9 @@ class Surprise {
     this.lastActivityAt,
     this.winner,
     this.creatorDefenseCount = 0,
+    this.questId,
+    this.questStep,
+    this.unlockAfter,
   });
 
   final String id;
@@ -49,8 +52,24 @@ class Surprise {
   final String? winner;
   final int creatorDefenseCount;
 
+  /// Quest link: null for standalone surprises.
+  final String? questId;
+
+  /// Step index within the quest (0-based).
+  final int? questStep;
+
+  /// Time Capsule: surprise cannot be unlocked before this date.
+  final DateTime? unlockAfter;
+
   bool get isPhoto => surpriseType == 'photo';
   bool get isVoice => surpriseType == 'voice';
+
+  /// True if this surprise is part of a Love Quest.
+  bool get isQuestSurprise => questId != null;
+
+  /// True if this is a time capsule that hasn't reached its unlock date yet.
+  bool get isTimeLocked =>
+      unlockAfter != null && unlockAfter!.isAfter(DateTime.now());
 
   factory Surprise.fromJson(Map<String, dynamic> json) {
     return Surprise(
@@ -84,6 +103,11 @@ class Surprise {
           : null,
       winner: json['winner'] as String?,
       creatorDefenseCount: json['creator_defense_count'] as int? ?? 0,
+      questId: json['quest_id'] as String?,
+      questStep: json['quest_step'] as int?,
+      unlockAfter: json['unlock_after'] != null
+          ? DateTime.parse(json['unlock_after'] as String)
+          : null,
     );
   }
 
@@ -111,6 +135,9 @@ class Surprise {
       'last_activity_at': lastActivityAt?.toIso8601String(),
       'winner': winner,
       'creator_defense_count': creatorDefenseCount,
+      'quest_id': questId,
+      'quest_step': questStep,
+      'unlock_after': unlockAfter?.toIso8601String(),
     };
   }
 }

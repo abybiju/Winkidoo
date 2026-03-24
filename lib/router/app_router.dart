@@ -23,6 +23,9 @@ import 'package:winkidoo/features/vault/wink_plus_screen.dart';
 import 'package:winkidoo/features/winks/winks_tab_screen.dart';
 import 'package:winkidoo/core/layout/responsive_vault_shell.dart';
 import 'package:winkidoo/core/widgets/wink_bottom_nav.dart';
+import 'package:winkidoo/features/quest/quest_create_screen.dart';
+import 'package:winkidoo/features/quest/quest_progress_screen.dart';
+import 'package:winkidoo/features/quest/quest_complete_screen.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
@@ -302,6 +305,24 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/shell/wink-plus',
         builder: (_, __) => const WinkPlusScreen(),
+      ),
+      GoRoute(
+        path: '/shell/quest/create',
+        builder: (_, __) => const QuestCreateScreen(),
+      ),
+      GoRoute(
+        path: '/shell/quest/complete/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return QuestCompleteScreen(questId: id);
+        },
+      ),
+      GoRoute(
+        path: '/shell/quest/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return QuestProgressScreen(questId: id);
+        },
       ),
       GoRoute(
         path: '/shell/treasure-archive',

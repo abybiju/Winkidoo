@@ -73,4 +73,34 @@ class AppConstants {
 
   /// Minimum effective resistance drop (points) to show "Resistance weakened..." (avoids noise from tiny drops).
   static const int fatigueWeakenedMinDrop = 3;
+
+  // ── Love Quests ──
+
+  /// Min/max steps in a quest chain.
+  static const int questMinSteps = 3;
+  static const int questMaxSteps = 7;
+
+  /// Quest statuses.
+  static const String questStatusActive = 'active';
+  static const String questStatusCompleted = 'completed';
+  static const String questStatusAbandoned = 'abandoned';
+
+  // ── Daily Streaks ──
+
+  /// Winks cost for a streak freeze (one day).
+  static const int streakFreezeCostWinks = 10;
+
+  /// Activity types for daily_activity_log.
+  static const String activitySurpriseCreated = 'surprise_created';
+  static const String activityMessageSent = 'message_sent';
+  static const String activityBattleResolved = 'battle_resolved';
+  static const String activityQuestStep = 'quest_step';
+
+  // ── XP System (Phase 2 prep) ──
+
+  static const int xpPerSurpriseCreated = 10;
+  static const int xpPerBattleWon = 25;
+  static const int xpPerStreakDay = 5;
+  static const int xpPerQuestCompleted = 100;
+  static const int xpPerQuestStep = 15;
 }

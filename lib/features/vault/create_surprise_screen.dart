@@ -41,6 +41,8 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   String _judgePersona = AppConstants.personaSassyCupid;
   int _difficulty = 2;
   int _autoDeleteHours = 0;
+  DateTime? _unlockAfter;
+  bool _isTimeCapsule = false;
   bool _isLoading = false;
   bool _showJudgeSelection = true;
   late AnimationController _formFadeController;
@@ -223,6 +225,8 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'is_unlocked': false,
         'battle_status': 'active',
         'surprise_type': 'text',
+        if (_unlockAfter != null)
+          'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
       });
 
       ref.invalidate(surprisesListProvider);
@@ -285,6 +289,8 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'battle_status': 'active',
         'surprise_type': 'photo',
         'content_storage_path': path,
+        if (_unlockAfter != null)
+          'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
       });
 
       ref.invalidate(surprisesListProvider);
@@ -349,6 +355,8 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'battle_status': 'active',
         'surprise_type': 'voice',
         'content_storage_path': path,
+        if (_unlockAfter != null)
+          'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
       });
 
       ref.invalidate(surprisesListProvider);
@@ -679,6 +687,92 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                             ),
                           ],
                         ),
+                        const SizedBox(height: 24),
+                        // Time Capsule toggle
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Time Capsule',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                            Switch(
+                              value: _isTimeCapsule,
+                              activeColor: AppTheme.primaryPink,
+                              onChanged: (v) {
+                                setState(() {
+                                  _isTimeCapsule = v;
+                                  if (!v) _unlockAfter = null;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        if (_isTimeCapsule) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Lock this surprise until a specific date',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _unlockAfter ??
+                                    DateTime.now()
+                                        .add(const Duration(days: 1)),
+                                firstDate: DateTime.now()
+                                    .add(const Duration(days: 1)),
+                                lastDate: DateTime.now()
+                                    .add(const Duration(days: 365)),
+                              );
+                              if (picked != null) {
+                                setState(() => _unlockAfter = picked);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white.withValues(alpha: 0.06),
+                                border: Border.all(
+                                  color:
+                                      Colors.white.withValues(alpha: 0.15),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.hourglass_top_rounded,
+                                      color: AppTheme.premiumGold, size: 20),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    _unlockAfter != null
+                                        ? 'Unlocks on ${_unlockAfter!.day}/${_unlockAfter!.month}/${_unlockAfter!.year}'
+                                        : 'Pick a date...',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 32),
                         Semantics(
                           label: 'Create surprise',

@@ -995,7 +995,7 @@ class _ConnectionStreakCard extends StatelessWidget {
                   color: AppTheme.textSecondary,
                 ),
               ),
-              if (!stats.activeThisWeek) ...[
+              if (!stats.activeToday) ...[
                 const SizedBox(height: 12),
                 Text(
                   'Play a battle this week to continue your streak.',
