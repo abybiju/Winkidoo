@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 
-enum PillCtaStyle { standard, layered, glass }
+enum PillCtaStyle { standard, layered, glass, ghost }
 
 class PillCta extends StatefulWidget {
   const PillCta({
@@ -14,6 +15,7 @@ class PillCta extends StatefulWidget {
     this.filled = true,
     this.compact = false,
     this.style = PillCtaStyle.standard,
+    this.glow = false,
   });
 
   final String label;
@@ -23,6 +25,7 @@ class PillCta extends StatefulWidget {
   final bool filled;
   final bool compact;
   final PillCtaStyle style;
+  final bool glow;
 
   @override
   State<PillCta> createState() => _PillCtaState();
@@ -100,12 +103,33 @@ class _PillCtaState extends State<PillCta>
         borderWidth = 1;
         boxShadow = AppTheme.elevation1(brightness);
         break;
+      case PillCtaStyle.ghost:
+        bgColor = Colors.transparent;
+        fg = brightness == Brightness.dark
+            ? AppTheme.primaryOrange
+            : AppTheme.primaryOrangeDark;
+        borderColor = AppTheme.primaryOrange.withValues(alpha: 0.5);
+        borderWidth = 1.5;
+        boxShadow = [];
+        break;
+    }
+
+    if (widget.glow) {
+      boxShadow = [
+        ...boxShadow,
+        BoxShadow(
+          color: AppTheme.primaryOrange.withValues(alpha: 0.20),
+          blurRadius: 20,
+          spreadRadius: 0,
+        ),
+      ];
     }
 
     return GestureDetector(
       onTapDown: (_) => _pressController.forward(),
       onTapUp: (_) {
         _pressController.reverse();
+        HapticFeedback.lightImpact();
         widget.onTap();
       },
       onTapCancel: () => _pressController.reverse(),

@@ -10,6 +10,7 @@ import 'package:winkidoo/core/constants/avatar_presets.dart';
 import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
 import 'package:winkidoo/models/achievement.dart';
@@ -40,38 +41,9 @@ class ProfileScreen extends ConsumerWidget {
         surprises.fold<int>(0, (sum, s) => sum + s.creatorDefenseCount);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: AppTheme.homeBackgroundGradient(
-                      Theme.of(context).brightness),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0, -0.25),
-                    radius: 1.1,
-                    colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
+      body: CosmicBackground(
+        glowColor: AppTheme.primaryOrange,
+        child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Column(
@@ -155,7 +127,6 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
-        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/achievement.dart';
 import 'package:winkidoo/providers/season_recap_provider.dart';
 
@@ -61,17 +62,7 @@ class _SeasonRecapScreenState extends State<SeasonRecapScreen>
   Widget build(BuildContext context) {
     final recap = widget.recap;
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppTheme.backgroundStart,
-              AppTheme.backgroundEnd,
-            ],
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Column(
             children: [

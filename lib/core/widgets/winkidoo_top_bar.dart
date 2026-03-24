@@ -81,7 +81,7 @@ class WinkidooTopBar extends StatelessWidget {
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Icon(
                           Icons.favorite_rounded,
-                          color: Color(0xFFF5C76B),
+                          color: AppTheme.primaryOrange,
                           size: 26,
                         ),
                       ),
@@ -316,7 +316,7 @@ class _StreakBubbleState extends State<_StreakBubble>
         );
       case StreakTier.doubleFlame:
         return (
-          [const Color(0xFFFF6B2C), const Color(0xFFE85D93)],
+          [const Color(0xFFFF6B2C), const Color(0xFFFF4A1A)],
           Colors.white
         );
       case StreakTier.blueFlame:
@@ -326,7 +326,7 @@ class _StreakBubbleState extends State<_StreakBubble>
         );
       case StreakTier.legendary:
         return (
-          [const Color(0xFFF5C76B), const Color(0xFFFF6B2C)],
+          [const Color(0xFFFFAA33), const Color(0xFFFF6B2C)],
           Colors.white
         );
     }
@@ -432,11 +432,11 @@ class _LevelBadge extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF5C76B), Color(0xFFFF9A3E)],
+          colors: [Color(0xFFFF9A42), Color(0xFFFF6B1A)],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF9A3E).withValues(alpha: 0.25),
+            color: const Color(0xFFFF6B1A).withValues(alpha: 0.25),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

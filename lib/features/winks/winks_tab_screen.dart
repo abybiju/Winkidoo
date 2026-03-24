@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
 
@@ -15,37 +16,9 @@ class WinksTabScreen extends ConsumerWidget {
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: AppTheme.homeBackgroundGradient(brightness),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0, -0.25),
-                    radius: 1.1,
-                    colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
+      body: CosmicBackground(
+        glowColor: AppTheme.primaryOrange,
+        child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Column(
@@ -82,8 +55,8 @@ class WinksTabScreen extends ConsumerWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Color(0xFFFFE37B),
-                                Color(0xFFF5C76B),
+                                AppTheme.ctaGoldA,
+                                AppTheme.premiumAmber,
                               ],
                             ),
                             boxShadow: [
@@ -98,7 +71,7 @@ class WinksTabScreen extends ConsumerWidget {
                           child: const Icon(
                             Icons.emoji_emotions_rounded,
                             size: 28,
-                            color: Color(0xFF6E4500),
+                            color: Color(0xFF5A3A00),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -150,7 +123,7 @@ class WinksTabScreen extends ConsumerWidget {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFFFFE37B), Color(0xFFF5C76B)],
+                          colors: [AppTheme.ctaGoldA, AppTheme.premiumAmber],
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -165,14 +138,14 @@ class WinksTabScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(Icons.star_rounded,
-                              size: 20, color: Color(0xFF6E4500)),
+                              size: 20, color: Color(0xFF5A3A00)),
                           const SizedBox(width: 8),
                           Text(
                             'Unlock more with Wink+',
                             style: GoogleFonts.poppins(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF6E4500),
+                              color: const Color(0xFF5A3A00),
                             ),
                           ),
                         ],
@@ -183,7 +156,6 @@ class WinksTabScreen extends ConsumerWidget {
               ),
             ),
           ),
-        ],
       ),
     );
   }

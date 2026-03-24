@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/features/create/judge_selection_screen.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
@@ -449,15 +450,8 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
             )
           : FadeTransition(
               opacity: _formFadeAnimation,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors:
-                        AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-                  ),
-                ),
+              child: CosmicBackground(
+                glowColor: AppTheme.primaryOrange,
                 child: SafeArea(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
@@ -730,7 +724,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                             ),
                             Switch(
                               value: _isTimeCapsule,
-                              activeColor: AppTheme.primaryPink,
+                              activeColor: AppTheme.primaryOrange,
                               onChanged: (v) {
                                 setState(() {
                                   _isTimeCapsule = v;
@@ -831,7 +825,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                             ),
                             Switch(
                               value: _isCollaborative,
-                              activeColor: AppTheme.primaryPink,
+                              activeColor: AppTheme.primaryOrange,
                               onChanged: (v) =>
                                   setState(() => _isCollaborative = v),
                             ),

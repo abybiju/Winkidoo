@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/models/treasure_archive.dart';
@@ -48,14 +49,7 @@ class TreasureArchiveScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: archiveWithSurprises.when(
           data: (list) {
             if (list.isEmpty) {

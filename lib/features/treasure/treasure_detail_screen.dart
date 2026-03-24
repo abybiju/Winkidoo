@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/features/treasure/replay_battle_view.dart';
 import 'package:winkidoo/models/battle_message.dart';
 import 'package:winkidoo/models/judge.dart';
@@ -181,14 +182,7 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
           ),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-              ),
-            ),
+          body: CosmicBackground(
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),

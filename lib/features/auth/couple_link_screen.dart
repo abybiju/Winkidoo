@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/couple.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
@@ -187,14 +188,8 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
     final coupleAsync = ref.watch(coupleProvider);
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-          ),
-        ),
+      body: CosmicBackground(
+        glowColor: AppTheme.primaryOrange,
         child: SafeArea(
           child: coupleAsync.when(
             data: (couple) {

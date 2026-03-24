@@ -18,6 +18,7 @@ class WinkCard extends StatefulWidget {
     this.borderColor,
     this.boxShadow,
     this.enablePressAnimation = true,
+    this.glowColor,
   });
 
   final Widget child;
@@ -28,6 +29,7 @@ class WinkCard extends StatefulWidget {
   final Color? borderColor;
   final List<BoxShadow>? boxShadow;
   final bool enablePressAnimation;
+  final Color? glowColor;
 
   @override
   State<WinkCard> createState() => _WinkCardState();
@@ -73,7 +75,15 @@ class _WinkCardState extends State<WinkCard>
         color: widget.borderColor ??
             AppTheme.premiumBorder30(brightness),
       ),
-      boxShadow: widget.boxShadow ?? AppTheme.elevation2(brightness),
+      boxShadow: [
+        ...(widget.boxShadow ?? AppTheme.elevation2(brightness)),
+        if (widget.glowColor != null)
+          BoxShadow(
+            color: widget.glowColor!.withValues(alpha: 0.15),
+            blurRadius: 20,
+            spreadRadius: 0,
+          ),
+      ],
     );
 
     Widget content = Padding(padding: widget.padding, child: widget.child);

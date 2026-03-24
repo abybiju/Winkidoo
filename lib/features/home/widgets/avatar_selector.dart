@@ -81,8 +81,8 @@ class AvatarSelector extends StatelessWidget {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Color(0xFF5E2B85),
-                                        Color(0xFF3D1C61)
+                                        AppTheme.secondaryVioletMuted,
+                                        AppTheme.secondaryVioletFaint,
                                       ],
                                     )
                                   : LinearGradient(
@@ -136,7 +136,7 @@ class AvatarSelector extends StatelessWidget {
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: const Color(0xFF26143A),
+                                  color: AppTheme.surface2,
                                   border: Border.all(
                                     color: AppTheme.premiumBorder30(
                                       Theme.of(context).brightness,
@@ -206,12 +206,12 @@ class _DotBadge extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isHot ? const Color(0xFFE95060) : const Color(0xFFE85060),
+        color: isHot ? AppTheme.primaryOrangeDark : AppTheme.primaryOrangeDark,
         border: Border.all(color: Colors.white, width: 1.2),
       ),
       child: isHot
           ? const Icon(Icons.local_fire_department_rounded,
-              size: 11, color: Color(0xFFFFE58A))
+              size: 11, color: AppTheme.premiumAmber)
           : Text(
               text,
               style: GoogleFonts.poppins(
@@ -248,7 +248,7 @@ class _AvatarInner extends StatelessWidget {
       return const Icon(
         Icons.auto_awesome_rounded,
         size: 26,
-        color: Color(0xFFFFE58F),
+        color: AppTheme.premiumAmber,
       );
     }
 

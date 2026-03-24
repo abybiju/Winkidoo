@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 
 class ReferralScreen extends ConsumerWidget {
@@ -13,17 +14,9 @@ class ReferralScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final coupleAsync = ref.watch(coupleProvider);
-    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -94,8 +87,8 @@ class ReferralScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(12),
                               gradient: const LinearGradient(
                                 colors: [
-                                  Color(0xFFF5C76B),
-                                  Color(0xFFFF9A3E)
+                                  AppTheme.ctaGoldA,
+                                  AppTheme.primaryOrange,
                                 ],
                               ),
                             ),

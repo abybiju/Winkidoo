@@ -12,6 +12,7 @@ import 'package:winkidoo/core/widgets/error_screen.dart';
 import 'package:winkidoo/core/widgets/pill_cta.dart';
 import 'package:winkidoo/core/widgets/skeleton_card.dart';
 import 'package:winkidoo/core/widgets/wink_card.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
@@ -149,40 +150,11 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     }
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: AppTheme.homeBackgroundGradient(
-                    Theme.of(context).brightness,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0, -0.25),
-                    radius: 1.1,
-                    colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: surprisesAsync.when(
+      body: CosmicBackground(
+        showStars: true,
+        glowColor: AppTheme.primaryOrange,
+        child: SafeArea(
+          child: surprisesAsync.when(
               data: (surprises) {
                 final collabAwaitingMe = surprises
                     .where((s) =>
@@ -254,7 +226,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFFE86A),
+                                    color: AppTheme.ctaGoldA,
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
@@ -262,7 +234,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF6A4300),
+                                      color: const Color(0xFF4A2800),
                                     ),
                                   ),
                                 ),
@@ -424,8 +396,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
               ),
             ),
           ),
-        ],
-      ),
+        ),
       floatingActionButton: null,
       bottomNavigationBar: widget.showBottomNav
           ? SafeArea(
@@ -642,7 +613,7 @@ class _LinkedVaultHeroState extends State<_LinkedVaultHero>
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => const Icon(
                         Icons.favorite_rounded,
-                        color: Color(0xFFF5C76B),
+                        color: AppTheme.premiumAmber,
                         size: 26,
                       ),
                     ),
@@ -788,7 +759,7 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chipTint = tint ?? const Color(0xFFCA9E4D);
+    final chipTint = tint ?? AppTheme.premiumAmber;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -854,8 +825,8 @@ class _ChestCallout extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: brightness == Brightness.dark
-                    ? const [Color(0xFF2A1B45), Color(0xFF1A132D)]
-                    : const [Color(0xFFFFEBA6), Color(0xFFE8DCFF)],
+                    ? const [AppTheme.surface3, AppTheme.surface1]
+                    : [AppTheme.ctaGoldA.withValues(alpha: 0.3), AppTheme.lightBackgroundEnd],
               ),
             ),
             child: Stack(
@@ -936,10 +907,10 @@ class _ChestCallout extends StatelessWidget {
                         height: 108,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(26),
-                          color: const Color(0xFFF5C76B),
+                          color: AppTheme.premiumAmber,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFF5C76B)
+                              color: AppTheme.premiumAmber
                                   .withValues(alpha: 0.42),
                               blurRadius: 18,
                               spreadRadius: 1,
@@ -949,7 +920,7 @@ class _ChestCallout extends StatelessWidget {
                         child: const Icon(
                           Icons.lock_rounded,
                           size: 52,
-                          color: Color(0xFF694100),
+                          color: Color(0xFF4A2800),
                         ),
                       ),
                     ),

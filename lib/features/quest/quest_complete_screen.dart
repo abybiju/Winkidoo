@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/pill_cta.dart';
 import 'package:winkidoo/features/home/home_screen.dart';
 import 'package:winkidoo/models/quest.dart';
@@ -41,19 +42,11 @@ class _QuestCompleteScreenState extends ConsumerState<QuestCompleteScreen> {
   @override
   Widget build(BuildContext context) {
     final questAsync = ref.watch(questByIdProvider(widget.questId));
-    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: AppTheme.homeBackgroundGradient(brightness),
-              ),
-            ),
+          CosmicBackground(
             child: SafeArea(
               child: questAsync.when(
                 loading: () => const Center(

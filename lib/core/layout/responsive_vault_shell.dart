@@ -151,7 +151,7 @@ class _DetailPlaceholder extends StatelessWidget {
                             child: const Icon(
                               Icons.lock_open_rounded,
                               size: 36,
-                              color: Color(0xFFF5C76B),
+                              color: AppTheme.premiumAmber,
                             ),
                           ),
                           const SizedBox(height: 14),

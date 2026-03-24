@@ -64,7 +64,7 @@ class _ShimmerEffectState extends State<ShimmerEffect>
     final base = widget.baseColor ?? Colors.transparent;
     final highlight = widget.highlightColor ??
         (brightness == Brightness.dark
-            ? Colors.white.withValues(alpha: 0.06)
+            ? const Color(0x0FFF8C42)
             : Colors.white.withValues(alpha: 0.50));
 
     return AnimatedBuilder(

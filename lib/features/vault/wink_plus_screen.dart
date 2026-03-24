@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 
 /// Wink+ benefits and upgrade placeholder. IAP / Stripe can be wired later.
@@ -22,14 +23,7 @@ class WinkPlusScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/judge_collectible.dart';
 import 'package:winkidoo/providers/collectible_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
@@ -32,17 +33,9 @@ class CollectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final collectiblesAsync = ref.watch(collectiblesProvider);
     final userGender = ref.watch(userProfileMetaProvider).gender;
-    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -168,9 +161,9 @@ class _JudgeCardSlot extends StatelessWidget {
   Color get _glowColor {
     switch (bestRarity) {
       case 'legendary':
-        return const Color(0xFFF5C76B);
+        return AppTheme.premiumAmber;
       case 'rare':
-        return const Color(0xFFB06EFF);
+        return AppTheme.secondaryViolet;
       default:
         return Colors.white24;
     }

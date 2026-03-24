@@ -19,6 +19,8 @@ class GlassContainer extends StatelessWidget {
     this.borderWidth = 1.0,
     this.boxShadow,
     this.onTap,
+    this.tint,
+    this.glowEdge = false,
   });
 
   final Widget child;
@@ -30,20 +32,33 @@ class GlassContainer extends StatelessWidget {
   final double borderWidth;
   final List<BoxShadow>? boxShadow;
   final VoidCallback? onTap;
+  final Color? tint;
+  final bool glowEdge;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final sigma = blurSigma ?? AppTheme.glassBlurSigma;
-    final fill = fillColor ??
+    var fill = fillColor ??
         (brightness == Brightness.dark
             ? AppTheme.glassFill
             : AppTheme.lightGlassFill);
+    if (tint != null) {
+      fill = Color.lerp(fill, tint, 0.08)!;
+    }
     final border = borderColor ??
         (brightness == Brightness.dark
             ? AppTheme.glassBorder
             : AppTheme.lightGlassBorder);
-    final shadows = boxShadow ?? AppTheme.elevation1(brightness);
+    final shadows = [
+      ...(boxShadow ?? AppTheme.elevation1(brightness)),
+      if (glowEdge)
+        BoxShadow(
+          color: (tint ?? AppTheme.primaryOrange).withValues(alpha: 0.10),
+          blurRadius: 16,
+          spreadRadius: 0,
+        ),
+    ];
 
     Widget content = ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),

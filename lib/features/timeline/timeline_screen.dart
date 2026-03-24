@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
@@ -14,17 +15,9 @@ class TimelineScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final surprisesAsync = ref.watch(surprisesListProvider);
     final couple = ref.watch(coupleProvider).value;
-    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Column(
             children: [

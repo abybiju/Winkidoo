@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:winkidoo/core/theme/app_theme.dart';
 
 // --- Constants ---
 
-const Color _kNavyTop = Color(0xFF0F172A);
-const Color _kPlumBottom = Color(0xFF1B1030);
-const Color _kPlum = Color(0xFF6D2E8C);
-const Color _kSurfaceDark = Color(0xFF1E293B);
+const Color _kNavyTop = AppTheme.bgTop;
+const Color _kPlumBottom = AppTheme.bgBottom;
+const Color _kPlum = AppTheme.secondaryViolet;
+const Color _kSurfaceDark = AppTheme.surface2;
 
 const double _kCardRadius = 20.0;
 const double _kButtonHeight = 52.0;

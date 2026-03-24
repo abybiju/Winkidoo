@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/pill_cta.dart';
 import 'package:winkidoo/features/home/home_screen.dart';
 import 'package:winkidoo/models/quest.dart';
@@ -22,18 +23,10 @@ class QuestProgressScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final questAsync = ref.watch(questByIdProvider(questId));
     final surprisesAsync = ref.watch(questSurprisesProvider(questId));
-    final brightness = Theme.of(context).brightness;
     final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: questAsync.when(
             loading: () => const Center(
@@ -88,7 +81,6 @@ class _QuestProgressBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     return Column(
       children: [
         // Header
@@ -273,7 +265,6 @@ class _StepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),

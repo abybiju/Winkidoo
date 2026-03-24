@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/pill_cta.dart';
 import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
@@ -104,16 +105,8 @@ class _QuestCreateScreenState extends ConsumerState<QuestCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Column(
             children: [

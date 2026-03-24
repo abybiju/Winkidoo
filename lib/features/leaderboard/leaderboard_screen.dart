@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/leaderboard_provider.dart';
 
@@ -13,17 +14,9 @@ class LeaderboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final leaderboardAsync = ref.watch(leaderboardProvider);
     final myCoupleId = ref.watch(coupleProvider).value?.id;
-    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -177,8 +170,8 @@ class LeaderboardScreen extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(20),
                                     gradient: const LinearGradient(
                                       colors: [
-                                        Color(0xFFF5C76B),
-                                        Color(0xFFFF9A3E)
+                                        AppTheme.ctaGoldA,
+                                        AppTheme.primaryOrange,
                                       ],
                                     ),
                                   ),

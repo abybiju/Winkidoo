@@ -247,7 +247,7 @@ class _JudgePreviewCard extends StatelessWidget {
               ? Colors.white.withValues(alpha: 0.60)
               : brightness == Brightness.dark
                   ? AppTheme.glassBorder
-                  : const Color(0x33000000),
+                  : AppTheme.lightGlassBorder,
           width: highlighted ? 1.4 : 1.0,
         ),
         boxShadow: highlighted
@@ -264,8 +264,8 @@ class _JudgePreviewCard extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: highlighted
-                    ? const [Color(0xFF3A1D58), Color(0xFF1E1038)]
-                    : const [Color(0xFF2E1846), Color(0xFF18102C)],
+                    ? const [AppTheme.surface3, AppTheme.surface1]
+                    : const [AppTheme.surface2, AppTheme.surface1],
               ),
             ),
           ),
@@ -397,12 +397,12 @@ class _OutlineButtonState extends State<_OutlineButton>
             border: Border.all(
               color: brightness == Brightness.dark
                   ? AppTheme.glassBorder
-                  : const Color(0x33000000),
+                  : AppTheme.lightGlassBorder,
               width: 1,
             ),
             color: brightness == Brightness.dark
                 ? AppTheme.glassFill
-                : const Color(0x0A000000),
+                : AppTheme.lightGlassFill,
             boxShadow: [
               if (widget.hovered && kIsWeb)
                 BoxShadow(
@@ -433,8 +433,8 @@ class _OutlineButtonState extends State<_OutlineButton>
                   Icons.chevron_right_rounded,
                   size: 16,
                   color: brightness == Brightness.dark
-                      ? const Color(0xFF9890B0)
-                      : const Color(0xFF8B80A0),
+                      ? AppTheme.textMuted
+                      : AppTheme.lightTextMuted,
                 ),
               ],
             ),

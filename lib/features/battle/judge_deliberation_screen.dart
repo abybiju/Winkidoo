@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,14 +48,7 @@ class _JudgeDeliberationScreenState
   Widget build(BuildContext context) {
     final emoji = widget.judgeResponse.moodEmoji ?? '🤔';
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Center(
             child: Column(

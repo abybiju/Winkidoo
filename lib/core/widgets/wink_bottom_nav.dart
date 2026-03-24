@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
@@ -50,16 +51,16 @@ class WinkBottomNavStyle {
           : const Color(0x33A06DAF),
       active: brightness == Brightness.dark
           ? AppTheme.footerActive
-          : const Color(0xFF8C5D00),
+          : const Color(0xFFD06A1A),
       inactive: brightness == Brightness.dark
           ? AppTheme.footerInactive
           : const Color(0xFF887B9A),
       centerBackground: brightness == Brightness.dark
           ? AppTheme.footerCenter
-          : const Color(0xFFD8A92F),
+          : const Color(0xFFE07020),
       centerForeground: brightness == Brightness.dark
           ? AppTheme.footerCenterOn
-          : const Color(0xFF332600),
+          : Colors.white,
       icons: const WinkNavIconSet(
         home: PhosphorIconsFill.houseSimple,
         vault: PhosphorIconsFill.archive,
@@ -221,6 +222,7 @@ class _NavItemState extends State<_NavItem>
       onTapDown: (_) => _scaleController.forward(),
       onTapUp: (_) {
         _scaleController.reverse();
+        HapticFeedback.selectionClick();
         widget.onTap(widget.index);
       },
       onTapCancel: () => _scaleController.reverse(),
@@ -257,6 +259,16 @@ class _NavItemState extends State<_NavItem>
                   color: color,
                 ),
                 child: Text(widget.label),
+              ),
+              const SizedBox(height: 3),
+              AnimatedContainer(
+                duration: AppTheme.microDuration,
+                width: isActive ? 4 : 0,
+                height: isActive ? 4 : 0,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive ? widget.style.active : Colors.transparent,
+                ),
               ),
             ],
           ),

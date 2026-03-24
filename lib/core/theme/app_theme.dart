@@ -2,68 +2,76 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Premium 2026 design system for Winkidoo.
-/// Midnight Luxe (dark) + Crystal Blush (light).
+/// Cosmic Midnight (dark) + Crystal Dawn (light).
+/// Dark cosmic liquid glass with vibrant orange gradient accents.
 class AppTheme {
   AppTheme._();
 
   // ───────────────────────────────────────────────────────────────────────────
-  // BRAND COLORS — Unchanged identity
+  // BRAND COLORS — Cosmic Orange Identity
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color primaryPink = Color(0xFFE85D93);
-  static const Color plum = Color(0xFF6D2E8C);
-  static const Color premiumGold = Color(0xFFF5C76B);
+  static const Color primaryOrange = Color(0xFFFF8C42);
+  static const Color primaryOrangeLight = Color(0xFFFFB067);
+  static const Color primaryOrangeDark = Color(0xFFE06B20);
+  static const Color secondaryViolet = Color(0xFF7C5CFC);
+  static const Color secondaryVioletMuted = Color(0xFF5A3EBF);
+  static const Color secondaryVioletFaint = Color(0xFF3D2A8A);
+  static const Color premiumAmber = Color(0xFFFFAA33);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // DARK MODE — Deep space luxury
+  // DARK MODE — Cosmic Midnight
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color bgTop = Color(0xFF080B1A);
-  static const Color bgBottom = Color(0xFF12082A);
+  static const Color bgTop = Color(0xFF050810);
+  static const Color bgBottom = Color(0xFF0D0620);
 
   /// Surface layers: frosted glass approach
-  static const Color surface1 = Color(0xFF141024);
-  static const Color surface2 = Color(0xFF1C1534);
-  static const Color surface3 = Color(0xFF261D42);
+  static const Color surface1 = Color(0xFF0F0B1E);
+  static const Color surface2 = Color(0xFF161030);
+  static const Color surface3 = Color(0xFF1E1640);
+  static const Color surfaceInput = Color(0xFF130E26);
 
   /// Glass tokens (dark mode)
-  static const Color glassFill = Color(0x0DFFFFFF); // white 5%
-  static const Color glassFillHover = Color(0x14FFFFFF); // white 8%
-  static const Color glassBorder = Color(0x1AFFFFFF); // white 10%
-  static const Color glassBorderSubtle = Color(0x0DFFFFFF); // white 5%
+  static const Color glassFill = Color(0x0AFFFFFF); // white 4%
+  static const Color glassFillHover = Color(0x12FFFFFF); // white 7%
+  static const Color glassBorder = Color(0x14FFFFFF); // white 8%
+  static const Color glassBorderSubtle = Color(0x0AFFFFFF); // white 4%
+  static const Color glassBorderOrange = Color(0x26FF8C42); // orange 15%
 
   /// Card surfaces (dark)
-  static const Color darkCardA = Color(0xFF1A1230);
-  static const Color darkCardB = Color(0xFF110D20);
+  static const Color darkCardA = Color(0xFF14102A);
+  static const Color darkCardB = Color(0xFF0C0918);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // LIGHT MODE — Crystal blush
+  // LIGHT MODE — Crystal Dawn
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color lightBackgroundStart = Color(0xFFF8F9FC);
-  static const Color lightBackgroundEnd = Color(0xFFF0EDFA);
+  static const Color lightBackgroundStart = Color(0xFFFAF9FE);
+  static const Color lightBackgroundEnd = Color(0xFFF2EDFA);
 
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurfaceElevated = Color(0xFFFCFAFF);
+  static const Color lightSurfaceElevated = Color(0xFFFEFCFF);
 
   /// Light card tones
-  static const Color lightCardA = Color(0xFFFAF6FF);
-  static const Color lightCardB = Color(0xFFF5F0FF);
+  static const Color lightCardA = Color(0xFFFBF7FF);
+  static const Color lightCardB = Color(0xFFF6F1FF);
 
   /// Glass tokens (light mode)
-  static const Color lightGlassFill = Color(0xB3FFFFFF); // white 70%
-  static const Color lightGlassBorder = Color(0x33A78BBE); // plum 20%
+  static const Color lightGlassFill = Color(0xBFFFFFFF); // white 75%
+  static const Color lightGlassBorder = Color(0x26785AB4); // violet 15%
 
   /// Light nav / top bar
   static const Color lightTopBar = Color(0xFFF5F2FD);
   static const Color lightNavBg = Color(0xFFF0ECF8);
   static const Color lightPillBg = Color(0xFFFFF0D6);
   static const Color lightPillBorder = Color(0xFFE8D5B0);
-  static const Color lightBadgeBg = Color(0xFFE85088);
+  static const Color lightBadgeBg = Color(0xFFE06B20);
 
   // ───────────────────────────────────────────────────────────────────────────
   // TEXT COLORS
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color textPrimary = Color(0xFFF2F0FF);
-  static const Color textSecondary = Color(0xB3C8BFE0); // 70%
-  static const Color textMuted = Color(0x80A093C0); // 50%
+  static const Color textPrimary = Color(0xFFF0EDF8);
+  static const Color textSecondary = Color(0xB3C8BEE0); // 70%
+  static const Color textMuted = Color(0x73A093C0); // 45%
+  static const Color textOrangeAccent = Color(0xFFFFB067);
 
   static const Color lightTextPrimary = Color(0xFF1A1028);
   static const Color lightTextSecondary = Color(0xFF6B5A80);
@@ -72,83 +80,93 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   // ACCENT GRADIENTS
   // ───────────────────────────────────────────────────────────────────────────
-  /// Battle/primary CTA gradient
-  static const Color battleGradientA = Color(0xFFE85D93);
-  static const Color battleGradientB = Color(0xFFFF8E52);
+  /// Battle/primary CTA gradient (orange)
+  static const Color battleGradientA = Color(0xFFFF9A42);
+  static const Color battleGradientB = Color(0xFFFF6B1A);
 
-  /// Gold CTA gradient
-  static const Color ctaGoldA = Color(0xFFFFE37B);
-  static const Color ctaGoldB = Color(0xFFF5C76B);
+  /// CTA gradient (orange capsule — Holla-inspired)
+  static const Color ctaOrangeA = Color(0xFFFF9A42);
+  static const Color ctaOrangeB = Color(0xFFFF6B1A);
+  static const Color ctaInnerGlow = Color(0x4DFFC88C); // warm highlight
+  static const Color ctaOuterGlow = Color(0x59FF6A1A); // shadow glow
+
+  /// Gold CTA gradient (premium)
+  static const Color ctaGoldA = Color(0xFFFFD666);
+  static const Color ctaGoldB = Color(0xFFFFAA33);
 
   /// Vault gradient (cards)
-  static const Color vaultGradientA = Color(0xFF1E1240);
-  static const Color vaultGradientB = Color(0xFF2A1852);
+  static const Color vaultGradientA = Color(0xFF151030);
+  static const Color vaultGradientB = Color(0xFF0D0820);
 
   /// Spotlight gradient
-  static const Color spotlightGradientA = Color(0xFF201540);
-  static const Color spotlightGradientB = Color(0xFF2C1D50);
+  static const Color spotlightGradientA = Color(0xFF161030);
+  static const Color spotlightGradientB = Color(0xFF1E1640);
 
   // ───────────────────────────────────────────────────────────────────────────
   // HOME SCREEN PALETTE
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color homeBgTop = Color(0xFF080B1A);
-  static const Color homeBgBottom = Color(0xFF16092E);
-  static const Color homeGlowOrange = Color(0xFFFF8C3A);
-  static const Color homeGlowPink = Color(0xFFE85D93);
-  static const Color homeTextPrimary = Color(0xFFF2F0FF);
+  static const Color homeBgTop = Color(0xFF050810);
+  static const Color homeBgBottom = Color(0xFF0D0620);
+  static const Color homeGlowOrange = Color(0xFFFF8C42);
+  static const Color homeGlowPink = Color(0xFFFF6B1A); // now orange-red
+  static const Color homeTextPrimary = Color(0xFFF0EDF8);
   static const Color homeTextSecondary = Color(0xB3D2CAE6);
-  static const Color homeSurfaceMuted = Color(0x261C1533);
-  static const Color homeSurfaceCard = Color(0x33231A3E);
-  static const Color homeDivider = Color(0x336D2E8C);
-  static const Color homeCtaNavyA = Color(0xFF1E2848);
-  static const Color homeCtaNavyB = Color(0xFF141C38);
+  static const Color homeSurfaceMuted = Color(0x26130E26);
+  static const Color homeSurfaceCard = Color(0x33161030);
+  static const Color homeDivider = Color(0x337C5CFC); // violet divider
+  static const Color homeCtaNavyA = Color(0xFF1A1838);
+  static const Color homeCtaNavyB = Color(0xFF110E28);
 
   // ───────────────────────────────────────────────────────────────────────────
   // VAULT SCREEN PALETTE
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color vaultStatusLinked = Color(0xFF4DD7A5);
-  static const Color vaultStatusPending = Color(0xFFFFC86B);
-  static const Color vaultCardUrgent = Color(0xFFE85D93);
-  static const Color vaultCardOwned = Color(0xFFF5C76B);
-  static const Color vaultDramaSurfaceA = Color(0xFF1E1240);
-  static const Color vaultDramaSurfaceB = Color(0xFF0E0820);
-  static const Color vaultDramaVignette = Color(0x9911081D);
-  static const Color vaultCtaPrimaryA = Color(0xFFFFA064);
-  static const Color vaultCtaPrimaryB = Color(0xFFE85D93);
-  static const Color vaultCtaInnerGlow = Color(0x4DFFD69A);
-  static const Color vaultCtaSecondaryStroke = Color(0x4DE3D2FF);
+  static const Color vaultStatusLinked = Color(0xFF4DE8A5);
+  static const Color vaultStatusPending = Color(0xFFFFD166);
+  static const Color vaultCardUrgent = Color(0xFFFF8C42);
+  static const Color vaultCardOwned = Color(0xFFFFAA33);
+  static const Color vaultDramaSurfaceA = Color(0xFF151030);
+  static const Color vaultDramaSurfaceB = Color(0xFF0A0618);
+  static const Color vaultDramaVignette = Color(0x990A0618);
+  static const Color vaultCtaPrimaryA = Color(0xFFFF9A42);
+  static const Color vaultCtaPrimaryB = Color(0xFFFF6B1A);
+  static const Color vaultCtaInnerGlow = Color(0x4DFFC88C);
+  static const Color vaultCtaSecondaryStroke = Color(0x4DD6C8FF);
   static const Color vaultCtaSecondaryFill = Color(0x14FFFFFF);
-  static const Color vaultHeroCharacterOverlay = Color(0x33E85D93);
+  static const Color vaultHeroCharacterOverlay = Color(0x33FF8C42);
 
   // ───────────────────────────────────────────────────────────────────────────
   // NAVIGATION PALETTE
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color footerBase = Color(0xFF0E0F1C);
-  static const Color footerStroke = Color(0x338B7BAA);
-  static const Color footerActive = Color(0xFFF5C76B);
-  static const Color footerInactive = Color(0xFF8B7EA0);
-  static const Color footerCenter = Color(0xFFD4A72C);
-  static const Color footerCenterOn = Color(0xFF2F2200);
+  static const Color footerBase = Color(0xFF0A0B18);
+  static const Color footerStroke = Color(0x33786AAA);
+  static const Color footerActive = Color(0xFFFF8C42);
+  static const Color footerInactive = Color(0xFF6B6080);
+  static const Color footerCenter = Color(0xFFFF7A2E);
+  static const Color footerCenterOn = Color(0xFFFFFFFF);
 
   // ───────────────────────────────────────────────────────────────────────────
   // SEMANTIC
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color error = Color(0xFFE57373);
-  static const Color success = Color(0xFF4DD7A5);
-  static const Color warning = Color(0xFFFFC86B);
+  static const Color error = Color(0xFFFF6B6B);
+  static const Color success = Color(0xFF4DE8A5);
+  static const Color warning = Color(0xFFFFD166);
+  static const Color info = Color(0xFF7C9DFC);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // LEGACY ALIASES (backward compat)
+  // LEGACY ALIASES (backward compat — point to new values)
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color primary = primaryPink;
-  static const Color secondary = plum;
-  static const Color accent = premiumGold;
+  static const Color primaryPink = primaryOrange;
+  static const Color plum = secondaryViolet;
+  static const Color premiumGold = premiumAmber;
+  static const Color primary = primaryOrange;
+  static const Color secondary = secondaryViolet;
+  static const Color accent = premiumAmber;
   static const Color backgroundStart = bgTop;
   static const Color backgroundEnd = bgBottom;
   static const Color surface = surface1;
-  static const Color sparkColor = Color(0xFFFFA046);
-  static const Color orbitalLine = Color(0xFF8550A7);
-  static const Color winsSurface = Color(0x331A1230);
+  static const Color sparkColor = Color(0xFFFF9A42);
+  static const Color orbitalLine = Color(0xFF7C5CFC);
+  static const Color winsSurface = Color(0x33161030);
   static const Color ctaBattleA = battleGradientA;
   static const Color ctaBattleB = battleGradientB;
 
@@ -159,6 +177,26 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   // TYPOGRAPHY SCALE
   // ───────────────────────────────────────────────────────────────────────────
+
+  /// Display — hero numbers, large stats (Space Grotesk)
+  static TextStyle display(Brightness brightness) =>
+      GoogleFonts.spaceGrotesk(
+        fontSize: 36,
+        fontWeight: FontWeight.w800,
+        height: 1.1,
+        letterSpacing: -0.8,
+        color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
+      );
+
+  /// Stat numbers — XP, levels, streak counts (Space Grotesk)
+  static TextStyle statNumber(Brightness brightness) =>
+      GoogleFonts.spaceGrotesk(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        height: 1.1,
+        letterSpacing: -0.5,
+        color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
+      );
 
   static TextStyle heading1(Brightness brightness) => GoogleFonts.poppins(
         fontSize: 28,
@@ -180,6 +218,15 @@ class AppTheme {
         fontSize: 18,
         fontWeight: FontWeight.w600,
         height: 1.25,
+        color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
+      );
+
+  /// Subheading — section labels, pill text
+  static TextStyle subheading(Brightness brightness) => GoogleFonts.poppins(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        height: 1.3,
+        letterSpacing: 0.2,
         color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
       );
 
@@ -209,7 +256,7 @@ class AppTheme {
         fontSize: 11,
         fontWeight: FontWeight.w600,
         height: 1.3,
-        letterSpacing: 0.8,
+        letterSpacing: 1.0,
         color: brightness == Brightness.dark ? textMuted : lightTextMuted,
       );
 
@@ -238,7 +285,7 @@ class AppTheme {
         ),
       ];
 
-  /// Level 2: prominent card shadow with accent tint
+  /// Level 2: prominent card shadow with violet accent tint
   static List<BoxShadow> elevation2(Brightness brightness) => [
         BoxShadow(
           color: brightness == Brightness.dark
@@ -249,14 +296,14 @@ class AppTheme {
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? plum.withValues(alpha: 0.10)
-              : plum.withValues(alpha: 0.06),
+              ? secondaryViolet.withValues(alpha: 0.10)
+              : secondaryViolet.withValues(alpha: 0.06),
           blurRadius: 12,
           offset: const Offset(0, 2),
         ),
       ];
 
-  /// Level 3: premium glow — multi-layer with pink/gold tint
+  /// Level 3: premium glow — multi-layer with orange/violet tint
   static List<BoxShadow> elevation3(Brightness brightness) => [
         BoxShadow(
           color: brightness == Brightness.dark
@@ -267,15 +314,15 @@ class AppTheme {
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? homeGlowPink.withValues(alpha: 0.12)
-              : homeGlowPink.withValues(alpha: 0.08),
+              ? primaryOrange.withValues(alpha: 0.12)
+              : primaryOrange.withValues(alpha: 0.08),
           blurRadius: 18,
           offset: const Offset(0, 6),
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? homeGlowOrange.withValues(alpha: 0.08)
-              : premiumGold.withValues(alpha: 0.06),
+              ? secondaryViolet.withValues(alpha: 0.08)
+              : secondaryViolet.withValues(alpha: 0.06),
           blurRadius: 10,
           offset: const Offset(0, 2),
         ),
@@ -304,23 +351,33 @@ class AppTheme {
   // STANDARD GLOWS
   // ───────────────────────────────────────────────────────────────────────────
 
-  static BoxShadow get pinkGlow => BoxShadow(
-        color: primaryPink.withValues(alpha: 0.30),
+  static BoxShadow get orangeGlow => BoxShadow(
+        color: primaryOrange.withValues(alpha: 0.30),
         blurRadius: 24,
         spreadRadius: 1,
       );
 
-  static BoxShadow get goldGlow => BoxShadow(
-        color: premiumGold.withValues(alpha: 0.35),
+  static BoxShadow get amberGlow => BoxShadow(
+        color: premiumAmber.withValues(alpha: 0.35),
         blurRadius: 26,
         spreadRadius: 1,
       );
+
+  static BoxShadow get violetGlow => BoxShadow(
+        color: secondaryViolet.withValues(alpha: 0.25),
+        blurRadius: 22,
+        spreadRadius: 1,
+      );
+
+  // Legacy glow aliases
+  static BoxShadow get pinkGlow => orangeGlow;
+  static BoxShadow get goldGlow => amberGlow;
 
   // ───────────────────────────────────────────────────────────────────────────
   // GLASSMORPHISM
   // ───────────────────────────────────────────────────────────────────────────
 
-  /// Standard glass card decoration (no BackdropFilter — pair with GlassContainer)
+  /// Standard glass card decoration
   static BoxDecoration glassDecoration(Brightness brightness,
       {double borderRadius = 24}) {
     return BoxDecoration(
@@ -331,6 +388,29 @@ class AppTheme {
             brightness == Brightness.dark ? glassBorder : lightGlassBorder,
       ),
       boxShadow: elevation1(brightness),
+    );
+  }
+
+  /// Orange-tinted glass decoration for active/highlighted panels
+  static BoxDecoration glassDecorationOrange(Brightness brightness,
+      {double borderRadius = 24}) {
+    return BoxDecoration(
+      color: brightness == Brightness.dark
+          ? const Color(0x0FFF8C42) // orange 6%
+          : const Color(0x0FFF8C42),
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: Border.all(
+        color: glassBorderOrange,
+        width: 1.2,
+      ),
+      boxShadow: [
+        ...elevation1(brightness),
+        BoxShadow(
+          color: primaryOrange.withValues(alpha: 0.08),
+          blurRadius: 16,
+          spreadRadius: 0,
+        ),
+      ],
     );
   }
 
@@ -353,8 +433,8 @@ class AppTheme {
   }
 
   /// Sigma for backdrop blur
-  static double get glassBlurSigma => 16.0;
-  static double get frostedBlurSigma => 24.0;
+  static double get glassBlurSigma => 20.0;
+  static double get frostedBlurSigma => 28.0;
 
   // ───────────────────────────────────────────────────────────────────────────
   // ANIMATION TOKENS
@@ -366,8 +446,17 @@ class AppTheme {
   /// Standard transition duration
   static const Duration transitionDuration = Duration(milliseconds: 350);
 
+  /// Page transition duration
+  static const Duration pageTransitionDuration = Duration(milliseconds: 400);
+
   /// Shimmer sweep duration
   static const Duration shimmerDuration = Duration(milliseconds: 1800);
+
+  /// Stagger delay for list animations
+  static const Duration staggerDelay = Duration(milliseconds: 60);
+
+  /// Glow pulse cycle duration
+  static const Duration glowPulseDuration = Duration(milliseconds: 2400);
 
   /// Spring curve for press animations
   static const Curve springCurve = Curves.easeOutBack;
@@ -398,34 +487,34 @@ class AppTheme {
       brightness == Brightness.dark ? darkCardB : lightCardB;
 
   static Color pillBg(Brightness brightness) =>
-      brightness == Brightness.dark ? premiumGold : lightPillBg;
+      brightness == Brightness.dark ? premiumAmber : lightPillBg;
 
   static Color pillBorder(Brightness brightness) =>
       brightness == Brightness.dark
-          ? plum.withValues(alpha: 0.4)
+          ? secondaryViolet.withValues(alpha: 0.4)
           : lightPillBorder;
 
   static Color navBg(Brightness brightness) =>
       brightness == Brightness.dark ? footerBase : lightNavBg;
 
   static Color navActive(Brightness brightness) =>
-      brightness == Brightness.dark ? footerActive : const Color(0xFF8C5D00);
+      brightness == Brightness.dark ? footerActive : const Color(0xFFD06A1A);
 
   static Color navInactive(Brightness brightness) =>
       brightness == Brightness.dark ? footerInactive : const Color(0xFF8A7A9B);
 
   static Color navTextStrong(Brightness brightness) =>
       brightness == Brightness.dark
-          ? const Color(0xFF311300)
+          ? const Color(0xFFFFFFFF)
           : const Color(0xFF5C3800);
 
   static Color badgeBg(Brightness brightness) =>
-      brightness == Brightness.dark ? primaryPink : lightBadgeBg;
+      brightness == Brightness.dark ? primaryOrange : lightBadgeBg;
 
   static Color premiumBorder30(Brightness brightness) =>
       brightness == Brightness.dark
-          ? plum.withValues(alpha: 0.20)
-          : const Color(0x33A06DAF);
+          ? secondaryViolet.withValues(alpha: 0.20)
+          : const Color(0x33785AB4);
 
   // ───────────────────────────────────────────────────────────────────────────
   // GRADIENT HELPERS
@@ -436,10 +525,28 @@ class AppTheme {
           ? const [backgroundStart, backgroundEnd]
           : const [lightBackgroundStart, lightBackgroundEnd];
 
+  /// 3-stop cosmic background gradient
+  static List<Color> cosmicBackgroundGradient(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const [bgTop, Color(0xFF090618), bgBottom]
+          : const [lightBackgroundStart, lightBackgroundEnd];
+
   static List<Color> homeBackgroundGradient(Brightness brightness) =>
       brightness == Brightness.dark
           ? const [homeBgTop, homeBgBottom]
           : const [lightBackgroundStart, lightBackgroundEnd];
+
+  /// Orange CTA gradient (Holla-style capsule)
+  static List<Color> orangeCtaGradient(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const [ctaOrangeA, ctaOrangeB]
+          : const [Color(0xFFFF9A42), Color(0xFFFF7A2E)];
+
+  /// Violet accent gradient for secondary elements
+  static List<Color> violetAccentGradient(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? const [secondaryViolet, secondaryVioletMuted]
+          : const [Color(0xFF8A6CFF), Color(0xFF6B4EE0)];
 
   static List<Color> battleGradient(Brightness brightness) =>
       brightness == Brightness.dark
@@ -459,13 +566,13 @@ class AppTheme {
   static List<Color> vaultHeroGlow(Brightness brightness) =>
       brightness == Brightness.dark
           ? [
-              primaryPink.withValues(alpha: 0.14),
-              premiumGold.withValues(alpha: 0.08),
+              primaryOrange.withValues(alpha: 0.14),
+              secondaryViolet.withValues(alpha: 0.08),
               Colors.transparent,
             ]
           : [
-              primaryPink.withValues(alpha: 0.10),
-              premiumGold.withValues(alpha: 0.06),
+              primaryOrange.withValues(alpha: 0.10),
+              secondaryViolet.withValues(alpha: 0.06),
               Colors.transparent,
             ];
 
@@ -493,11 +600,11 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
-        primary: primary,
-        secondary: secondary,
+        primary: primaryOrange,
+        secondary: secondaryViolet,
         surface: surface1,
         error: error,
-        onPrimary: textPrimary,
+        onPrimary: Colors.white,
         onSecondary: textPrimary,
         onSurface: textPrimary,
         onError: textPrimary,
@@ -515,10 +622,10 @@ class AppTheme {
         ),
       ),
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.poppins(
-          fontSize: 32,
+        displayLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 36,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
+          letterSpacing: -0.8,
           color: textPrimary,
         ),
         displayMedium: GoogleFonts.poppins(
@@ -545,8 +652,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: textPrimary,
+          backgroundColor: primaryOrange,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMedium),
@@ -558,7 +665,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surface2,
+        fillColor: surfaceInput,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusSmall),
           borderSide: BorderSide.none,
@@ -566,11 +673,11 @@ class AppTheme {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusSmall),
           borderSide: BorderSide(
-              color: plum.withValues(alpha: 0.20), width: 1),
+              color: secondaryViolet.withValues(alpha: 0.20), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusSmall),
-          borderSide: const BorderSide(color: primary, width: 1.5),
+          borderSide: const BorderSide(color: primaryOrange, width: 1.5),
         ),
         labelStyle: const TextStyle(color: textSecondary),
         hintStyle: const TextStyle(color: textMuted),
@@ -603,8 +710,8 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
-        primary: primary,
-        secondary: secondary,
+        primary: primaryOrange,
+        secondary: secondaryViolet,
         surface: lightSurface,
         error: error,
         onPrimary: Colors.white,
@@ -626,10 +733,10 @@ class AppTheme {
         iconTheme: const IconThemeData(color: lightTextPrimary),
       ),
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.poppins(
-          fontSize: 32,
+        displayLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 36,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
+          letterSpacing: -0.8,
           color: lightTextPrimary,
         ),
         displayMedium: GoogleFonts.poppins(
@@ -656,7 +763,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
+          backgroundColor: primaryOrange,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           shape: RoundedRectangleBorder(
@@ -681,7 +788,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusSmall),
-          borderSide: const BorderSide(color: primary, width: 1.5),
+          borderSide: const BorderSide(color: primaryOrange, width: 1.5),
         ),
         labelStyle: const TextStyle(color: lightTextSecondary),
         hintStyle: const TextStyle(color: lightTextMuted),

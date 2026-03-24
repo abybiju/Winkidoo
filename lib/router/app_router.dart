@@ -157,14 +157,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Color(0xFF0F172A),
-                            Color(0xFF1B1030),
+                            AppTheme.bgTop,
+                            AppTheme.bgBottom,
                           ],
                         ),
                       ),
                       child: const Center(
                         child: CircularProgressIndicator(
-                          color: AppTheme.primary,
+                          color: AppTheme.primaryOrange,
                         ),
                       ),
                     ),
@@ -179,14 +179,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0xFF0F172A),
-                        Color(0xFF1B1030),
+                        AppTheme.bgTop,
+                        AppTheme.bgBottom,
                       ],
                     ),
                   ),
                   child: const Center(
                     child: CircularProgressIndicator(
-                      color: AppTheme.primary,
+                      color: AppTheme.primaryOrange,
                     ),
                   ),
                 ),
@@ -198,14 +198,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0xFF0F172A),
-                        Color(0xFF1B1030),
+                        AppTheme.bgTop,
+                        AppTheme.bgBottom,
                       ],
                     ),
                   ),
                   child: const Center(
                     child: CircularProgressIndicator(
-                      color: AppTheme.primary,
+                      color: AppTheme.primaryOrange,
                     ),
                   ),
                 ),

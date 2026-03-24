@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/utils/battle_math.dart';
 import 'package:winkidoo/core/widgets/error_screen.dart';
 import 'package:winkidoo/core/widgets/skeleton_message_row.dart';
@@ -557,14 +558,8 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
           ),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-              ),
-            ),
+          body: CosmicBackground(
+            glowColor: AppTheme.secondaryViolet,
             child: SafeArea(
               child: Column(
                 children: [
@@ -818,14 +813,8 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           foregroundColor: AppTheme.textPrimary,
           elevation: 0,
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-            ),
-          ),
+        body: CosmicBackground(
+          glowColor: AppTheme.secondaryViolet,
           child: SafeArea(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

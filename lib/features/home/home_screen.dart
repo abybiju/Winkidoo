@@ -8,6 +8,7 @@ import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/home/widgets/avatar_selector.dart';
 import 'package:winkidoo/features/home/widgets/battle_card.dart';
@@ -125,23 +126,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       HomeAvatarOption(
         label: 'Ava',
         type: HomeAvatarType.regular,
-        color: Color(0xFFFFBE66),
+        color: AppTheme.primaryOrangeLight,
       ),
       HomeAvatarOption(
         label: 'Maya',
         type: HomeAvatarType.regular,
-        color: Color(0xFFFF8A62),
+        color: AppTheme.primaryOrange,
       ),
       HomeAvatarOption(
         label: 'Kevin',
         type: HomeAvatarType.regular,
-        color: Color(0xFFFFCF5E),
+        color: AppTheme.premiumAmber,
         badge: '3',
       ),
       HomeAvatarOption(
         label: 'Ria',
         type: HomeAvatarType.regular,
-        color: Color(0xFF9C78FF),
+        color: AppTheme.secondaryViolet,
       ),
       HomeAvatarOption(
         label: 'Add',
@@ -215,85 +216,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final recentItemHeight = _clamped(contentWidth, 0.14, 88, 108);
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors:
-                AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0, -0.25),
-                    radius: 1.1,
-                    colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 126),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 760),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        WinkidooTopBar(
-                          matchLogoToWordmark: true,
-                          notificationCount: math.min(waitingForMe.length, 9),
-                          streakCount: streakWeeks,
-                          levelCount: levelCount,
-                          onNotificationTap: () => context.go('/shell/vault'),
-                          onStreakTap: () => context.go('/shell/profile'),
-                        ),
-                        SizedBox(height: gap),
-                        HeroSection(
-                          height: heroHeight,
-                          items: _avatarOptions(),
-                          onAvatarTap: (_) => _goToCreateWithProfileGate(),
-                        ),
-                        SizedBox(height: gap),
-                        BattleCard(
-                          onInviteTap: _goToCreateWithProfileGate,
-                          compact: isCompact,
-                          height: battleHeight,
-                        ),
-                        SizedBox(height: gap),
-                        JudgeSpotlightCard(
-                          judge: judge,
-                          judges: spotlightJudges,
-                          onExplore: _goToCreateWithProfileGate,
-                          compact: isCompact,
-                          height: judgeHeight,
-                        ),
-                        SizedBox(height: gap),
-                        _QuestSection(questsAsync: questsAsync),
-                        SizedBox(height: gap),
-                        RecentWins(
-                          surprises: recent,
-                          judgeNameForPersona: HomeScreen.personaDisplayName,
-                          onSeeAll: () => context.go('/shell/vault'),
-                          itemHeight: recentItemHeight,
-                        ),
-                      ],
+      body: CosmicBackground(
+        showStars: true,
+        glowColor: AppTheme.primaryOrange,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 126),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    WinkidooTopBar(
+                      matchLogoToWordmark: true,
+                      notificationCount: math.min(waitingForMe.length, 9),
+                      streakCount: streakWeeks,
+                      levelCount: levelCount,
+                      onNotificationTap: () => context.go('/shell/vault'),
+                      onStreakTap: () => context.go('/shell/profile'),
                     ),
-                  ),
+                    SizedBox(height: gap),
+                    HeroSection(
+                      height: heroHeight,
+                      items: _avatarOptions(),
+                      onAvatarTap: (_) => _goToCreateWithProfileGate(),
+                    ),
+                    SizedBox(height: gap),
+                    BattleCard(
+                      onInviteTap: _goToCreateWithProfileGate,
+                      compact: isCompact,
+                      height: battleHeight,
+                    ),
+                    SizedBox(height: gap),
+                    JudgeSpotlightCard(
+                      judge: judge,
+                      judges: spotlightJudges,
+                      onExplore: _goToCreateWithProfileGate,
+                      compact: isCompact,
+                      height: judgeHeight,
+                    ),
+                    SizedBox(height: gap),
+                    _QuestSection(questsAsync: questsAsync),
+                    SizedBox(height: gap),
+                    RecentWins(
+                      surprises: recent,
+                      judgeNameForPersona: HomeScreen.personaDisplayName,
+                      onSeeAll: () => context.go('/shell/vault'),
+                      itemHeight: recentItemHeight,
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

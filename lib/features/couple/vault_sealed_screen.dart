@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// --- Constants ---
-
-const Color _kNavyTop = Color(0xFF0F172A);
-const Color _kPlumBottom = Color(0xFF1B1030);
-const Color _kPlum = Color(0xFF6D2E8C);
-const Color _kSurfaceDark = Color(0xFF1E293B);
+import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 
 const double _kCardRadius = 24.0;
 const double _kButtonHeight = 52.0;
@@ -64,12 +59,9 @@ class _VaultSealedScreenState extends State<VaultSealedScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          _buildLayer1(),
-          _buildLayer2(),
-          _buildLayer3Vignette(),
-          SafeArea(
+      body: CosmicBackground(
+        glowColor: AppTheme.secondaryViolet,
+        child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                 _kPadding,
@@ -99,55 +91,6 @@ class _VaultSealedScreenState extends State<VaultSealedScreen>
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLayer1() {
-    return Positioned.fill(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [_kNavyTop, _kPlumBottom],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLayer2() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(0, -0.2),
-            radius: 0.8,
-            colors: [
-              _kPlum.withValues(alpha: 0.25),
-              Colors.transparent,
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLayer3Vignette() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.4,
-            colors: [
-              Colors.transparent,
-              Colors.black.withValues(alpha: 0.2),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -192,10 +135,10 @@ class _VaultSealedScreenState extends State<VaultSealedScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(_kPadding),
       decoration: BoxDecoration(
-        color: _kSurfaceDark,
+        color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(_kCardRadius),
         border: Border.all(
-          color: _kPlum.withValues(alpha: 0.4),
+          color: AppTheme.secondaryViolet.withValues(alpha: 0.4),
         ),
         boxShadow: [
           BoxShadow(
@@ -238,11 +181,11 @@ class _VaultSealedScreenState extends State<VaultSealedScreen>
         child: Container(
           height: _kButtonHeight,
           decoration: BoxDecoration(
-            color: _kPlum,
+            color: AppTheme.secondaryViolet,
             borderRadius: BorderRadius.circular(_kRadius),
             boxShadow: [
               BoxShadow(
-                color: _kPlum.withValues(alpha: 0.3),
+                color: AppTheme.secondaryViolet.withValues(alpha: 0.3),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -268,7 +211,7 @@ class _VaultSealedScreenState extends State<VaultSealedScreen>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(_kRadius),
         border: Border.all(
-          color: _kPlum.withValues(alpha: 0.5),
+          color: AppTheme.secondaryViolet.withValues(alpha: 0.5),
         ),
       ),
       alignment: Alignment.center,

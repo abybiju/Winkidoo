@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:go_router/go_router.dart';
 import 'package:winkidoo/models/judge_response.dart';
@@ -345,14 +346,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
-              ),
-            ),
+          CosmicBackground(
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(24),

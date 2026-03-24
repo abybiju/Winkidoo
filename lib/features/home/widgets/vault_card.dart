@@ -149,7 +149,7 @@ class _VaultGlyph extends StatelessWidget {
       ),
       child: const Icon(
         Icons.inventory_2_rounded,
-        color: Color(0xFFC9C4DB),
+        color: AppTheme.textSecondary,
         size: 28,
       ),
     );
@@ -224,7 +224,7 @@ class _EnterVaultButtonState extends State<_EnterVaultButton> {
                       const Icon(
                         Icons.chevron_right_rounded,
                         size: 17,
-                        color: Color(0xFFC9C4DB),
+                        color: AppTheme.textSecondary,
                       ),
                     ],
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
 
 /// 3-screen onboarding: value prop, couple link, first surprise. Shown once to new users.
@@ -34,18 +35,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final colors = AppTheme.homeBackgroundGradient(brightness);
-
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: colors,
-          ),
-        ),
+      body: CosmicBackground(
+        glowColor: AppTheme.primaryOrange,
         child: SafeArea(
           child: Column(
             children: [

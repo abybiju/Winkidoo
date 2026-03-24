@@ -173,7 +173,7 @@ class _BattleActionButtonState extends State<_BattleActionButton>
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFFFFE37B), Color(0xFFF5C76B)],
+              colors: [AppTheme.ctaGoldA, AppTheme.ctaGoldB],
             ),
             border:
                 Border.all(color: Colors.white.withValues(alpha: 0.18)),
@@ -195,7 +195,7 @@ class _BattleActionButtonState extends State<_BattleActionButton>
               children: [
                 const Icon(
                   Icons.flash_on_rounded,
-                  color: Color(0xFF6E4500),
+                  color: Color(0xFF4A2800),
                   size: 16,
                 ),
                 const SizedBox(width: 8),
@@ -205,7 +205,7 @@ class _BattleActionButtonState extends State<_BattleActionButton>
                     fontSize: widget.compact ? 14 : 15,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.2,
-                    color: const Color(0xFF6E4500),
+                    color: const Color(0xFF4A2800),
                   ),
                 ),
               ],
@@ -257,8 +257,8 @@ class _MinimalBattleIconBlock extends StatelessWidget {
                 Icons.sports_martial_arts_rounded,
                 size: 32,
                 color: brightness == Brightness.dark
-                    ? const Color(0xFF9890B0)
-                    : const Color(0xFF8B80A0),
+                    ? AppTheme.textMuted
+                    : AppTheme.lightTextMuted,
               ),
             ],
           ),

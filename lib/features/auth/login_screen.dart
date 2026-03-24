@@ -217,8 +217,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     center: const Alignment(0, -0.15),
                     radius: 1.12,
                     colors: [
-                      AppTheme.primaryPink.withValues(alpha: 0.13),
-                      AppTheme.plum.withValues(alpha: 0.10),
+                      AppTheme.primaryOrange.withValues(alpha: 0.13),
+                      AppTheme.secondaryViolet.withValues(alpha: 0.10),
                       Colors.transparent,
                     ],
                   ),
@@ -317,7 +317,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       onPressed:
                                           _isLoading ? null : _onForgotPassword,
                                       style: TextButton.styleFrom(
-                                        foregroundColor: AppTheme.primaryPink,
+                                        foregroundColor: AppTheme.primaryOrange,
                                         visualDensity: VisualDensity.compact,
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 4, vertical: 2),
@@ -369,7 +369,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       Colors.white.withValues(alpha: 0.03),
                                   foregroundColor: Colors.white,
                                   border: Border.all(
-                                    color: AppTheme.primaryPink
+                                    color: AppTheme.primaryOrange
                                         .withValues(alpha: 0.35),
                                   ),
                                   iconScale: 1.2,
@@ -385,7 +385,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       Colors.white.withValues(alpha: 0.03),
                                   foregroundColor: Colors.white,
                                   border: Border.all(
-                                    color: AppTheme.primaryPink
+                                    color: AppTheme.primaryOrange
                                         .withValues(alpha: 0.35),
                                   ),
                                   iconScale: 1.2,
@@ -488,12 +488,12 @@ class _PremiumInput extends StatelessWidget {
 
   static final _restBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(_kRadius),
-    borderSide: BorderSide(color: AppTheme.primaryPink.withValues(alpha: 0.35)),
+    borderSide: BorderSide(color: AppTheme.primaryOrange.withValues(alpha: 0.35)),
   );
 
   static final _focusBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(_kRadius),
-    borderSide: const BorderSide(color: AppTheme.primaryPink, width: 2),
+    borderSide: const BorderSide(color: AppTheme.primaryOrange, width: 2),
   );
 
   @override
@@ -511,7 +511,7 @@ class _PremiumInput extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.72),
           fontWeight: FontWeight.w500,
         ),
-        prefixIcon: Icon(icon, color: AppTheme.primaryPink, size: 28),
+        prefixIcon: Icon(icon, color: AppTheme.primaryOrange, size: 28),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.04),
@@ -647,7 +647,7 @@ class _ModeToggleTextState extends State<_ModeToggleText> {
     final prefix =
         widget.isSignUp ? 'Already have an account? ' : 'Need an account? ';
     final actionColor =
-        _hovered ? Colors.white : AppTheme.primaryPink.withValues(alpha: 0.95);
+        _hovered ? Colors.white : AppTheme.primaryOrange.withValues(alpha: 0.95);
 
     return MouseRegion(
       cursor:

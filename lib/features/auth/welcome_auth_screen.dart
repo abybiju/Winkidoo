@@ -170,8 +170,8 @@ class _HeroOverlays extends StatelessWidget {
                 center: const Alignment(0, 0.2),
                 radius: 1.15,
                 colors: [
-                  AppTheme.primaryPink.withValues(alpha: 0.07),
-                  AppTheme.plum.withValues(alpha: 0.05),
+                  AppTheme.primaryOrange.withValues(alpha: 0.07),
+                  AppTheme.secondaryViolet.withValues(alpha: 0.05),
                   Colors.transparent,
                 ],
               ),
@@ -191,7 +191,7 @@ class _HeroOverlays extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFFF5CA8).withValues(alpha: 0.13),
+                      AppTheme.primaryOrange.withValues(alpha: 0.13),
                       Colors.transparent,
                     ],
                     radius: 0.82,

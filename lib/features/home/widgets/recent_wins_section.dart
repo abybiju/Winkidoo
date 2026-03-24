@@ -147,7 +147,7 @@ class _WinCard extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFFFE37B), Color(0xFFF5C76B)],
+                colors: [AppTheme.ctaGoldA, AppTheme.ctaGoldB],
               ),
               boxShadow: [
                 BoxShadow(
@@ -159,7 +159,7 @@ class _WinCard extends StatelessWidget {
             ),
             child: Icon(
               Icons.emoji_events_rounded,
-              color: const Color(0xFF6E4500),
+              color: const Color(0xFF4A2800),
               size: compact ? 18 : 20,
             ),
           ),

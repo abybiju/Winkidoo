@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:winkidoo/core/theme/app_theme.dart';
 
 class AvatarChipData {
   const AvatarChipData({
@@ -33,7 +34,7 @@ class AvatarChipRow extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final item = items[index];
-          final baseColor = item.color ?? const Color(0xFFFFB649);
+          final baseColor = item.color ?? AppTheme.primaryOrangeLight;
           return SizedBox(
             width: 70,
             child: Column(
@@ -51,7 +52,7 @@ class AvatarChipRow extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [
                             baseColor.withValues(alpha: 0.85),
-                            const Color(0xFFE85D93)
+                            AppTheme.primaryOrange
                           ],
                         ),
                         border: Border.all(color: Colors.white, width: 3),
@@ -74,16 +75,16 @@ class AvatarChipRow extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFC52C),
+                            color: AppTheme.premiumAmber,
                             borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: const Color(0xFFE7A900)),
+                            border: Border.all(color: AppTheme.primaryOrangeDark),
                           ),
                           child: Text(
                             'New!',
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w700,
                               fontSize: 12,
-                              color: const Color(0xFF5A2C00),
+                              color: const Color(0xFF3D1800),
                             ),
                           ),
                         ),
@@ -98,14 +99,14 @@ class AvatarChipRow extends StatelessWidget {
                           alignment: Alignment.center,
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFFFFD600),
+                            color: AppTheme.premiumAmber,
                           ),
                           child: Text(
                             item.badge!,
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w700,
                               fontSize: 12,
-                              color: const Color(0xFF5A2C00),
+                              color: const Color(0xFF3D1800),
                             ),
                           ),
                         ),

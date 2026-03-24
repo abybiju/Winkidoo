@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/providers/battle_pass_provider.dart';
 import 'package:winkidoo/services/battle_pass_service.dart';
 
@@ -15,14 +16,7 @@ class BattlePassScreen extends ConsumerWidget {
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppTheme.homeBackgroundGradient(brightness),
-          ),
-        ),
+      body: CosmicBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -80,7 +74,7 @@ class BattlePassScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                               gradient: const LinearGradient(
-                                colors: [Color(0xFFF5C76B), Color(0xFFFF6B2C)],
+                                colors: [AppTheme.ctaGoldA, AppTheme.primaryOrange],
                               ),
                             ),
                             child: Column(
@@ -175,7 +169,7 @@ class BattlePassScreen extends ConsumerWidget {
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFFF5C76B),
+                                color: AppTheme.ctaGoldA,
                               ),
                             ),
 
