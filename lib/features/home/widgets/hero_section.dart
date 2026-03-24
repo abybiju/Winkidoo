@@ -55,17 +55,17 @@ class _SmallHeroGlowStripState extends State<SmallHeroGlowStrip>
     return Container(
       height: widget.height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: AppTheme.homeBackgroundGradient(brightness),
         ),
         border: Border.all(color: AppTheme.premiumBorder30(brightness)),
-        boxShadow: AppTheme.premiumElevation(brightness),
+        boxShadow: AppTheme.elevation3(brightness),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         child: Stack(
           children: [
             AnimatedBuilder(
@@ -74,8 +74,8 @@ class _SmallHeroGlowStripState extends State<SmallHeroGlowStrip>
                 return CustomPaint(
                   painter: _GlowStripPainter(
                     progress: _controller.value,
-                    lineColor: AppTheme.orbitalLine.withValues(alpha: 0.26),
-                    sparkColor: AppTheme.sparkColor.withValues(alpha: 0.24),
+                    lineColor: AppTheme.orbitalLine.withValues(alpha: 0.18),
+                    sparkColor: AppTheme.sparkColor.withValues(alpha: 0.20),
                   ),
                   child: const SizedBox.expand(),
                 );
@@ -98,9 +98,12 @@ class _SmallHeroGlowStripState extends State<SmallHeroGlowStrip>
                     'Tap an avatar to challenge!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.68),
+                      letterSpacing: -0.1,
+                      color: brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.55)
+                          : AppTheme.lightTextMuted,
                     ),
                   ),
                 ],
@@ -129,7 +132,7 @@ class _GlowStripPainter extends CustomPainter {
     final ringPaint = Paint()
       ..color = lineColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4;
+      ..strokeWidth = 1.0;
 
     final center = Offset(size.width / 2, size.height * 0.68);
     canvas.drawArc(
@@ -154,8 +157,8 @@ class _GlowStripPainter extends CustomPainter {
         center: const Alignment(0, 0.3),
         radius: 1.0,
         colors: [
-          AppTheme.homeGlowPink.withValues(alpha: 0.14),
-          AppTheme.homeGlowOrange.withValues(alpha: 0.10),
+          AppTheme.homeGlowPink.withValues(alpha: 0.10),
+          AppTheme.homeGlowOrange.withValues(alpha: 0.06),
           Colors.transparent,
         ],
       ).createShader(Offset.zero & size);
@@ -173,7 +176,7 @@ class _GlowStripPainter extends CustomPainter {
 
     for (var i = 0; i < points.length; i++) {
       final pulse = 0.8 + (0.7 * math.sin(phase + i));
-      canvas.drawCircle(points[i], pulse.clamp(0.5, 1.6), sparkPaint);
+      canvas.drawCircle(points[i], pulse.clamp(0.5, 1.4), sparkPaint);
     }
   }
 

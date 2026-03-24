@@ -233,8 +233,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     center: const Alignment(0, -0.25),
                     radius: 1.1,
                     colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.09),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.05),
+                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
+                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
                       Colors.transparent,
                     ],
                   ),
@@ -316,23 +316,20 @@ class _QuestSection extends StatelessWidget {
 
         if (activeQuest.isEmpty) {
           // No active quest - show CTA
+          final brightness = Theme.of(context).brightness;
           return GestureDetector(
             onTap: () => context.push('/shell/quest/create'),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppTheme.primaryPink.withValues(alpha: 0.15),
-                    AppTheme.primaryPink.withValues(alpha: 0.05),
-                  ],
-                ),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                color: brightness == Brightness.dark
+                    ? AppTheme.glassFill
+                    : Colors.white.withValues(alpha: 0.70),
                 border: Border.all(
-                  color: AppTheme.primaryPink.withValues(alpha: 0.3),
+                  color: AppTheme.primaryPink.withValues(alpha: 0.20),
                 ),
+                boxShadow: AppTheme.elevation1(brightness),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,23 +351,23 @@ class _QuestSection extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withValues(alpha: 0.7),
+                          .withValues(alpha: 0.65),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                      horizontal: 14,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: AppTheme.primaryPink.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                      color: AppTheme.primaryPink.withValues(alpha: 0.15),
                     ),
                     child: const Text(
                       'Start Love Quest ⚔️',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryPink,
                       ),
@@ -385,23 +382,20 @@ class _QuestSection extends StatelessWidget {
         // Active quest - show progress
         final progress = (activeQuest.currentStep / activeQuest.totalSteps * 100)
             .toStringAsFixed(0);
+        final brightness = Theme.of(context).brightness;
         return GestureDetector(
           onTap: () => context.push('/shell/quest/${activeQuest.id}'),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryPink.withValues(alpha: 0.2),
-                  AppTheme.primaryPink.withValues(alpha: 0.08),
-                ],
-              ),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              color: brightness == Brightness.dark
+                  ? AppTheme.glassFill
+                  : Colors.white.withValues(alpha: 0.70),
               border: Border.all(
-                color: AppTheme.primaryPink.withValues(alpha: 0.4),
+                color: AppTheme.primaryPink.withValues(alpha: 0.22),
               ),
+              boxShadow: AppTheme.elevation1(brightness),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,12 +417,12 @@ class _QuestSection extends StatelessWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: 10,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        color: AppTheme.primaryPink.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                        color: AppTheme.primaryPink.withValues(alpha: 0.15),
                       ),
                       child: Text(
                         'Step ${activeQuest.currentStep}/${activeQuest.totalSteps}',
@@ -443,11 +437,12 @@ class _QuestSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
                     value: activeQuest.currentStep / activeQuest.totalSteps,
                     minHeight: 6,
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    backgroundColor:
+                        AppTheme.primaryPink.withValues(alpha: 0.10),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       AppTheme.primaryPink,
                     ),
@@ -462,7 +457,7 @@ class _QuestSection extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withValues(alpha: 0.6),
+                        .withValues(alpha: 0.55),
                   ),
                 ),
               ],
@@ -470,23 +465,33 @@ class _QuestSection extends StatelessWidget {
           ),
         );
       },
-      loading: () => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Colors.white.withValues(alpha: 0.08),
-        ),
-        child: const SizedBox(
-          height: 60,
-          child: Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+      loading: () {
+        final brightness = Theme.of(context).brightness;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            color: brightness == Brightness.dark
+                ? AppTheme.glassFill
+                : Colors.white.withValues(alpha: 0.50),
+            border: Border.all(
+              color: brightness == Brightness.dark
+                  ? AppTheme.glassBorderSubtle
+                  : AppTheme.lightGlassBorder,
             ),
           ),
-        ),
-      ),
+          child: const SizedBox(
+            height: 60,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+        );
+      },
       error: (_, __) => const SizedBox.shrink(),
     );
   }

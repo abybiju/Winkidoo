@@ -51,9 +51,9 @@ class TreasureArchiveScreen extends ConsumerWidget {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppTheme.gradientColors(Theme.of(context).brightness),
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
           ),
         ),
         child: archiveWithSurprises.when(
@@ -175,7 +175,7 @@ class _TreasureCard extends ConsumerWidget {
     Widget cardContent = Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         boxShadow: [
           BoxShadow(
             color: judge.primaryColor.withValues(alpha: 0.2),
@@ -186,12 +186,12 @@ class _TreasureCard extends ConsumerWidget {
       ),
       child: Material(
         color: AppTheme.surface.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
             child: Stack(
               children: [
                 Padding(

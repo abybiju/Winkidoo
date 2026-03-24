@@ -554,13 +554,15 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
               icon: const Icon(Icons.arrow_back),
               onPressed: () => context.pop(),
             ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
           ),
           body: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppTheme.gradientColors(Theme.of(context).brightness),
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
               ),
             ),
             child: SafeArea(
@@ -712,9 +714,39 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                                   Expanded(
                                     child: TextField(
                                       controller: _textController,
-                                      decoration: const InputDecoration(
+                                      decoration: InputDecoration(
                                         hintText: 'Type your argument...',
-                                        border: OutlineInputBorder(),
+                                        filled: true,
+                                        fillColor: Theme.of(context).brightness == Brightness.dark
+                                            ? AppTheme.glassFill
+                                            : Colors.white.withValues(alpha: 0.60),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                          borderSide: BorderSide(
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? AppTheme.glassBorder
+                                                : AppTheme.lightGlassBorder,
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                          borderSide: BorderSide(
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? AppTheme.glassBorder
+                                                : AppTheme.lightGlassBorder,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                          borderSide: const BorderSide(
+                                            color: AppTheme.primaryPink,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
                                       ),
                                       maxLines: 2,
                                       enabled: verdict == null && !_isSending,
@@ -784,13 +816,14 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           title: const Text('Battle'),
           backgroundColor: Colors.transparent,
           foregroundColor: AppTheme.textPrimary,
+          elevation: 0,
         ),
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: AppTheme.gradientColors(Theme.of(context).brightness),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
             ),
           ),
           child: SafeArea(
@@ -824,20 +857,30 @@ class _SystemBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: AppTheme.textSecondary.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(12),
+            color: brightness == Brightness.dark
+                ? AppTheme.glassFill
+                : Colors.white.withValues(alpha: 0.50),
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+            border: Border.all(
+              color: brightness == Brightness.dark
+                  ? AppTheme.glassBorderSubtle
+                  : AppTheme.lightGlassBorder,
+            ),
           ),
           child: Text(
             text,
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: AppTheme.textSecondary,
+              color: brightness == Brightness.dark
+                  ? AppTheme.homeTextSecondary
+                  : AppTheme.lightTextSecondary,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -855,19 +898,25 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     if (message.isFromJudge) {
       return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: 14),
         child: Center(
           child: Container(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.85,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: BoxDecoration(
-              color: AppTheme.accent.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.5)),
+              color: brightness == Brightness.dark
+                  ? AppTheme.glassFill
+                  : Colors.white.withValues(alpha: 0.70),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              border: Border.all(
+                color: AppTheme.accent.withValues(alpha: 0.30),
+              ),
+              boxShadow: AppTheme.elevation1(brightness),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -877,27 +926,41 @@ class _ChatBubble extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                     color: AppTheme.accent,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   message.content,
                   style: GoogleFonts.caveat(
                     fontSize: 18,
-                    color: AppTheme.textPrimary,
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextPrimary
+                        : AppTheme.lightTextPrimary,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 if (message.isVerdict && message.verdictScore != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Score: ${message.verdictScore}/100 • '
-                    '${message.verdictUnlocked == true ? "Unlocked!" : "Denied"}',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusPill),
+                      color: AppTheme.accent.withValues(alpha: 0.12),
+                    ),
+                    child: Text(
+                      'Score: ${message.verdictScore}/100 · '
+                      '${message.verdictUnlocked == true ? "Unlocked!" : "Denied"}',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: brightness == Brightness.dark
+                            ? AppTheme.homeTextPrimary
+                            : AppTheme.lightTextPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -916,16 +979,29 @@ class _ChatBubble extends StatelessWidget {
           constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.75,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           decoration: BoxDecoration(
-            color: isMe ? AppTheme.primary : AppTheme.secondary,
-            borderRadius: BorderRadius.circular(16),
+            color: isMe
+                ? AppTheme.primaryPink.withValues(alpha: 0.20)
+                : (brightness == Brightness.dark
+                    ? AppTheme.glassFill
+                    : Colors.white.withValues(alpha: 0.60)),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            border: Border.all(
+              color: isMe
+                  ? AppTheme.primaryPink.withValues(alpha: 0.30)
+                  : (brightness == Brightness.dark
+                      ? AppTheme.glassBorder
+                      : AppTheme.lightGlassBorder),
+            ),
           ),
           child: Text(
             message.content,
             style: GoogleFonts.inter(
               fontSize: 15,
-              color: AppTheme.textPrimary,
+              color: brightness == Brightness.dark
+                  ? AppTheme.homeTextPrimary
+                  : AppTheme.lightTextPrimary,
             ),
           ),
         ),

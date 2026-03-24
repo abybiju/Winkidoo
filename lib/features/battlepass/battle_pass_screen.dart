@@ -20,7 +20,7 @@ class BattlePassScreen extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: AppTheme.gradientColors(brightness),
+            colors: AppTheme.homeBackgroundGradient(brightness),
           ),
         ),
         child: SafeArea(
@@ -147,12 +147,12 @@ class BattlePassScreen extends ConsumerWidget {
                           // Progress bar
                           if (pass.tier != 'gold') ...[
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                               child: LinearProgressIndicator(
                                 value: progress.clamp(0.0, 1.0),
                                 minHeight: 10,
                                 backgroundColor:
-                                    Colors.white.withValues(alpha: 0.1),
+                                    AppTheme.primaryPink.withValues(alpha: 0.10),
                                 valueColor:
                                     const AlwaysStoppedAnimation<Color>(
                                         AppTheme.primaryPink),
@@ -244,15 +244,19 @@ class BattlePassScreen extends ConsumerWidget {
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                                 color: isActive
                                     ? AppTheme.primaryPink
-                                        .withValues(alpha: 0.15)
-                                    : Colors.white.withValues(alpha: 0.05),
+                                        .withValues(alpha: 0.12)
+                                    : (brightness == Brightness.dark
+                                        ? AppTheme.glassFill
+                                        : Colors.white.withValues(alpha: 0.50)),
                                 border: Border.all(
                                   color: isActive
                                       ? AppTheme.primaryPink
-                                      : Colors.white.withValues(alpha: 0.1),
+                                      : (brightness == Brightness.dark
+                                          ? AppTheme.glassBorderSubtle
+                                          : AppTheme.lightGlassBorder),
                                 ),
                               ),
                               child: Row(

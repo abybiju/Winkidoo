@@ -31,7 +31,7 @@ class QuestProgressScreen extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: AppTheme.gradientColors(brightness),
+            colors: AppTheme.homeBackgroundGradient(brightness),
           ),
         ),
         child: SafeArea(

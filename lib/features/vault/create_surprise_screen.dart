@@ -455,7 +455,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors:
-                        AppTheme.gradientColors(Theme.of(context).brightness),
+                        AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
                   ),
                 ),
                 child: SafeArea(

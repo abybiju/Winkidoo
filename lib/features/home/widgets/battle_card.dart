@@ -22,42 +22,45 @@ class BattleCard extends StatelessWidget {
     return Container(
       constraints: BoxConstraints(minHeight: targetHeight),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: AppTheme.vaultHeroGradient(brightness),
         ),
         border: Border.all(color: AppTheme.premiumBorder30(brightness)),
-        boxShadow: AppTheme.premiumElevation(brightness),
+        boxShadow: AppTheme.elevation3(brightness),
       ),
       child: Stack(
         children: [
+          // Subtle glow from bottom
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    AppTheme.homeGlowPink.withValues(alpha: 0.08),
+                    AppTheme.homeGlowPink.withValues(alpha: 0.06),
                     Colors.transparent,
                   ],
                 ),
               ),
             ),
           ),
+          // Left vignette for depth
           Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                   gradient: LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
                       AppTheme.vaultDramaVignette.withValues(
-                        alpha: brightness == Brightness.dark ? 0.46 : 0.22,
+                        alpha: brightness == Brightness.dark ? 0.36 : 0.16,
                       ),
                       Colors.transparent,
                     ],
@@ -68,7 +71,7 @@ class BattleCard extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(
-                16, compact ? 14 : 16, 16, compact ? 14 : 16),
+                18, compact ? 14 : 18, 18, compact ? 14 : 18),
             child: Row(
               children: [
                 Expanded(
@@ -81,23 +84,25 @@ class BattleCard extends StatelessWidget {
                       Text(
                         'Start a Battle',
                         style: GoogleFonts.poppins(
-                          fontSize: compact ? 21 : 23,
+                          fontSize: compact ? 21 : 24,
                           fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                           color: AppTheme.homeTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Challenge a friend. Persuade. Win.',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: compact ? 14 : 15,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                           color: AppTheme.homeTextSecondary,
-                          height: 1.25,
+                          height: 1.4,
                         ),
                       ),
-                      SizedBox(height: compact ? 11 : 14),
-                      _BattleActionButton(onTap: onInviteTap, compact: compact),
+                      SizedBox(height: compact ? 14 : 18),
+                      _BattleActionButton(
+                          onTap: onInviteTap, compact: compact),
                     ],
                   ),
                 ),
@@ -125,72 +130,85 @@ class _BattleActionButton extends StatefulWidget {
   State<_BattleActionButton> createState() => _BattleActionButtonState();
 }
 
-class _BattleActionButtonState extends State<_BattleActionButton> {
-  bool _hovered = false;
-  bool _pressed = false;
+class _BattleActionButtonState extends State<_BattleActionButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      vsync: this,
+      duration: AppTheme.microDuration,
+      lowerBound: 0.0,
+      upperBound: 1.0,
+      value: 0.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final scale = _pressed ? 0.97 : (_hovered ? 1.015 : 1.0);
-
-    return AnimatedScale(
-      scale: scale,
-      duration: const Duration(milliseconds: 130),
-      curve: Curves.easeOut,
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapCancel: () => setState(() => _pressed = false),
-          onTapUp: (_) => setState(() => _pressed = false),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              color: const Color(0xFFF5C76B),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-              boxShadow: [
-                if (_hovered)
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.24),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-              ],
+    return GestureDetector(
+      onTapDown: (_) => _pressController.forward(),
+      onTapUp: (_) {
+        _pressController.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _pressController.reverse(),
+      child: AnimatedBuilder(
+        animation: _pressController,
+        builder: (context, child) {
+          final scale = 1.0 - (_pressController.value * 0.04);
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFE37B), Color(0xFFF5C76B)],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.onTap,
-                borderRadius: BorderRadius.circular(999),
-                splashColor: Colors.white.withValues(alpha: 0.12),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: widget.compact ? 16 : 18,
-                    vertical: widget.compact ? 9 : 10,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.flash_on_rounded,
-                        color: Color(0xFF6E4500),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Invite to Battle',
-                        style: GoogleFonts.poppins(
-                          fontSize: widget.compact ? 14 : 15,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF6E4500),
-                        ),
-                      ),
-                    ],
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.premiumGold.withValues(alpha: 0.30),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.compact ? 18 : 20,
+              vertical: widget.compact ? 10 : 12,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.flash_on_rounded,
+                  color: Color(0xFF6E4500),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Invite to Battle',
+                  style: GoogleFonts.poppins(
+                    fontSize: widget.compact ? 14 : 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                    color: const Color(0xFF6E4500),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -204,32 +222,43 @@ class _MinimalBattleIconBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Align(
       alignment: Alignment.center,
       child: Container(
-        width: 124,
-        height: 124,
+        width: 118,
+        height: 118,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          color: Colors.white.withValues(alpha: 0.05),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          color: brightness == Brightness.dark
+              ? AppTheme.glassFill
+              : const Color(0x0A000000),
+          border: Border.all(
+            color: brightness == Brightness.dark
+                ? AppTheme.glassBorderSubtle
+                : const Color(0x14000000),
+          ),
         ),
         child: Center(
           child: Stack(
             alignment: Alignment.center,
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: brightness == Brightness.dark
+                      ? AppTheme.glassFill
+                      : const Color(0x0A000000),
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.sports_martial_arts_rounded,
-                size: 34,
-                color: Color(0xFFC9C4DB),
+                size: 32,
+                color: brightness == Brightness.dark
+                    ? const Color(0xFF9890B0)
+                    : const Color(0xFF8B80A0),
               ),
             ],
           ),

@@ -172,8 +172,8 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                     center: const Alignment(0, -0.25),
                     radius: 1.1,
                     colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.09),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.05),
+                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
+                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
                       Colors.transparent,
                     ],
                   ),
@@ -297,10 +297,10 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: AppTheme.primaryPink.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            color: AppTheme.primaryPink.withValues(alpha: 0.10),
                             border: Border.all(
-                              color: AppTheme.primaryPink.withValues(alpha: 0.3),
+                              color: AppTheme.primaryPink.withValues(alpha: 0.20),
                             ),
                           ),
                           child: Row(

@@ -62,8 +62,8 @@ class ProfileScreen extends ConsumerWidget {
                     center: const Alignment(0, -0.25),
                     radius: 1.1,
                     colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.09),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.05),
+                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
+                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
                       Colors.transparent,
                     ],
                   ),

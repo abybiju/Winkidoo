@@ -35,7 +35,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final colors = AppTheme.gradientColors(brightness);
+    final colors = AppTheme.homeBackgroundGradient(brightness);
 
     return Scaffold(
       body: Container(

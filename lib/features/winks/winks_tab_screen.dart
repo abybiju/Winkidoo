@@ -12,6 +12,7 @@ class WinksTabScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final winks = ref.watch(winksBalanceProvider).value;
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       body: Stack(
@@ -22,8 +23,7 @@ class WinksTabScreen extends ConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: AppTheme.homeBackgroundGradient(
-                      Theme.of(context).brightness),
+                  colors: AppTheme.homeBackgroundGradient(brightness),
                 ),
               ),
             ),
@@ -36,8 +36,8 @@ class WinksTabScreen extends ConsumerWidget {
                     center: const Alignment(0, -0.25),
                     radius: 1.1,
                     colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.09),
-                      AppTheme.homeGlowOrange.withValues(alpha: 0.05),
+                      AppTheme.homeGlowPink.withValues(alpha: 0.06),
+                      AppTheme.homeGlowOrange.withValues(alpha: 0.03),
                       Colors.transparent,
                     ],
                   ),
@@ -55,53 +55,128 @@ class WinksTabScreen extends ConsumerWidget {
                     matchLogoToWordmark: true,
                     showLogo: true,
                   ),
-                  const SizedBox(height: 14),
-                  Card(
-                    color: AppTheme.homeSurfaceCard.withValues(alpha: 0.86),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusLarge),
+                      color: brightness == Brightness.dark
+                          ? AppTheme.glassFill
+                          : Colors.white.withValues(alpha: 0.70),
+                      border: Border.all(
+                        color: brightness == Brightness.dark
+                            ? AppTheme.glassBorder
+                            : AppTheme.lightGlassBorder,
+                      ),
+                      boxShadow: AppTheme.elevation2(brightness),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFFFE37B),
+                                Color(0xFFF5C76B),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.premiumGold
+                                    .withValues(alpha: 0.30),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.emoji_emotions_rounded,
+                            size: 28,
+                            color: Color(0xFF6E4500),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '${winks?.balance ?? 0}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1,
+                            color: brightness == Brightness.dark
+                                ? AppTheme.homeTextPrimary
+                                : AppTheme.lightTextPrimary,
+                          ),
+                        ),
+                        Text(
+                          'Winks',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: brightness == Brightness.dark
+                                ? AppTheme.homeTextSecondary
+                                : AppTheme.lightTextSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Use Winks for hints, persuasion boosts,\nand instant unlock.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            height: 1.5,
+                            color: brightness == Brightness.dark
+                                ? AppTheme.homeTextSecondary
+                                : AppTheme.lightTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  GestureDetector(
+                    onTap: () => context.push('/shell/wink-plus'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusPill),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFFFE37B), Color(0xFFF5C76B)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                AppTheme.premiumGold.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.emoji_emotions_rounded,
-                              size: 48, color: AppTheme.accent),
-                          const SizedBox(height: 12),
+                          const Icon(Icons.star_rounded,
+                              size: 20, color: Color(0xFF6E4500)),
+                          const SizedBox(width: 8),
                           Text(
-                            '${winks?.balance ?? 0}',
-                            style: GoogleFonts.inter(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primary,
-                            ),
-                          ),
-                          Text(
-                            'Winks',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Use Winks for hints, persuasion boosts, and instant unlock.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary,
+                            'Unlock more with Wink+',
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF6E4500),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: () => context.push('/shell/wink-plus'),
-                    icon: const Icon(Icons.star_rounded, size: 20),
-                    label: const Text('Unlock more with Wink+'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ],

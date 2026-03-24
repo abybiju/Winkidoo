@@ -348,9 +348,9 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppTheme.gradientColors(Theme.of(context).brightness),
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
               ),
             ),
             child: SafeArea(
@@ -384,8 +384,15 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.surface.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppTheme.glassFill
+                            : Colors.white.withValues(alpha: 0.50),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppTheme.glassBorderSubtle
+                              : AppTheme.lightGlassBorder,
+                        ),
                       ),
                       child: Text(
                         _formatBattleStats(
@@ -405,8 +412,16 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppTheme.surface,
-                        borderRadius: BorderRadius.circular(16),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppTheme.glassFill
+                            : Colors.white.withValues(alpha: 0.70),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppTheme.glassBorder
+                              : AppTheme.lightGlassBorder,
+                        ),
+                        boxShadow: AppTheme.elevation1(Theme.of(context).brightness),
                       ),
                       child: Text(
                         widget.judgeResponse.commentary,

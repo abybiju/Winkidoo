@@ -19,6 +19,7 @@ class RecentWins extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     final compact = itemHeight < 96;
 
     return Column(
@@ -31,20 +32,25 @@ class RecentWins extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: compact ? 20 : 22,
                 fontWeight: FontWeight.w800,
-                color: AppTheme.homeTextPrimary,
+                letterSpacing: -0.3,
+                color: brightness == Brightness.dark
+                    ? AppTheme.homeTextPrimary
+                    : AppTheme.lightTextPrimary,
               ),
             ),
             const Spacer(),
             TextButton(
               onPressed: onSeeAll,
               style: TextButton.styleFrom(
-                foregroundColor: AppTheme.homeTextSecondary,
+                foregroundColor: brightness == Brightness.dark
+                    ? AppTheme.homeTextSecondary
+                    : AppTheme.lightTextSecondary,
                 visualDensity: VisualDensity.compact,
               ),
               child: Text(
                 'View all',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -56,10 +62,12 @@ class RecentWins extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(2, 6, 2, 0),
             child: Text(
               'No resolved battles yet. Your first win will appear here.',
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.homeTextSecondary,
+                fontWeight: FontWeight.w400,
+                color: brightness == Brightness.dark
+                    ? AppTheme.homeTextSecondary
+                    : AppTheme.lightTextSecondary,
               ),
             ),
           )
@@ -77,7 +85,8 @@ class RecentWins extends StatelessWidget {
                   final date = surprise.lastActivityAt ??
                       surprise.unlockedAt ??
                       surprise.createdAt;
-                  final judgeName = judgeNameForPersona(surprise.judgePersona);
+                  final judgeName =
+                      judgeNameForPersona(surprise.judgePersona);
                   return SizedBox(
                     width: tileWidth,
                     child: _WinCard(
@@ -115,32 +124,43 @@ class _WinCard extends StatelessWidget {
     return Container(
       height: height,
       padding:
-          EdgeInsets.symmetric(horizontal: compact ? 10 : 12, vertical: 10),
+          EdgeInsets.symmetric(horizontal: compact ? 12 : 14, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: AppTheme.vaultHeroGradient(brightness),
-        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        color: brightness == Brightness.dark
+            ? AppTheme.glassFill
+            : Colors.white.withValues(alpha: 0.70),
         border: Border.all(
-          color: AppTheme.premiumBorder30(brightness),
+          color: brightness == Brightness.dark
+              ? AppTheme.glassBorder
+              : AppTheme.lightGlassBorder,
         ),
+        boxShadow: AppTheme.elevation1(brightness),
       ),
       child: Row(
         children: [
           Container(
-            width: compact ? 40 : 44,
-            height: compact ? 40 : 44,
+            width: compact ? 38 : 42,
+            height: compact ? 38 : 42,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.08),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFE37B), Color(0xFFF5C76B)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.premiumGold.withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(
               Icons.emoji_events_rounded,
-              color: AppTheme.homeTextSecondary,
-              size: compact ? 21 : 23,
+              color: const Color(0xFF6E4500),
+              size: compact ? 18 : 20,
             ),
           ),
           const SizedBox(width: 10),
@@ -156,16 +176,21 @@ class _WinCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: compact ? 14 : 15,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.homeTextPrimary,
+                    letterSpacing: -0.2,
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextPrimary
+                        : AppTheme.lightTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   dateText,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: compact ? 12 : 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.homeTextSecondary,
+                    fontWeight: FontWeight.w400,
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextSecondary
+                        : AppTheme.lightTextSecondary,
                   ),
                 ),
               ],

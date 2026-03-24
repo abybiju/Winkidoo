@@ -186,7 +186,7 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: AppTheme.gradientColors(Theme.of(context).brightness),
+                colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
               ),
             ),
             child: SafeArea(

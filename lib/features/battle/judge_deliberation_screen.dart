@@ -50,9 +50,9 @@ class _JudgeDeliberationScreenState
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppTheme.gradientColors(Theme.of(context).brightness),
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: AppTheme.homeBackgroundGradient(Theme.of(context).brightness),
           ),
         ),
         child: SafeArea(

@@ -4,7 +4,7 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 
 enum PillCtaStyle { standard, layered, glass }
 
-class PillCta extends StatelessWidget {
+class PillCta extends StatefulWidget {
   const PillCta({
     super.key,
     required this.label,
@@ -25,12 +25,38 @@ class PillCta extends StatelessWidget {
   final PillCtaStyle style;
 
   @override
+  State<PillCta> createState() => _PillCtaState();
+}
+
+class _PillCtaState extends State<PillCta>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      vsync: this,
+      duration: AppTheme.microDuration,
+      lowerBound: 0.0,
+      upperBound: 1.0,
+      value: 0.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final defaultBg = filled
+    final defaultBg = widget.filled
         ? AppTheme.pillBg(brightness)
         : Theme.of(context).colorScheme.surface.withValues(alpha: 0.78);
-    final defaultFg = filled
+    final defaultFg = widget.filled
         ? AppTheme.navTextStrong(brightness)
         : Theme.of(context).colorScheme.onSurface;
 
@@ -39,9 +65,9 @@ class PillCta extends StatelessWidget {
     Color fg = defaultFg;
     Color borderColor = AppTheme.pillBorder(brightness);
     double borderWidth = 1;
-    List<BoxShadow> boxShadow = AppTheme.toyPillShadow(brightness);
+    List<BoxShadow> boxShadow = AppTheme.elevation1(brightness);
 
-    switch (style) {
+    switch (widget.style) {
       case PillCtaStyle.standard:
         break;
       case PillCtaStyle.layered:
@@ -51,55 +77,57 @@ class PillCta extends StatelessWidget {
           colors: [AppTheme.vaultCtaPrimaryA, AppTheme.vaultCtaPrimaryB],
         );
         fg = Colors.white;
-        borderColor = Colors.white.withValues(alpha: 0.28);
+        borderColor = Colors.white.withValues(alpha: 0.22);
         borderWidth = 1.2;
         boxShadow = [
           BoxShadow(
-            color: AppTheme.vaultCtaPrimaryB.withValues(alpha: 0.36),
-            blurRadius: 16,
-            spreadRadius: 0.5,
-            offset: const Offset(0, 5),
+            color: AppTheme.vaultCtaPrimaryB.withValues(alpha: 0.30),
+            blurRadius: 20,
+            spreadRadius: 0,
+            offset: const Offset(0, 6),
           ),
-          ...AppTheme.toyPillShadow(brightness),
+          ...AppTheme.elevation1(brightness),
         ];
         break;
       case PillCtaStyle.glass:
         bgColor = brightness == Brightness.dark
-            ? AppTheme.vaultCtaSecondaryFill
-            : Colors.white.withValues(alpha: 0.62);
+            ? AppTheme.glassFill
+            : Colors.white.withValues(alpha: 0.72);
         fg = Theme.of(context).colorScheme.onSurface;
         borderColor = brightness == Brightness.dark
-            ? AppTheme.vaultCtaSecondaryStroke
-            : const Color(0x66A06DAF);
-        borderWidth = 1.1;
-        boxShadow = [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.14),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ];
+            ? AppTheme.glassBorder
+            : const Color(0x33A06DAF);
+        borderWidth = 1;
+        boxShadow = AppTheme.elevation1(brightness);
         break;
     }
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
+    return GestureDetector(
+      onTapDown: (_) => _pressController.forward(),
+      onTapUp: (_) {
+        _pressController.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _pressController.reverse(),
+      child: AnimatedBuilder(
+        animation: _pressController,
+        builder: (context, child) {
+          final scale = 1.0 - (_pressController.value * 0.04);
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: Container(
           decoration: BoxDecoration(
             color: bgGradient == null ? bgColor : null,
             gradient: bgGradient,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
             border: Border.all(color: borderColor, width: borderWidth),
             boxShadow: boxShadow,
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
             child: Stack(
               children: [
-                if (style == PillCtaStyle.layered)
+                if (widget.style == PillCtaStyle.layered)
                   const Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
@@ -110,34 +138,37 @@ class PillCta extends StatelessWidget {
                             AppTheme.vaultCtaInnerGlow,
                             Colors.transparent,
                           ],
-                          stops: [0.0, 0.6],
+                          stops: [0.0, 0.5],
                         ),
                       ),
                     ),
                   ),
                 Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 14 : 18,
-                    vertical: compact ? 10 : 12,
+                    horizontal: widget.compact ? 16 : 20,
+                    vertical: widget.compact ? 10 : 13,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (icon != null && !trailing) ...[
-                        Icon(icon, size: compact ? 16 : 18, color: fg),
+                      if (widget.icon != null && !widget.trailing) ...[
+                        Icon(widget.icon,
+                            size: widget.compact ? 16 : 18, color: fg),
                         const SizedBox(width: 8),
                       ],
                       Text(
-                        label,
+                        widget.label,
                         style: GoogleFonts.poppins(
-                          fontSize: compact ? 15 : 17,
+                          fontSize: widget.compact ? 14 : 16,
                           fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
                           color: fg,
                         ),
                       ),
-                      if (icon != null && trailing) ...[
+                      if (widget.icon != null && widget.trailing) ...[
                         const SizedBox(width: 8),
-                        Icon(icon, size: compact ? 16 : 18, color: fg),
+                        Icon(widget.icon,
+                            size: widget.compact ? 16 : 18, color: fg),
                       ],
                     ],
                   ),

@@ -40,30 +40,31 @@ class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
       onExit: (_) => setState(() => _hovered = false),
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
+        duration: AppTheme.microDuration,
+        curve: AppTheme.standardCurve,
         transform: Matrix4.translationValues(0.0, _hovered ? -1.5 : 0.0, 0.0),
         constraints: BoxConstraints(minHeight: targetHeight),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: AppTheme.vaultHeroGradient(brightness),
           ),
           border: Border.all(color: AppTheme.premiumBorder30(brightness)),
-          boxShadow: AppTheme.premiumElevation(brightness),
+          boxShadow: AppTheme.elevation3(brightness),
         ),
         child: Stack(
           children: [
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                   gradient: LinearGradient(
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
                     colors: [
-                      AppTheme.homeGlowPink.withValues(alpha: 0.07),
+                      AppTheme.homeGlowPink.withValues(alpha: 0.05),
                       Colors.transparent,
                     ],
                   ),
@@ -74,13 +75,13 @@ class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(26),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                     gradient: LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [
                         AppTheme.vaultDramaVignette.withValues(
-                          alpha: brightness == Brightness.dark ? 0.42 : 0.22,
+                          alpha: brightness == Brightness.dark ? 0.36 : 0.16,
                         ),
                         Colors.transparent,
                       ],
@@ -90,7 +91,7 @@ class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
               child: Row(
                 children: [
                   Expanded(
@@ -102,10 +103,9 @@ class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
                       children: [
                         Text(
                           'Judge Spotlight',
-                          style: GoogleFonts.poppins(
-                            fontSize: widget.compact ? 17 : 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.homeTextPrimary,
+                          style: AppTheme.overline(brightness).copyWith(
+                            color: AppTheme.homeTextSecondary,
+                            letterSpacing: 1.2,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -113,8 +113,9 @@ class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
                           'Meet ${_judgeDisplayName(topJudge)}',
                           maxLines: 2,
                           style: GoogleFonts.poppins(
-                            fontSize: widget.compact ? 17 : 19,
+                            fontSize: widget.compact ? 18 : 20,
                             fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
                             color: AppTheme.homeTextPrimary,
                             height: 1.15,
                           ),
@@ -125,14 +126,14 @@ class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
                               'Feeling magical. Feeling judgey.',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(
-                            fontSize: widget.compact ? 14 : 15,
-                            fontWeight: FontWeight.w500,
+                          style: GoogleFonts.inter(
+                            fontSize: widget.compact ? 13 : 14,
+                            fontWeight: FontWeight.w400,
                             color: AppTheme.homeTextSecondary,
-                            height: 1.2,
+                            height: 1.35,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         _OutlineButton(
                           onTap: widget.onExplore,
                           hovered: _hovered,
@@ -231,6 +232,7 @@ class _JudgePreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     final w = compact ? 66.0 : 72.0;
     final h = compact ? 88.0 : 96.0;
     final imagePath = _imagePathForJudge(judge);
@@ -242,17 +244,15 @@ class _JudgePreviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: highlighted
-              ? Colors.white.withValues(alpha: 0.72)
-              : Colors.white.withValues(alpha: 0.28),
+              ? Colors.white.withValues(alpha: 0.60)
+              : brightness == Brightness.dark
+                  ? AppTheme.glassBorder
+                  : const Color(0x33000000),
           width: highlighted ? 1.4 : 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: highlighted ? 0.30 : 0.20),
-            blurRadius: highlighted ? 12 : 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: highlighted
+            ? AppTheme.elevation2(brightness)
+            : AppTheme.elevation1(brightness),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -264,8 +264,8 @@ class _JudgePreviewCard extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: highlighted
-                    ? const [Color(0xFF432062), Color(0xFF25123C)]
-                    : const [Color(0xFF392051), Color(0xFF1E1432)],
+                    ? const [Color(0xFF3A1D58), Color(0xFF1E1038)]
+                    : const [Color(0xFF2E1846), Color(0xFF18102C)],
               ),
             ),
           ),
@@ -283,7 +283,7 @@ class _JudgePreviewCard extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withValues(alpha: 0.56),
+                  Colors.black.withValues(alpha: 0.60),
                 ],
               ),
             ),
@@ -353,66 +353,90 @@ class _OutlineButton extends StatefulWidget {
   State<_OutlineButton> createState() => _OutlineButtonState();
 }
 
-class _OutlineButtonState extends State<_OutlineButton> {
-  bool _pressed = false;
+class _OutlineButtonState extends State<_OutlineButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      vsync: this,
+      duration: AppTheme.microDuration,
+      lowerBound: 0.0,
+      upperBound: 1.0,
+      value: 0.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final scale = _pressed ? 0.97 : 1.0;
-
-    return AnimatedScale(
-      scale: scale,
-      duration: const Duration(milliseconds: 120),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTapUp: (_) => setState(() => _pressed = false),
-        child: DecoratedBox(
+    final brightness = Theme.of(context).brightness;
+    return GestureDetector(
+      onTapDown: (_) => _pressController.forward(),
+      onTapUp: (_) {
+        _pressController.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _pressController.reverse(),
+      child: AnimatedBuilder(
+        animation: _pressController,
+        builder: (context, child) {
+          final scale = 1.0 - (_pressController.value * 0.04);
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.30),
-              width: 1.1,
+              color: brightness == Brightness.dark
+                  ? AppTheme.glassBorder
+                  : const Color(0x33000000),
+              width: 1,
             ),
-            color: Colors.white.withValues(alpha: 0.04),
+            color: brightness == Brightness.dark
+                ? AppTheme.glassFill
+                : const Color(0x0A000000),
             boxShadow: [
               if (widget.hovered && kIsWeb)
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 7,
+                  color: Colors.black.withValues(alpha: 0.14),
+                  blurRadius: 8,
                 ),
             ],
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: widget.onTap,
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: widget.compact ? 12 : 14,
-                  vertical: widget.compact ? 8 : 9,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.compact ? 14 : 16,
+              vertical: widget.compact ? 9 : 10,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Explore Judges',
+                  style: GoogleFonts.poppins(
+                    fontSize: widget.compact ? 13 : 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                    color: AppTheme.homeTextPrimary,
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Explore Judges',
-                      style: GoogleFonts.poppins(
-                        fontSize: widget.compact ? 13 : 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.homeTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16,
-                      color: Color(0xFFC9C4DB),
-                    ),
-                  ],
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: brightness == Brightness.dark
+                      ? const Color(0xFF9890B0)
+                      : const Color(0xFF8B80A0),
                 ),
-              ),
+              ],
             ),
           ),
         ),
