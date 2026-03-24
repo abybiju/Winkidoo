@@ -87,23 +87,52 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - Deep links: surprise_id → battle or reveal; type season_launch → /shell/create.
 - Firebase: Android (google-services.json), iOS (GoogleService-Info.plist), Web (index.html); FIREBASE_SERVICE_ACCOUNT in Supabase secrets only.
 
+### Phase 1 — Core USP + Daily Hooks ✅
+- Love Quests: `quests` table, quest create/progress/complete screens, AI judge quest context injection
+- Daily Streaks: `daily_activity_log`, fire emoji escalation (1→7→30→100+ days)
+- Time Capsule Vault: `unlock_after` on surprises, date picker, countdown UI
+- Battle Highlights: share card image via `RepaintBoundary` + `share_plus`
+
+### Phase 2 — Gaming + Social Depth ✅
+- Love Levels XP: `couple_xp` table, `XpService`, level badge in top bar + profile XP bar
+- Judge Memory: `judge_memory` table, post-battle Gemini summary, injected into system prompt
+- Dynamic Judge Moods: time-of-day/weekday context in judge system prompt
+- Partner Peek: Supabase Realtime Presence — "✏️ Your partner is crafting..." banner
+
+### Phase 3 — Viral Growth ✅
+- Battle Pass: `battle_pass_seasons` + `battle_pass_progress`, Bronze/Silver/Gold tiers, points on create/win/quest
+- Couple Referral System: invite link deep link, +50 Winks reward UI
+- Collaborative Vault: both partners add encrypted pieces, revealed side-by-side on win
+
+### Phase 4 — Aspirational ✅
+- Judge Collectible Cards: `judge_collectibles` table, rarity (common/rare/legendary), collection grid in Profile
+- Couple Leaderboard: anonymous global ranking by XP, top 50, "You" highlight
+- Relationship Timeline: milestone map from existing surprise history (no new DB)
+- Home Screen Widget: iOS WidgetKit + Android App Widget — streak, pending surprises, daily prompt
+
 ### Migrations (run in order)
 - 001–008: schema, battle_messages, wink_plus, surprise type/photo, blueprint v1, resolved_at, creator_defense RPC, realtime.
 - 009–010: user_push_tokens, multi-device.
 - 010: profiles avatar persistence + profile-avatars storage policies.
-- 011: judges data-driven (tagline, difficulty, chaos, tone_tags, preview_quotes, primary_color_hex, is_premium, season_start/end).
-- 012: judges.is_new.
-- 013: judges.season_push_sent.
+- 011–013: judges data-driven, is_new, season_push_sent.
+- 014: quests + time capsule (quest_id, quest_step, unlock_after on surprises).
+- 015: daily_activity_log.
+- 016: couple_xp (Love Levels).
+- 017: judge_memory.
+- 018: battle_pass_seasons + battle_pass_progress.
+- 019: referrals.
+- 020: collaborative vault columns on surprises.
+- 021: judge_collectibles.
+- 022: public leaderboard read policy on couple_xp.
 
 ---
 
 ## Next / optional
 
-- Local run + LOCAL_VALIDATION checklist; Part 1 manual smoke-test (two accounts).
-- Fix photo "Bucket not found" (ensure Storage bucket `surprises` exists and policies).
-- Voice recording: device permissions and record package version if issues on Android.
-- Push: filter tokens by updated_at last 90 days or users in a couple (scale).
+- Complete iOS widget setup: add App Group `group.com.winkidoo.app` to Runner + WinkidooWidget targets in Xcode → Signing & Capabilities.
 - IAP/Stripe for Wink+ (wink_plus_until set by backend).
+- AI Love Coach (opt-in relationship insights from surprise patterns).
+- Push: filter tokens by updated_at last 90 days or users in a couple (scale).
 
 ---
 
