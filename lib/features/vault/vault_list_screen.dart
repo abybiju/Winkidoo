@@ -17,9 +17,11 @@ import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
 import 'package:winkidoo/features/vault/wink_plus_screen.dart';
 import 'package:winkidoo/models/surprise.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
+import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
 
@@ -41,14 +43,37 @@ class VaultListScreen extends ConsumerStatefulWidget {
 
 class _VaultListScreenState extends ConsumerState<VaultListScreen>
     with WidgetsBindingObserver {
+  RealtimeChannel? _presenceChannel;
+  bool _partnerCrafting = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _subscribePresence());
+  }
+
+  void _subscribePresence() {
+    final couple = ref.read(coupleProvider).value;
+    final myId = ref.read(currentUserProvider)?.id;
+    if (couple == null || myId == null) return;
+    final client = ref.read(supabaseClientProvider);
+    _presenceChannel = client.channel('presence:${couple.id}');
+    _presenceChannel!
+      ..onPresenceSync((_) {
+        final state = _presenceChannel!.presenceState();
+        final partnerCrafting = state.entries.any((e) =>
+            e.value.any((p) =>
+                p.payload['crafting'] == true &&
+                p.payload['user_id'] != myId));
+        if (mounted) setState(() => _partnerCrafting = partnerCrafting);
+      })
+      ..subscribe();
   }
 
   @override
   void dispose() {
+    _presenceChannel?.unsubscribe();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -241,6 +266,39 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                         ),
                       ),
                     ),
+                    if (_partnerCrafting)
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: EdgeInsets.fromLTRB(
+                              widget.isDesktopSidebar ? 12 : 14,
+                              8,
+                              widget.isDesktopSidebar ? 12 : 14,
+                              0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: AppTheme.primaryPink.withValues(alpha: 0.12),
+                            border: Border.all(
+                              color: AppTheme.primaryPink.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Text('✏️', style: TextStyle(fontSize: 16)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Your partner is crafting something...',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppTheme.primaryPink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     SliverPadding(
                       padding: EdgeInsets.fromLTRB(
                           widget.isDesktopSidebar ? 12 : 14,

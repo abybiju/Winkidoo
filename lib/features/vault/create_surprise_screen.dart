@@ -20,6 +20,7 @@ import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
 import 'package:winkidoo/providers/xp_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateSurpriseScreen extends ConsumerStatefulWidget {
@@ -50,6 +51,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   late AnimationController _formFadeController;
   late Animation<double> _formFadeAnimation;
   bool _checkedProfileGate = false;
+  RealtimeChannel? _presenceChannel;
 
   @override
   void initState() {
@@ -68,13 +70,30 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       _checkedProfileGate = true;
       if (!ok) {
         context.pop();
+        return;
       }
       setState(() {});
+      _startPresence();
     });
+  }
+
+  void _startPresence() {
+    final couple = ref.read(coupleProvider).value;
+    if (couple == null) return;
+    final client = ref.read(supabaseClientProvider);
+    _presenceChannel = client.channel('presence:${couple.id}');
+    _presenceChannel!
+      ..onPresenceSync((_) {})
+      ..subscribe((status, _) async {
+        if (status == RealtimeSubscribeStatus.subscribed) {
+          await _presenceChannel!.track({'crafting': true});
+        }
+      });
   }
 
   @override
   void dispose() {
+    _presenceChannel?.unsubscribe();
     _formFadeController.dispose();
     _contentController.dispose();
     _recorder.dispose();
