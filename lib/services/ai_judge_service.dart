@@ -63,10 +63,21 @@ class AiJudgeService {
             temperature: 0.8,
             maxOutputTokens: 1024,
           ),
+        ),
+        _freeformModel = GenerativeModel(
+          model: 'gemini-2.5-flash',
+          apiKey: apiKey,
+          generationConfig: GenerationConfig(
+            responseMimeType: 'application/json',
+            temperature: 0.8,
+            maxOutputTokens: 2048,
+          ),
         );
 
   final String _apiKey;
   final GenerativeModel _model;
+  /// Model without schema constraint — for custom persona, dare, and mini-game generation.
+  final GenerativeModel _freeformModel;
 
   /// Winkidoo v2.0–style base: identity, safety, adaptation, criteria. Persona is layered on top.
   static const _winkidooJudgeSystemPrompt = '''
@@ -497,7 +508,7 @@ Respond with JSON only, no markdown.
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
       final title = json['title'] as String? ?? 'A surprise for your partner';
@@ -580,7 +591,7 @@ Return JSON only: {"dare_text": "<the dare in your voice, 1-3 sentences>", "cate
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
       return (
@@ -628,7 +639,7 @@ Return JSON only:
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
       final commentary = json['commentary'] as String? ?? 'Not bad, not bad at all.';
@@ -670,39 +681,71 @@ Return JSON only:
     if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
 
     final webBlock = webSearchContext.isNotEmpty
-        ? '\nHere is real web research about "$personalityName":\n---\n$webSearchContext\n---\nUse this research to capture their REAL speaking style, quotes, and mannerisms accurately.\n'
+        ? '''
+
+=== WEB RESEARCH ABOUT "$personalityName" ===
+$webSearchContext
+=== END RESEARCH ===
+
+CRITICAL: You MUST use the web research above to build an ACCURATE persona. Extract:
+- Their ACTUAL catchphrases, slang, and speech patterns
+- REAL quotes they've said (from interviews, shows, social media)
+- Their humor style, accent cues, and personality quirks
+- How they interact with people (confrontational? warm? sarcastic?)
+- Any memes, viral moments, or signature behaviors
+
+The preview quotes MUST sound like something this person would ACTUALLY say — not generic judge quotes. Use their real vocabulary and tone.
+'''
         : '';
 
     final prompt = '''
-$_winkidooJudgeSystemPrompt
+You are an expert personality analyst and AI persona builder for Winkidoo, a romantic couples game app.
 
-You are Winkidoo's Custom Judge Creator. Your job is to create an AI judge persona based on a famous personality.
+Your job: Create a hyper-accurate AI judge persona that SOUNDS EXACTLY like a specific famous person.
 
-The user wants a judge based on: "$personalityName"
-The mood they selected: "$mood"
+TARGET PERSONALITY: "$personalityName"
+MOOD FILTER: "$mood" (apply this mood on top of their natural personality)
 $webBlock
-Your task:
-1. Draw on your knowledge AND the web research (if provided) of this person's speaking style, famous quotes, catchphrases, mannerisms, and public personality.
-2. Create a detailed persona prompt (3-5 sentences) that an AI could follow to convincingly roleplay as this person judging a romantic couples game. Include their REAL signature phrases, speaking patterns, and attitude.
-3. Apply the "$mood" filter — if "funny" make them extra humorous, if "savage" make them brutally honest, if "romantic" make them sweet, if "strict" make them demanding, if "chaotic" make them wild, if "chill" make them laid-back.
-4. Generate 3 sample quotes this judge would say during a battle (in their voice, using their REAL catchphrases and style).
-5. Suggest a single emoji that represents this personality.
-6. Suggest a difficulty level (1-5) and chaos level (1-5) based on their personality.
-7. Generate a short push notification message (1 sentence, max 80 chars) in their voice announcing they are ready to judge. Examples: "Gordon Ramsay here. Ready to judge. It better not be RAW." or "Drake judging your love story... started from the bottom now we here."
+INSTRUCTIONS:
 
-Safety rules:
-- If the personality is a private individual (not a public figure or fictional character), return {"error": "Please choose a public figure or fictional character."}
-- If the request is hateful, harmful, or inappropriate, return {"error": "This personality cannot be used. Try someone else!"}
-- Keep everything PG-13 and fun. The persona should be entertaining, not offensive.
+1. PERSONA PROMPT (3-5 sentences): Write a roleplay instruction that would make any AI convincingly impersonate this person judging couples in a love game. Include:
+   - Their EXACT speaking style (formal? slang? accent hints?)
+   - 2-3 of their REAL catchphrases or signature phrases
+   - How they express approval vs disapproval
+   - Their unique personality quirks
+
+2. HOW TO IMPRESS (1-2 sentences): What would THIS specific person want to see from couples? Based on their real values and personality.
+
+3. PREVIEW QUOTES (exactly 3): Write 3 things this person would say AS A JUDGE in a couples game. These MUST:
+   - Sound EXACTLY like them (use their vocabulary, slang, cadence)
+   - Reference their known style or famous lines (adapted to a love context)
+   - Be entertaining and in-character
+   - NOT be generic ("Ready to be judged?" is NEVER acceptable)
+
+4. AVATAR EMOJI: One emoji that captures their essence.
+
+5. DIFFICULTY (1-5) and CHAOS (1-5): Based on how tough and unpredictable they'd be as a judge.
+
+6. NOTIFICATION TEXT (max 80 chars): A push notification in their voice announcing they're ready. Must sound like them. Examples:
+   - Gordon Ramsay: "Ramsay here. Your love story better not be RAW."
+   - Drake: "Started from the bottom of love... now we here."
+
+MOOD APPLICATION:
+- "funny" = amplify their humorous side, add jokes
+- "savage" = amplify their harsh/roasting side, brutal honesty
+- "romantic" = soften them, find their sweet side
+- "strict" = amplify their demanding/perfectionist side
+- "chaotic" = amplify their wildest, most unpredictable traits
+- "chill" = mellow them out, laid-back version
+
+SAFETY: If the person is a private individual (not public figure/fictional character) or the request is inappropriate, return {"error": "Please choose a public figure or fictional character."}
 
 Return JSON only, no markdown:
-{"persona_prompt": "<3-5 sentence persona description>", "how_to_impress": "<1-2 sentences>", "preview_quotes": ["<quote 1>", "<quote 2>", "<quote 3>"], "avatar_emoji": "<single emoji>", "suggested_difficulty": <1-5>, "suggested_chaos": <1-5>, "notification_text": "<push notification in their voice>"}
-
-If there is a safety issue, return: {"error": "<message>"}
+{"persona_prompt": "<detailed 3-5 sentence persona>", "how_to_impress": "<1-2 sentences>", "preview_quotes": ["<quote 1>", "<quote 2>", "<quote 3>"], "avatar_emoji": "<emoji>", "suggested_difficulty": <1-5>, "suggested_chaos": <1-5>, "notification_text": "<push message in their voice>"}
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
 
@@ -790,7 +833,7 @@ Return ONLY the dialogue text, no JSON, no quotes around it.
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       return response.text?.trim() ?? 'Let\'s begin this chapter.';
     } catch (e) {
       debugPrint('generateChapterIntro error: $e');
@@ -833,7 +876,7 @@ Return ONLY the dialogue text, no JSON.
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       return response.text?.trim() ?? 'Chapter complete. Onward!';
     } catch (e) {
       debugPrint('generateChapterOutro error: $e');
@@ -892,7 +935,7 @@ Respond with JSON only, no markdown.
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
       final gamePrompt = json['prompt'] as String? ?? 'Tell your partner something unexpected about yourself.';
@@ -954,7 +997,7 @@ Return JSON only: {"commentary": "<your 2-3 sentence in-character grading>", "sc
 ''';
 
     try {
-      final response = await _model.generateContent([Content.text(prompt)]);
+      final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
       return (
