@@ -127,21 +127,35 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 020: collaborative vault columns on surprises.
 - 021: judge_collectibles.
 - 022: public leaderboard read policy on couple_xp.
+- 023: daily_dares (Daily Love Dares).
+- 024: judge_packs + judge_pack_judges + pack_dare_templates + couple_active_pack (Themed Battle Packs).
+- 025: mini_game_types + daily_mini_games + pack_mini_game_templates (Couple Mini-Games).
+- 026: campaigns + campaign_chapters + couple_campaign_progress + campaign_rewards (Story Mode).
+- 027: content expansion — 3 new campaigns + 3 themed packs seed data.
+- 028: custom_judges + custom_judge_uses (Custom AI Judge Creator + Marketplace).
+- 029: custom_judges status + notification_text columns (web search + async generation).
+- 030: custom_judges is_active_for_battle column (battlefield toggle).
+
+### March 29, 2026 — Major feature expansion
+- **Daily Love Dares**: AI daily challenges, photo/voice responses, shareable dare cards, realtime partner notifications
+- **Phase 5 — Themed Battle Packs**: judge_packs system with persona overrides, themed dares, BP multiplier. 4 packs: Valentine Vibes, Horror Night, Bollywood Romance, Summer Fling
+- **Phase 6 — Couple Mini-Games**: 4 rotating daily games (Would You Rather, Love Trivia, Caption This, Finish My Sentence) with AI grading
+- **Phase 7 — Story Mode Campaigns**: narrative quest chains with persona_mood_override (judge personality shifts per chapter). 4 campaigns: The Love Heist, Romance Academy, Operation Date Night, The Ex Files
+- **Visual Polish**: stagger card entrance animations, confetti on all completions, shimmer skeleton loaders, Couple Wrapped shareable stats card
+- **Custom AI Judge Creator**: web search via Tavily API (free tier 1,000/month), multi-mood selection (funny+savage+chill), 8-dimension personality analysis framework, community marketplace, judge audition chat, gallery photo upload, publish/private/share flow
+- **My Judges Management**: battlefield toggle (only active judges appear in carousel), publish/unpublish, change avatar, delete (blocked for published), signed URL avatar display
+- **Rate Limiting**: 3 custom judges/day per couple (bypassed in debug mode), Gemini spend cap guidance
+- **Environment**: Added TAVILY_API_KEY via --dart-define
 
 ---
 
 ## Next / optional
 
-- iOS widget: connect physical device → Cmd+R → long-press home → add Winkidoo widget to verify data bridge.
-- IAP/Stripe for Wink+ (wink_plus_until set by backend).
+- **Known bugs to fix**: judge delete from My Judges, avatar photo display consistency, marketplace published judges visibility
+- IAP/Stripe for Wink+ (RevenueCat — wink_plus_until set by backend).
+- Push notifications for dares, mini-games, campaign chapters, custom judge ready.
+- Onboarding polish (guided first experience, welcome gift, first surprise prompt).
 - AI Love Coach (opt-in relationship insights from surprise patterns).
-- Push: filter tokens by updated_at last 90 days or users in a couple (scale).
-
-### March 24, 2026 — Phase 4 iOS widget Xcode wiring
-- App Group `group.com.winkidoo.app` added to Runner + WinkidooWidgetExtension targets (Signing & Capabilities).
-- Entitlements files committed: `ios/Runner/Runner.entitlements`, `ios/WinkidooWidgetExtension.entitlements`.
-- Widget deployment target set to iOS 16 in `project.pbxproj`.
-- Flutter code (all Phases 1–4) committed; all routes, services, providers, screens complete.
 
 ---
 
