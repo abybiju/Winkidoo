@@ -7,6 +7,7 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/stagger_entrance.dart';
 import 'package:winkidoo/models/custom_judge.dart';
+import 'package:winkidoo/features/judges/custom_judge_audition_sheet.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
@@ -311,6 +312,55 @@ class _CreateCustomJudgeScreenState
                 if (_step == 3 && _createdJudge != null) ...[
                   _JudgePreview(judge: _createdJudge!),
                   const SizedBox(height: 24),
+
+                  // Test This Judge CTA (opens audition with post-play options)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(26),
+                        gradient: const LinearGradient(colors: [
+                          AppTheme.ctaOrangeA, AppTheme.ctaOrangeB,
+                        ]),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.ctaOuterGlow.withValues(alpha: 0.4),
+                            blurRadius: 14, offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: MaterialButton(
+                        onPressed: () {
+                          showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => CustomJudgeAuditionSheet(
+                                judge: _createdJudge!),
+                          );
+                        },
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(26)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.play_arrow_rounded,
+                                color: Color(0xFF4A2800), size: 20),
+                            const SizedBox(width: 8),
+                            Text('Test This Judge',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16, fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF4A2800),
+                                )),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Secondary actions
                   Row(
                     children: [
                       Expanded(
@@ -333,50 +383,31 @@ class _CreateCustomJudgeScreenState
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(26),
-                            gradient: const LinearGradient(colors: [
-                              AppTheme.ctaOrangeA, AppTheme.ctaOrangeB,
-                            ]),
-                          ),
-                          child: MaterialButton(
-                            onPressed: () => context.pop(),
+                        child: OutlinedButton(
+                          onPressed: () => context.pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppTheme.glassBorder),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(26)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            child: Text('Done!',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14, fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF4A2800),
-                                )),
                           ),
+                          child: Text('Skip & Save',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14, fontWeight: FontWeight.w600,
+                                color: AppTheme.homeTextPrimary,
+                              )),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Center(
-                    child: TextButton(
-                      onPressed: () async {
-                        final client = ref.read(supabaseClientProvider);
-                        await CustomJudgeService.publishJudge(
-                            client, _createdJudge!.id);
-                        ref.invalidate(myCustomJudgesProvider);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Published to marketplace!'),
-                              backgroundColor: AppTheme.success,
-                            ),
-                          );
-                        }
-                      },
-                      child: Text('Publish to Marketplace',
-                          style: GoogleFonts.inter(
-                            fontSize: 13, fontWeight: FontWeight.w500,
-                            color: AppTheme.secondaryViolet,
-                          )),
+                    child: Text(
+                      'Test the judge first, then choose to publish, share, or keep private.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 12, color: AppTheme.textMuted,
+                      ),
                     ),
                   ),
                 ],
