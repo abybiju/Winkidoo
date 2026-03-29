@@ -113,24 +113,18 @@ class PackService {
   }
 
   /// Sets or clears the couple's active pack.
+  /// Uses upsert for both activate and deactivate (sets pack_id to null).
   static Future<void> setCoupleActivePack(
     SupabaseClient client,
     String coupleId,
     String? packId,
   ) async {
     try {
-      if (packId == null) {
-        await client
-            .from('couple_active_pack')
-            .delete()
-            .eq('couple_id', coupleId);
-      } else {
-        await client.from('couple_active_pack').upsert({
-          'couple_id': coupleId,
-          'pack_id': packId,
-          'activated_at': DateTime.now().toUtc().toIso8601String(),
-        });
-      }
+      await client.from('couple_active_pack').upsert({
+        'couple_id': coupleId,
+        'pack_id': packId,
+        'activated_at': DateTime.now().toUtc().toIso8601String(),
+      });
     } catch (e) {
       debugPrint('PackService.setCoupleActivePack: $e');
     }
