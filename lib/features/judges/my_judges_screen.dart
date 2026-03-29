@@ -216,8 +216,27 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
     );
     if (confirm != true) return;
     final client = ref.read(supabaseClientProvider);
-    await CustomJudgeService.deleteJudge(client, widget.judge.id);
-    ref.invalidate(myCustomJudgesProvider);
+    final deleted = await CustomJudgeService.deleteJudge(client, widget.judge.id);
+    debugPrint('MyJudges: deleteJudge result=$deleted for ${widget.judge.id}');
+    if (deleted) {
+      ref.invalidate(myCustomJudgesProvider);
+      ref.invalidate(availableCustomJudgesProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.judge.personalityName} deleted.'),
+            backgroundColor: AppTheme.textMuted,
+          ),
+        );
+      }
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not delete. Unpublish first if published.'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    }
   }
 
   @override
