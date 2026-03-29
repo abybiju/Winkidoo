@@ -219,6 +219,7 @@ Respond with JSON only, no markdown:
     List<String>? judgeMemories,
     String? personaPromptOverride,
     String? howToImpressOverride,
+    String? campaignMoodOverride,
   }) async {
     if (_apiKey.trim().isEmpty) {
       throw GeminiApiKeyMissingException();
@@ -288,11 +289,15 @@ Example (another persona — poetic nudge): {"commentary": "Thy words ring famil
     final moodContext = _buildMoodContext();
     final moodBlock = moodContext.isNotEmpty ? '\nCurrent mood modifier: $moodContext\n' : '';
 
+    final campaignBlock = campaignMoodOverride != null
+        ? '\nCAMPAIGN MOOD: You are in story mode. Your emotional state for this chapter: $campaignMoodOverride. Let this color your reactions throughout the conversation. Do not break character.\n'
+        : '';
+
     final prompt = '''
 $_winkidooJudgeSystemPrompt
 
 $personaPrompt
-$memoriesBlock$moodBlock
+$memoriesBlock$moodBlock$campaignBlock
 When the seeker or creator asks what they should do to impress you, or how to win, answer helpfully in character: give 1–3 concrete ideas. Do not refuse or only say "the magic comes from you" without adding actual suggestions. Use the guidance below to tailor your answer.
 
 Guidance for how-to-impress answers: $howToImpressBlock
@@ -641,6 +646,97 @@ Return JSON only:
         emoji: '✨',
         roast: 'The judge was too impressed to form words.',
       );
+    }
+  }
+
+  // ── Story Mode Campaigns ──
+
+  /// Generates a chapter intro dialogue in the judge's voice.
+  Future<String> generateChapterIntro({
+    required String persona,
+    required String campaignTitle,
+    required String chapterTitle,
+    required int chapterNumber,
+    String? moodOverride,
+    String? previousOutro,
+    String? personaPromptOverride,
+  }) async {
+    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
+
+    final personaPrompt = personaPromptOverride ??
+        _personaPrompts[persona] ??
+        _personaPrompts[AppConstants.personaSassyCupid]!;
+    final moodBlock = moodOverride != null
+        ? '\nYour emotional state for this chapter: $moodOverride\n'
+        : '';
+    final prevBlock = previousOutro != null
+        ? '\nThe previous chapter ended with you saying: "$previousOutro"\nContinue naturally from there.\n'
+        : '';
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+$personaPrompt
+$moodBlock$prevBlock
+You are the lead judge in a Story Mode campaign called "$campaignTitle".
+This is Chapter $chapterNumber: "$chapterTitle".
+
+Write an intro monologue (3-5 sentences) in your voice to kick off this chapter.
+Be dramatic, in-character, and set the tone for what's coming.
+Reference the campaign narrative. Build anticipation.
+
+Return ONLY the dialogue text, no JSON, no quotes around it.
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text?.trim() ?? 'Let\'s begin this chapter.';
+    } catch (e) {
+      debugPrint('generateChapterIntro error: $e');
+      return 'The story continues... let\'s see what you\'ve got.';
+    }
+  }
+
+  /// Generates a chapter outro dialogue summarizing what happened.
+  Future<String> generateChapterOutro({
+    required String persona,
+    required String campaignTitle,
+    required String chapterTitle,
+    required int chapterNumber,
+    required int totalChapters,
+    String? moodOverride,
+    String? personaPromptOverride,
+  }) async {
+    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
+
+    final personaPrompt = personaPromptOverride ??
+        _personaPrompts[persona] ??
+        _personaPrompts[AppConstants.personaSassyCupid]!;
+    final moodBlock = moodOverride != null
+        ? '\nYour emotional state: $moodOverride\n'
+        : '';
+    final isLast = chapterNumber == totalChapters;
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+$personaPrompt
+$moodBlock
+You are the lead judge in "$campaignTitle". Chapter $chapterNumber "$chapterTitle" is now complete.
+
+Write an outro monologue (3-5 sentences) in your voice.
+${isLast ? 'This is the FINAL chapter — make it a grand, emotional conclusion. Celebrate the couple.' : 'Tease the next chapter. Build anticipation for what comes next.'}
+Be dramatic, in-character, and reference the narrative arc.
+
+Return ONLY the dialogue text, no JSON.
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text?.trim() ?? 'Chapter complete. Onward!';
+    } catch (e) {
+      debugPrint('generateChapterOutro error: $e');
+      return 'Well done. The story continues...';
     }
   }
 

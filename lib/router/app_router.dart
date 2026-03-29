@@ -33,6 +33,9 @@ import 'package:winkidoo/features/collection/collection_screen.dart';
 import 'package:winkidoo/features/leaderboard/leaderboard_screen.dart';
 import 'package:winkidoo/features/timeline/timeline_screen.dart';
 import 'package:winkidoo/features/dare/dare_result_screen.dart';
+import 'package:winkidoo/features/campaign/campaign_list_screen.dart';
+import 'package:winkidoo/features/campaign/campaign_detail_screen.dart';
+import 'package:winkidoo/features/campaign/campaign_chapter_intro_screen.dart';
 import 'package:winkidoo/features/minigame/mini_game_result_screen.dart';
 import 'package:winkidoo/features/packs/pack_list_screen.dart';
 import 'package:winkidoo/features/packs/pack_detail_screen.dart';
@@ -364,6 +367,28 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/shell/dare/result',
         builder: (_, __) => const DareResultScreen(),
+      ),
+      GoRoute(
+        path: '/shell/campaigns',
+        builder: (_, __) => const CampaignListScreen(),
+      ),
+      GoRoute(
+        path: '/shell/campaign/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return CampaignDetailScreen(campaignId: id);
+        },
+      ),
+      GoRoute(
+        path: '/shell/campaign/:id/intro/:num',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          final num = int.parse(state.pathParameters['num']!);
+          return CampaignChapterIntroScreen(
+            campaignId: id,
+            chapterNumber: num,
+          );
+        },
       ),
       GoRoute(
         path: '/shell/minigame/result',

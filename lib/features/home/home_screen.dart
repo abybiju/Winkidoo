@@ -16,6 +16,7 @@ import 'package:winkidoo/features/home/widgets/battle_card.dart';
 import 'package:winkidoo/features/home/widgets/hero_section.dart';
 import 'package:winkidoo/features/home/widgets/judge_spotlight_card.dart';
 import 'package:winkidoo/features/home/widgets/daily_dare_card.dart';
+import 'package:winkidoo/features/home/widgets/campaign_banner_card.dart';
 import 'package:winkidoo/features/home/widgets/pack_banner_card.dart';
 import 'package:winkidoo/features/minigame/mini_game_card.dart';
 import 'package:winkidoo/features/minigame/mini_game_play_sheet.dart';
@@ -260,6 +261,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     PackBannerCard(
                       compact: isCompact,
                       onExplorePacks: () => context.push('/shell/packs'),
+                    ),
+                    SizedBox(height: gap),
+                    CampaignBannerCard(
+                      compact: isCompact,
+                      onTap: (campaignId) =>
+                          context.push('/shell/campaign/$campaignId'),
+                      onBrowseCampaigns: () =>
+                          context.push('/shell/campaigns'),
                     ),
                     SizedBox(height: gap),
                     DailyDareCard(
