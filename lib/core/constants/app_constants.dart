@@ -138,6 +138,16 @@ class AppConstants {
     'finish_my_sentence',
   ];
 
+  // ── Custom Judge Creator ──
+
+  /// Mood options for custom judges.
+  static const List<String> judgeMoods = [
+    'funny', 'savage', 'romantic', 'strict', 'chaotic', 'chill',
+  ];
+
+  /// Max custom judges a free user can create.
+  static const int freeCustomJudgeLimit = 1;
+
   // ── XP System (Phase 2 prep) ──
 
   static const int xpPerSurpriseCreated = 10;

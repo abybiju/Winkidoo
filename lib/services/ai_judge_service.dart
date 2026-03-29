@@ -649,6 +649,96 @@ Return JSON only:
     }
   }
 
+  // ── Custom Judge Creator ──
+
+  /// Generates a complete custom judge persona based on a famous personality + mood.
+  /// Returns the persona prompt, how-to-impress, 3 preview quotes, emoji, and suggested levels.
+  Future<({
+    String personaPrompt,
+    String howToImpress,
+    List<String> previewQuotes,
+    String avatarEmoji,
+    int suggestedDifficulty,
+    int suggestedChaos,
+    String? error,
+  })> generateCustomPersona({
+    required String personalityName,
+    required String mood,
+  }) async {
+    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+You are Winkidoo's Custom Judge Creator. Your job is to create an AI judge persona based on a famous personality.
+
+The user wants a judge based on: "$personalityName"
+The mood they selected: "$mood"
+
+Your task:
+1. Draw on your knowledge of this person's speaking style, famous quotes, catchphrases, mannerisms, and public personality.
+2. Create a detailed persona prompt (3-5 sentences) that an AI could follow to convincingly roleplay as this person judging a romantic couples game. Include their signature phrases, speaking patterns, and attitude.
+3. Apply the "$mood" filter — if "funny" make them extra humorous, if "savage" make them brutally honest, if "romantic" make them sweet, if "strict" make them demanding, if "chaotic" make them wild, if "chill" make them laid-back.
+4. Generate 3 sample quotes this judge would say during a battle (in their voice, referencing their known style).
+5. Suggest a single emoji that represents this personality.
+6. Suggest a difficulty level (1-5) and chaos level (1-5) based on their personality.
+
+Safety rules:
+- If the personality is a private individual (not a public figure or fictional character), return {"error": "Please choose a public figure or fictional character."}
+- If the request is hateful, harmful, or inappropriate, return {"error": "This personality cannot be used. Try someone else!"}
+- Keep everything PG-13 and fun. The persona should be entertaining, not offensive.
+
+Return JSON only, no markdown:
+{"persona_prompt": "<3-5 sentence persona description>", "how_to_impress": "<1-2 sentences>", "preview_quotes": ["<quote 1>", "<quote 2>", "<quote 3>"], "avatar_emoji": "<single emoji>", "suggested_difficulty": <1-5>, "suggested_chaos": <1-5>}
+
+If there is a safety issue, return: {"error": "<message>"}
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      final json = _parseJsonFromResponse(text);
+
+      if (json.containsKey('error')) {
+        return (
+          personaPrompt: '',
+          howToImpress: '',
+          previewQuotes: <String>[],
+          avatarEmoji: '🎭',
+          suggestedDifficulty: 2,
+          suggestedChaos: 2,
+          error: json['error'] as String?,
+        );
+      }
+
+      final quotes = (json['preview_quotes'] as List?)?.cast<String>() ??
+          ['Ready to be judged?', 'Show me what you got!', 'Interesting...'];
+
+      return (
+        personaPrompt: json['persona_prompt'] as String? ??
+            'You are $personalityName judging a romantic couples game. Stay in character.',
+        howToImpress: json['how_to_impress'] as String? ??
+            'Be creative, honest, and show genuine effort.',
+        previewQuotes: quotes,
+        avatarEmoji: json['avatar_emoji'] as String? ?? '🎭',
+        suggestedDifficulty: (json['suggested_difficulty'] as int? ?? 2).clamp(1, 5),
+        suggestedChaos: (json['suggested_chaos'] as int? ?? 2).clamp(1, 5),
+        error: null,
+      );
+    } catch (e) {
+      debugPrint('generateCustomPersona error: $e');
+      return (
+        personaPrompt: 'You are $personalityName judging a romantic couples game. Stay in character and be entertaining.',
+        howToImpress: 'Be creative and genuine.',
+        previewQuotes: ['Ready to be judged!', 'Show me what you got.', 'Let\'s see...'],
+        avatarEmoji: '🎭',
+        suggestedDifficulty: 2,
+        suggestedChaos: 2,
+        error: null,
+      );
+    }
+  }
+
   // ── Story Mode Campaigns ──
 
   /// Generates a chapter intro dialogue in the judge's voice.

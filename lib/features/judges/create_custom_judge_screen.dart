@@ -1,0 +1,553 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/cosmic_background.dart';
+import 'package:winkidoo/core/widgets/stagger_entrance.dart';
+import 'package:winkidoo/models/custom_judge.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
+import 'package:winkidoo/providers/custom_judge_provider.dart';
+import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/services/custom_judge_service.dart';
+
+const _geminiApiKey =
+    String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+
+class CreateCustomJudgeScreen extends ConsumerStatefulWidget {
+  const CreateCustomJudgeScreen({super.key});
+
+  @override
+  ConsumerState<CreateCustomJudgeScreen> createState() =>
+      _CreateCustomJudgeScreenState();
+}
+
+class _CreateCustomJudgeScreenState
+    extends ConsumerState<CreateCustomJudgeScreen> {
+  final _nameController = TextEditingController();
+  String _selectedMood = 'funny';
+  int _step = 0; // 0=name, 1=mood, 2=generating, 3=preview, 4=saved
+  CustomJudge? _createdJudge;
+  String? _error;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _generate() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+
+    setState(() { _step = 2; _error = null; });
+    HapticFeedback.lightImpact();
+
+    final couple = ref.read(coupleProvider).value;
+    if (couple == null) {
+      setState(() { _step = 0; _error = 'No couple found.'; });
+      return;
+    }
+
+    final client = ref.read(supabaseClientProvider);
+    final judge = await CustomJudgeService.createJudge(
+      client,
+      _geminiApiKey,
+      coupleId: couple.id,
+      personalityName: name,
+      mood: _selectedMood,
+    );
+
+    if (judge == null) {
+      setState(() {
+        _step = 0;
+        _error = 'Could not create this judge. Try a different personality.';
+      });
+      return;
+    }
+
+    ref.invalidate(myCustomJudgesProvider);
+    setState(() { _createdJudge = judge; _step = 3; });
+    HapticFeedback.mediumImpact();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
+    return Scaffold(
+      body: CosmicBackground(
+        showStars: true,
+        glowColor: AppTheme.primaryOrange,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded,
+                      color: AppTheme.textPrimary),
+                  onPressed: () => context.pop(),
+                ),
+                const SizedBox(height: 16),
+
+                // Title
+                Center(
+                  child: Column(
+                    children: [
+                      Text('Create Your Judge',
+                          style: GoogleFonts.inter(
+                            fontSize: 26, fontWeight: FontWeight.w800,
+                            color: AppTheme.homeTextPrimary, letterSpacing: -0.5,
+                          )),
+                      const SizedBox(height: 4),
+                      Text('Any personality. Any mood.',
+                          style: GoogleFonts.inter(
+                            fontSize: 15, color: AppTheme.homeTextSecondary,
+                          )),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                if (_error != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: AppTheme.error.withValues(alpha: 0.1),
+                      border: Border.all(
+                          color: AppTheme.error.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(_error!,
+                        style: GoogleFonts.inter(
+                            fontSize: 13, color: AppTheme.error)),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Step 0: Name input
+                if (_step <= 1) ...[
+                  StaggerEntrance(
+                    index: 0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('WHO SHOULD JUDGE YOU?',
+                            style: AppTheme.overline(brightness).copyWith(
+                              color: AppTheme.homeTextSecondary,
+                              letterSpacing: 1.2,
+                            )),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _nameController,
+                          style: GoogleFonts.inter(
+                            fontSize: 18, fontWeight: FontWeight.w600,
+                            color: brightness == Brightness.dark
+                                ? AppTheme.textPrimary
+                                : AppTheme.lightTextPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Gordon Ramsay, Taylor Swift...',
+                            hintStyle: GoogleFonts.inter(
+                                fontSize: 16, color: AppTheme.textMuted),
+                            filled: true,
+                            fillColor: brightness == Brightness.dark
+                                ? AppTheme.surfaceInput
+                                : AppTheme.lightSurfaceElevated,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide:
+                                  BorderSide(color: AppTheme.glassBorder),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide:
+                                  BorderSide(color: AppTheme.glassBorder),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                  color: AppTheme.primaryOrange
+                                      .withValues(alpha: 0.5)),
+                            ),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            'Gordon Ramsay', 'Trump', 'Drake', 'Oprah',
+                            'Taylor Swift',
+                          ]
+                              .map((name) => GestureDetector(
+                                    onTap: () {
+                                      _nameController.text = name;
+                                      setState(() {});
+                                    },
+                                    child: Chip(
+                                      label: Text(name,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              color: AppTheme.textMuted)),
+                                      backgroundColor: AppTheme.glassFill,
+                                      side: BorderSide(
+                                          color: AppTheme.glassBorder),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Step 1: Mood selector
+                  StaggerEntrance(
+                    index: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('PICK A MOOD',
+                            style: AppTheme.overline(brightness).copyWith(
+                              color: AppTheme.homeTextSecondary,
+                              letterSpacing: 1.2,
+                            )),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: _moodOptions
+                              .map((m) => _MoodChip(
+                                    mood: m.mood,
+                                    label: m.label,
+                                    emoji: m.emoji,
+                                    color: m.color,
+                                    selected: _selectedMood == m.mood,
+                                    onTap: () =>
+                                        setState(() => _selectedMood = m.mood),
+                                  ))
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Generate CTA
+                  StaggerEntrance(
+                    index: 2,
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(26),
+                          gradient: _nameController.text.trim().isNotEmpty
+                              ? const LinearGradient(colors: [
+                                  AppTheme.ctaOrangeA, AppTheme.ctaOrangeB,
+                                ])
+                              : null,
+                          color: _nameController.text.trim().isEmpty
+                              ? AppTheme.glassFill
+                              : null,
+                          boxShadow:
+                              _nameController.text.trim().isNotEmpty
+                                  ? [
+                                      BoxShadow(
+                                        color: AppTheme.ctaOuterGlow
+                                            .withValues(alpha: 0.4),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                  : null,
+                        ),
+                        child: MaterialButton(
+                          onPressed: _nameController.text.trim().isNotEmpty
+                              ? _generate
+                              : null,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(26)),
+                          child: Text('Generate Judge',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16, fontWeight: FontWeight.w700,
+                                color: _nameController.text.trim().isNotEmpty
+                                    ? const Color(0xFF4A2800)
+                                    : AppTheme.textMuted,
+                              )),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Step 2: Generating
+                if (_step == 2)
+                  SizedBox(
+                    height: 300,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(
+                              color: AppTheme.primaryOrange),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Studying ${_nameController.text.trim()}\'s personality...',
+                            style: GoogleFonts.inter(
+                              fontSize: 16, color: AppTheme.homeTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Step 3: Preview
+                if (_step == 3 && _createdJudge != null) ...[
+                  _JudgePreview(judge: _createdJudge!),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() { _step = 0; _createdJudge = null; });
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppTheme.glassBorder),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(26)),
+                          ),
+                          child: Text('Try Again',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14, fontWeight: FontWeight.w600,
+                                color: AppTheme.homeTextPrimary,
+                              )),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(26),
+                            gradient: const LinearGradient(colors: [
+                              AppTheme.ctaOrangeA, AppTheme.ctaOrangeB,
+                            ]),
+                          ),
+                          child: MaterialButton(
+                            onPressed: () => context.pop(),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(26)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            child: Text('Done!',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14, fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF4A2800),
+                                )),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: TextButton(
+                      onPressed: () async {
+                        final client = ref.read(supabaseClientProvider);
+                        await CustomJudgeService.publishJudge(
+                            client, _createdJudge!.id);
+                        ref.invalidate(myCustomJudgesProvider);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Published to marketplace!'),
+                              backgroundColor: AppTheme.success,
+                            ),
+                          );
+                        }
+                      },
+                      child: Text('Publish to Marketplace',
+                          style: GoogleFonts.inter(
+                            fontSize: 13, fontWeight: FontWeight.w500,
+                            color: AppTheme.secondaryViolet,
+                          )),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const _moodOptions = [
+  (mood: 'funny', label: 'Funny', emoji: '😂', color: Color(0xFFFFD166)),
+  (mood: 'savage', label: 'Savage', emoji: '🔥', color: Color(0xFFFF6B6B)),
+  (mood: 'romantic', label: 'Romantic', emoji: '💕', color: Color(0xFFFF6B9D)),
+  (mood: 'strict', label: 'Strict', emoji: '📋', color: Color(0xFF7C5CFC)),
+  (mood: 'chaotic', label: 'Chaotic', emoji: '💀', color: Color(0xFF7CB342)),
+  (mood: 'chill', label: 'Chill', emoji: '😎', color: Color(0xFF87CEEB)),
+];
+
+class _MoodChip extends StatelessWidget {
+  const _MoodChip({
+    required this.mood, required this.label, required this.emoji,
+    required this.color, required this.selected, required this.onTap,
+  });
+
+  final String mood, label, emoji;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: selected ? color.withValues(alpha: 0.15) : AppTheme.glassFill,
+          border: Border.all(
+            color: selected ? color : AppTheme.glassBorder,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 6),
+            Text(label,
+                style: GoogleFonts.poppins(
+                  fontSize: 13, fontWeight: FontWeight.w600,
+                  color: selected ? color : AppTheme.textMuted,
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _JudgePreview extends StatelessWidget {
+  const _JudgePreview({required this.judge});
+
+  final CustomJudge judge;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final moodColor = _moodOptions
+        .firstWhere((m) => m.mood == judge.mood,
+            orElse: () => _moodOptions.first)
+        .color;
+
+    return Column(
+      children: [
+        // Avatar + name
+        Text(judge.avatarEmoji, style: const TextStyle(fontSize: 56)),
+        const SizedBox(height: 8),
+        Text(judge.personalityName,
+            style: GoogleFonts.inter(
+              fontSize: 24, fontWeight: FontWeight.w800,
+              color: AppTheme.homeTextPrimary,
+            )),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: moodColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: moodColor.withValues(alpha: 0.3)),
+          ),
+          child: Text(judge.moodDisplayName,
+              style: GoogleFonts.poppins(
+                fontSize: 12, fontWeight: FontWeight.w600, color: moodColor,
+              )),
+        ),
+        const SizedBox(height: 20),
+
+        // Sample quotes
+        Text('SAMPLE QUOTES',
+            style: AppTheme.overline(brightness).copyWith(
+              color: AppTheme.homeTextSecondary, letterSpacing: 1.2,
+            )),
+        const SizedBox(height: 10),
+        ...judge.previewQuotes.map((quote) => Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: brightness == Brightness.dark
+                    ? AppTheme.glassFill
+                    : AppTheme.lightGlassFill,
+                border: Border.all(
+                  color: brightness == Brightness.dark
+                      ? AppTheme.glassBorder
+                      : AppTheme.lightGlassBorder,
+                ),
+              ),
+              child: Text('"$quote"',
+                  style: GoogleFonts.caveat(
+                    fontSize: 18, color: AppTheme.homeTextPrimary, height: 1.3,
+                  )),
+            )),
+
+        // Stats
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _StatPill(label: 'Difficulty', value: '${judge.difficultyLevel}/5'),
+            const SizedBox(width: 12),
+            _StatPill(label: 'Chaos', value: '${judge.chaosLevel}/5'),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  const _StatPill({required this.label, required this.value});
+
+  final String label, value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.glassFill,
+        border: Border.all(color: AppTheme.glassBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label,
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: AppTheme.textMuted)),
+          const SizedBox(width: 6),
+          Text(value,
+              style: GoogleFonts.inter(
+                fontSize: 13, fontWeight: FontWeight.w700,
+                color: AppTheme.homeTextPrimary,
+              )),
+        ],
+      ),
+    );
+  }
+}
