@@ -131,12 +131,13 @@ Commentary tone: When praising or reacting, lean into wit and warmth — a littl
     required int difficultyLevel,
     required String submissionText,
     String? surpriseContextHint,
+    String? personaPromptOverride,
   }) async {
     if (_apiKey.trim().isEmpty) {
       throw GeminiApiKeyMissingException();
     }
     final required = requiredScoreFor(persona, difficultyLevel);
-    final personaPrompt = _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
+    final personaPrompt = personaPromptOverride ?? _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
 
     final prompt = '''
 $_winkidooJudgeSystemPrompt
@@ -216,13 +217,15 @@ Respond with JSON only, no markdown:
     String? howToImpressHint,
     List<String>? questBattleSummaries,
     List<String>? judgeMemories,
+    String? personaPromptOverride,
+    String? howToImpressOverride,
   }) async {
     if (_apiKey.trim().isEmpty) {
       throw GeminiApiKeyMissingException();
     }
     final required = requiredScoreFor(persona, difficultyLevel);
-    final personaPrompt = _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
-    final howToImpressPersona = _howToImpressByPersona[persona] ?? _howToImpressByPersona[AppConstants.personaSassyCupid]!;
+    final personaPrompt = personaPromptOverride ?? _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
+    final howToImpressPersona = howToImpressOverride ?? _howToImpressByPersona[persona] ?? _howToImpressByPersona[AppConstants.personaSassyCupid]!;
     final hintLower = (surpriseContextHint ?? '').toLowerCase();
     final unlockGuidance = hintLower.contains('persuade')
         ? 'For this surprise, convincing with words, creativity, or a thoughtful gesture works.'
@@ -529,12 +532,14 @@ Respond with JSON only, no markdown.
     List<String> judgeMemories = const [],
     int totalBattles = 0,
     int streakDays = 0,
+    String? personaPromptOverride,
+    String? packThemeContext,
   }) async {
     if (_apiKey.trim().isEmpty) {
       throw GeminiApiKeyMissingException();
     }
     final personaPrompt =
-        _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
+        personaPromptOverride ?? _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
     final moodContext = _buildMoodContext();
     final moodBlock = moodContext.isNotEmpty ? '\nCurrent mood: $moodContext\n' : '';
 
@@ -556,7 +561,7 @@ $_winkidooJudgeSystemPrompt
 $personaPrompt
 $moodBlock$memoriesBlock
 You are generating a DAILY LOVE DARE for a couple. This is a fun daily challenge that both partners complete (via text, photo, or voice note). It should take under 5 minutes.
-
+${packThemeContext != null ? '\nTHEMED PACK CONTEXT: $packThemeContext\nTailor the dare to fit this theme.\n' : ''}
 $coupleContext
 $recentBlock
 Rules:

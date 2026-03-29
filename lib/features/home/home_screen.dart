@@ -16,6 +16,7 @@ import 'package:winkidoo/features/home/widgets/battle_card.dart';
 import 'package:winkidoo/features/home/widgets/hero_section.dart';
 import 'package:winkidoo/features/home/widgets/judge_spotlight_card.dart';
 import 'package:winkidoo/features/home/widgets/daily_dare_card.dart';
+import 'package:winkidoo/features/home/widgets/pack_banner_card.dart';
 import 'package:winkidoo/features/home/widgets/recent_wins_section.dart';
 import 'package:winkidoo/features/dare/dare_response_sheet.dart';
 import 'package:winkidoo/providers/daily_dare_provider.dart';
@@ -250,6 +251,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       height: heroHeight,
                       items: _avatarOptions(),
                       onAvatarTap: (_) => _goToCreateWithProfileGate(),
+                    ),
+                    SizedBox(height: gap),
+                    PackBannerCard(
+                      compact: isCompact,
+                      onExplorePacks: () => context.push('/shell/packs'),
                     ),
                     SizedBox(height: gap),
                     DailyDareCard(

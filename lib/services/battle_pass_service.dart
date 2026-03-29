@@ -77,8 +77,9 @@ class BattlePassService {
   static Future<void> awardPoints(
     SupabaseClient client,
     String coupleId,
-    int points,
-  ) async {
+    int points, {
+    double packMultiplier = 1.0,
+  }) async {
     try {
       final season = await client
           .from('battle_pass_seasons')
@@ -95,7 +96,8 @@ class BattlePassService {
           .maybeSingle();
 
       final current = (existing?['points'] as int?) ?? 0;
-      final newPoints = current + points;
+      final effectivePoints = (points * packMultiplier).round();
+      final newPoints = current + effectivePoints;
 
       await client.from('battle_pass_progress').upsert({
         'couple_id': coupleId,

@@ -33,6 +33,8 @@ import 'package:winkidoo/features/collection/collection_screen.dart';
 import 'package:winkidoo/features/leaderboard/leaderboard_screen.dart';
 import 'package:winkidoo/features/timeline/timeline_screen.dart';
 import 'package:winkidoo/features/dare/dare_result_screen.dart';
+import 'package:winkidoo/features/packs/pack_list_screen.dart';
+import 'package:winkidoo/features/packs/pack_detail_screen.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
@@ -361,6 +363,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/shell/dare/result',
         builder: (_, __) => const DareResultScreen(),
+      ),
+      GoRoute(
+        path: '/shell/packs',
+        builder: (_, __) => const PackListScreen(),
+      ),
+      GoRoute(
+        path: '/shell/packs/:slug',
+        builder: (_, state) {
+          final slug = state.pathParameters['slug']!;
+          return PackDetailScreen(packSlug: slug);
+        },
       ),
       GoRoute(
         path: '/shell/treasure-archive',

@@ -16,6 +16,9 @@ class DailyDareService {
     String apiKey, {
     int totalBattles = 0,
     int streakDays = 0,
+    String? packId,
+    String? packPersonaPromptOverride,
+    String? packThemeContext,
   }) async {
     try {
       // Expire stale dares first
@@ -62,6 +65,8 @@ class DailyDareService {
         judgeMemories: memories,
         totalBattles: totalBattles,
         streakDays: streakDays,
+        personaPromptOverride: packPersonaPromptOverride,
+        packThemeContext: packThemeContext,
       );
 
       // Insert with upsert for race-condition safety
@@ -75,6 +80,7 @@ class DailyDareService {
               'dare_text': result.dareText,
               'dare_category': result.category,
               'status': 'pending',
+              if (packId != null) 'pack_id': packId,
             },
             onConflict: 'couple_id,dare_date',
           )
