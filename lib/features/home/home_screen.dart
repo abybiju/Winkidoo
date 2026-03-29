@@ -219,6 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final contentWidth = (width - (horizontal * 2)).clamp(320.0, 760.0);
 
     final heroHeight = _clamped(contentWidth, 0.22, 132, 170);
+    final dareHeight = _clamped(contentWidth, 0.33, 168, 214);
     final battleHeight = _clamped(contentWidth, 0.37, 188, 232);
     final judgeHeight = _clamped(contentWidth, 0.33, 168, 214);
     final recentItemHeight = _clamped(contentWidth, 0.14, 88, 108);
@@ -253,6 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     SizedBox(height: gap),
                     DailyDareCard(
                       compact: isCompact,
+                      height: dareHeight,
                       onTakeDare: () {
                         final dare = ref.read(dailyDareProvider).value?.dare;
                         if (dare == null) return;
