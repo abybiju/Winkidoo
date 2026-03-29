@@ -30,7 +30,7 @@ class CreateCustomJudgeScreen extends ConsumerStatefulWidget {
 class _CreateCustomJudgeScreenState
     extends ConsumerState<CreateCustomJudgeScreen> {
   final _nameController = TextEditingController();
-  String _selectedMood = 'funny';
+  final Set<String> _selectedMoods = {'funny'};
   int _step = 0; // 0=name, 1=mood, 2=generating, 3=preview, 4=saved
   String _generatingStatus = ''; // searching, generating, ready
   CustomJudge? _createdJudge;
@@ -88,7 +88,7 @@ class _CreateCustomJudgeScreenState
       _geminiApiKey,
       coupleId: couple.id,
       personalityName: name,
-      mood: _selectedMood,
+      mood: _selectedMoods.join('+'),
       tavilyApiKey: _tavilyApiKey,
       onStatusUpdate: (status) {
         if (mounted) setState(() => _generatingStatus = status);
@@ -251,7 +251,7 @@ class _CreateCustomJudgeScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('PICK A MOOD',
+                        Text('PICK MOODS (one or more)',
                             style: AppTheme.overline(brightness).copyWith(
                               color: AppTheme.homeTextSecondary,
                               letterSpacing: 1.2,
@@ -266,9 +266,16 @@ class _CreateCustomJudgeScreenState
                                     label: m.label,
                                     emoji: m.emoji,
                                     color: m.color,
-                                    selected: _selectedMood == m.mood,
-                                    onTap: () =>
-                                        setState(() => _selectedMood = m.mood),
+                                    selected: _selectedMoods.contains(m.mood),
+                                    onTap: () => setState(() {
+                                      if (_selectedMoods.contains(m.mood)) {
+                                        if (_selectedMoods.length > 1) {
+                                          _selectedMoods.remove(m.mood);
+                                        }
+                                      } else {
+                                        _selectedMoods.add(m.mood);
+                                      }
+                                    }),
                                   ))
                               .toList(),
                         ),
