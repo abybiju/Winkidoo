@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
 
 /// Cinematic judge selection: swipeable cards, animated aura, difficulty/chaos meters,
@@ -196,12 +198,41 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
                 child: SelectJudgeButton(
                   judge: judge,
                   locked: locked,
                   sealing: _isSealing,
                   onPressed: () => _onSealWithJudge(judge),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => context.push('/shell/create-judge'),
+                      icon: Icon(Icons.add_circle_outline_rounded,
+                          size: 16, color: AppTheme.textOrangeAccent),
+                      label: Text('Create Your Own',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13, fontWeight: FontWeight.w600,
+                            color: AppTheme.textOrangeAccent,
+                          )),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => context.push('/shell/judge-marketplace'),
+                      icon: Icon(Icons.explore_rounded,
+                          size: 16, color: AppTheme.secondaryViolet),
+                      label: Text('Marketplace',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13, fontWeight: FontWeight.w600,
+                            color: AppTheme.secondaryViolet,
+                          )),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -233,19 +264,20 @@ class AnimatedAuraBackground extends StatelessWidget {
       animation: animation,
       builder: (context, child) {
         final shift = 0.3 + 0.2 * (animation.value);
-        final baseAlpha = 0.35 + 0.25 * sealingIntensity;
-        final midAlpha = 0.15 + 0.2 * sealingIntensity;
+        final baseAlpha = 0.15 + 0.20 * sealingIntensity;
+        final midAlpha = 0.05 + 0.15 * sealingIntensity;
         return Container(
           decoration: BoxDecoration(
+            color: const Color(0xFF05050A),
             gradient: RadialGradient(
               center: Alignment(shift - 0.5, -0.3),
-              radius: 1.2,
+              radius: 1.5,
               colors: [
                 color.withValues(alpha: baseAlpha.clamp(0.0, 1.0)),
                 color.withValues(alpha: midAlpha.clamp(0.0, 1.0)),
-                Theme.of(context).scaffoldBackgroundColor,
+                const Color(0xFF05050A),
               ],
-              stops: const [0.0, 0.5, 1.0],
+              stops: const [0.0, 0.4, 1.0],
             ),
           ),
         );
@@ -299,12 +331,12 @@ class _JudgeCard extends StatelessWidget {
   final int quoteIndex;
   final double sealingProgress;
 
-  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 4, bottom: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Stack(
             clipBehavior: Clip.none,
@@ -316,13 +348,13 @@ class _JudgeCard extends StatelessWidget {
                 sealingProgress: sealingProgress,
               ),
               Positioned(
-                top: 0,
-                left: 0,
+                top: 8,
+                left: 8,
                 child: _NewBadge(judge: judge),
               ),
               Positioned(
-                top: 0,
-                right: 0,
+                top: 8,
+                right: 8,
                 child: _SeasonalBadge(judge: judge),
               ),
             ],
@@ -331,11 +363,11 @@ class _JudgeCard extends StatelessWidget {
           JudgeMetaInfo(judge: judge),
           const SizedBox(height: 16),
           DifficultyMeter(level: judge.difficultyLevel),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ChaosMeter(level: judge.chaosLevel),
           const SizedBox(height: 16),
           ToneTags(tags: judge.toneTags),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           RotatingQuote(
             quote: judge.previewQuotes.isNotEmpty
                 ? judge.previewQuotes[quoteIndex % judge.previewQuotes.length]
@@ -481,16 +513,59 @@ class JudgePortrait extends StatelessWidget {
           child: child,
         );
       },
-      child: SizedBox(
-        height: 160,
-        child: Center(
-          child: resolvedAvatar.isNotEmpty
-              ? Image.asset(
-                  resolvedAvatar,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => _placeholder(judge),
-                )
-              : _placeholder(judge),
+      child: Container(
+        height: 330,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          color: const Color(0xFF1B1B22).withValues(alpha: 0.6),
+          boxShadow: [
+            BoxShadow(
+              color: judge.primaryColor.withValues(alpha: 0.1),
+              blurRadius: 40,
+              spreadRadius: 4,
+            ),
+          ],
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                child: const SizedBox(),
+              ),
+            ),
+            Positioned.fill(
+              child: resolvedAvatar.isNotEmpty
+                  ? Image.asset(
+                      resolvedAvatar,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                      errorBuilder: (_, __, ___) => _placeholder(judge),
+                    )
+                  : _placeholder(judge),
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      judge.primaryColor.withValues(alpha: 0.15),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -498,24 +573,22 @@ class JudgePortrait extends StatelessWidget {
 
   Widget _placeholder(Judge judge) {
     final initial = judge.name.isNotEmpty ? judge.name[0] : '?';
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: judge.primaryColor.withValues(alpha: 0.4),
-        border: Border.all(
-          color: judge.accentColor.withValues(alpha: 0.8),
-          width: 3,
+    return Center(
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: judge.primaryColor.withValues(alpha: 0.4),
         ),
-      ),
-      child: Center(
-        child: Text(
-          initial,
-          style: GoogleFonts.poppins(
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-            color: judge.primaryColor,
+        child: Center(
+          child: Text(
+            initial,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: judge.primaryColor,
+            ),
           ),
         ),
       ),
@@ -531,25 +604,27 @@ class JudgeMetaInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           judge.name,
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 40,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1.5,
+            color: Colors.white,
           ),
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.left,
         ),
         if (judge.tagline != null && judge.tagline!.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             judge.tagline!,
-            style: GoogleFonts.caveat(
-              fontSize: 18,
-              color: AppTheme.textSecondary,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: const Color(0xFFCFC2D6),
             ),
-            textAlign: TextAlign.center,
+            textAlign: TextAlign.left,
           ),
         ],
       ],
@@ -565,21 +640,36 @@ class DifficultyMeter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(
-          'Difficulty: ',
+          'DIFFICULTY',
           style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+            color: const Color(0xFF988D9F),
           ),
         ),
+        const SizedBox(width: 12),
         ...List.generate(5, (i) {
-          return Padding(
-            padding: const EdgeInsets.only(left: 2),
-            child: Text(
-              i < level ? '🔥' : '○',
-              style: const TextStyle(fontSize: 16),
+          final active = i < level;
+          return Container(
+            margin: const EdgeInsets.only(right: 6),
+            width: 16,
+            height: 4,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2),
+              color: active ? const Color(0xFFFABC4E) : const Color(0xFF35343B),
+              boxShadow: active
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFFABC4E).withValues(alpha: 0.4),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      )
+                    ]
+                  : null,
             ),
           );
         }),
@@ -649,52 +739,69 @@ class _ChaosMeterState extends State<ChaosMeter>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Chaos Level',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final w = constraints.maxWidth *
-                        (widget.level / 5).clamp(0.0, 1.0);
-                    return Stack(
-                      children: [
-                        Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: AppTheme.surface.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
-                        Positioned(
-                          left: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: w,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.accent,
-                              borderRadius: BorderRadius.circular(3),
+              Text(
+                'CHAOS LEVEL',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                  color: const Color(0xFF988D9F),
+                ),
+              ),
+              if (isHighChaos)
+                const Text('⚡', style: TextStyle(fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth *
+                  (widget.level / 5).clamp(0.0, 1.0);
+              return SizedBox(
+                height: 12,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (w > 0)
+                      Positioned(
+                        left: 0,
+                        top: 5,
+                        width: w,
+                        height: 2,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0x0006B6D4), Color(0xFF06B6D4)],
                             ),
                           ),
                         ),
-                      ],
-                    );
-                  },
+                      ),
+                    Positioned(
+                      left: w > 12 ? w - 12 : 0,
+                      top: 0,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF06B6D4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF06B6D4).withValues(alpha: 0.6),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              if (isHighChaos) ...[
-                const SizedBox(width: 6),
-                const Text('⚡', style: TextStyle(fontSize: 14)),
-              ],
-            ],
+              );
+            },
           ),
         ],
       ),
@@ -711,22 +818,27 @@ class ToneTags extends StatelessWidget {
   Widget build(BuildContext context) {
     if (tags.isEmpty) return const SizedBox.shrink();
     return Wrap(
-      alignment: WrapAlignment.center,
+      alignment: WrapAlignment.start,
       spacing: 8,
-      runSpacing: 6,
+      runSpacing: 8,
       children: tags
           .map((t) => Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTheme.surface.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFF1B1B22),
+                  borderRadius: BorderRadius.circular(9999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   t,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFFE4E1EA),
                   ),
                 ),
               ))
@@ -745,21 +857,32 @@ class RotatingQuote extends StatelessWidget {
     if (quote.isEmpty) return const SizedBox.shrink();
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
-      child: Container(
+      child: ClipRRect(
         key: ValueKey(quote),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppTheme.surface.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          '"$quote"',
-          style: GoogleFonts.caveat(
-            fontSize: 20,
-            fontStyle: FontStyle.italic,
-            color: AppTheme.textPrimary,
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF35343B).withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              '"$quote"',
+              style: GoogleFonts.caveat(
+                fontSize: 22,
+                fontStyle: FontStyle.italic,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
-          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -783,58 +906,78 @@ class SelectJudgeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = locked || sealing;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: disabled ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: judge.primaryColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (locked) ...[
-              const Icon(Icons.lock, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Wink+ required',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ] else if (sealing) ...[
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Sealing...',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ] else ...[
-              Text(
-                'Seal with This Judge',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+    return AnimatedScale(
+      scale: sealing ? 0.96 : 1.0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutExpo,
+      child: GestureDetector(
+        onTap: disabled ? null : onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(9999),
+            gradient: LinearGradient(
+              colors: [
+                judge.primaryColor,
+                judge.primaryColor.withValues(alpha: sealing ? 1.0 : 0.7),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: judge.primaryColor.withValues(alpha: sealing ? 0.8 : 0.4),
+                blurRadius: sealing ? 30 : 20,
+                spreadRadius: sealing ? 4 : 2,
               ),
             ],
-          ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (locked) ...[
+                const Icon(Icons.lock, size: 20, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  'Wink+ required',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ] else if (sealing) ...[
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Sealing...',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                    color: Colors.white,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'Seal with This Judge',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

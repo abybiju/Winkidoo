@@ -84,6 +84,20 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   _ProfileActionCard(
+                    icon: Icons.add_circle_outline_rounded,
+                    label: 'Create Custom Judge',
+                    subtitle: 'Any personality, any mood',
+                    onTap: () => context.push('/shell/create-judge'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ProfileActionCard(
+                    icon: Icons.explore_rounded,
+                    label: 'Judge Marketplace',
+                    subtitle: 'Browse community-created judges',
+                    onTap: () => context.push('/shell/judge-marketplace'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ProfileActionCard(
                     icon: Icons.style_rounded,
                     label: 'Judge Collection',
                     subtitle: 'Collectible cards earned in battle',
