@@ -14,6 +14,7 @@ import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
 
 /// Cinematic judge selection: swipeable cards, animated aura, difficulty/chaos meters,
@@ -229,13 +230,82 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
                   onPageChanged: _onPageChanged,
                   itemCount: widget.judges.length,
                   itemBuilder: (context, index) {
-                    return _JudgeCard(
-                      judge: widget.judges[index],
-                      userGender: widget.userGender,
-                      portraitFloat: _portraitFloatController,
-                      quoteIndex: index == _currentIndex ? _quoteIndex : 0,
-                      sealingProgress:
-                          index == _currentIndex ? sealingProgress : 0.0,
+                    final j = widget.judges[index];
+                    final isCustom = j.personaId.startsWith('custom_');
+                    return Stack(
+                      children: [
+                        _JudgeCard(
+                          judge: j,
+                          userGender: widget.userGender,
+                          portraitFloat: _portraitFloatController,
+                          quoteIndex: index == _currentIndex ? _quoteIndex : 0,
+                          sealingProgress:
+                              index == _currentIndex ? sealingProgress : 0.0,
+                        ),
+                        if (isCustom)
+                          Positioned(
+                            top: 12,
+                            left: 28,
+                            child: GestureDetector(
+                              onTap: () async {
+                                final customId = j.personaId.replaceFirst('custom_', '');
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: AppTheme.surface2,
+                                    title: Text('Remove ${j.name}?',
+                                        style: GoogleFonts.inter(
+                                            color: AppTheme.homeTextPrimary)),
+                                    content: Text(
+                                        'This will remove the judge from your battle lineup.',
+                                        style: GoogleFonts.inter(
+                                            color: AppTheme.homeTextSecondary)),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, false),
+                                        child: Text('Cancel',
+                                            style: GoogleFonts.inter(
+                                                color: AppTheme.textMuted)),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        child: Text('Remove',
+                                            style: GoogleFonts.inter(
+                                                color: AppTheme.error)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm != true) return;
+                                final client = Supabase.instance.client;
+                                await client
+                                    .from('custom_judges')
+                                    .update({'is_active_for_battle': false})
+                                    .eq('id', customId);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('${j.name} removed from battle'),
+                                      backgroundColor: AppTheme.textMuted,
+                                    ),
+                                  );
+                                  context.pop();
+                                }
+                              },
+                              child: Container(
+                                width: 28, height: 28,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  border: Border.all(
+                                      color: AppTheme.error.withValues(alpha: 0.6)),
+                                ),
+                                child: const Icon(Icons.close_rounded,
+                                    size: 16, color: AppTheme.error),
+                              ),
+                            ),
+                          ),
+                      ],
                     );
                   },
                 ),
@@ -567,10 +637,14 @@ class JudgePortrait extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedAvatar = JudgeAssetResolver.resolveAvatarPath(
-      judge: judge,
-      userGender: userGender,
-    );
+    final isCustom = judge.personaId.startsWith('custom_');
+    final resolvedAvatar = isCustom
+        ? '' // Custom judges use network image, not asset
+        : JudgeAssetResolver.resolveAvatarPath(
+            judge: judge,
+            userGender: userGender,
+          );
+    final customStoragePath = isCustom ? (judge.avatarAssetPath ?? '') : '';
     return AnimatedBuilder(
       animation: floatAnimation,
       builder: (context, child) {
@@ -606,14 +680,29 @@ class JudgePortrait extends StatelessWidget {
               ),
             ),
             Positioned.fill(
-              child: resolvedAvatar.isNotEmpty
-                  ? Image.asset(
-                      resolvedAvatar,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                      errorBuilder: (_, __, ___) => _placeholder(judge),
+              child: isCustom && customStoragePath.isNotEmpty
+                  ? FutureBuilder<String>(
+                      future: Supabase.instance.client.storage
+                          .from('surprises')
+                          .createSignedUrl(customStoragePath, 3600),
+                      builder: (ctx, snap) {
+                        if (!snap.hasData) return _placeholder(judge);
+                        return Image.network(
+                          snap.data!,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
+                          errorBuilder: (_, __, ___) => _placeholder(judge),
+                        );
+                      },
                     )
-                  : _placeholder(judge),
+                  : resolvedAvatar.isNotEmpty
+                      ? Image.asset(
+                          resolvedAvatar,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
+                          errorBuilder: (_, __, ___) => _placeholder(judge),
+                        )
+                      : _placeholder(judge),
             ),
             Positioned.fill(
               child: Container(
