@@ -8,7 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/models/custom_judge.dart';
 import 'package:winkidoo/models/judge.dart';
+import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
 import 'package:go_router/go_router.dart';
@@ -21,14 +23,33 @@ class JudgeSelectionScreen extends ConsumerWidget {
     super.key,
     required this.isJudgeLocked,
     required this.onSelect,
+    this.onSelectCustom,
   });
 
   final bool Function(String personaId) isJudgeLocked;
   final void Function(String personaId, int difficulty) onSelect;
+  /// Called when a custom judge is selected. Pass the custom judge ID + difficulty.
+  final void Function(String customJudgeId, int difficulty)? onSelectCustom;
+
+  /// Converts a CustomJudge into a Judge for display in the carousel.
+  static Judge _customToJudge(CustomJudge custom) {
+    return Judge(
+      id: 'custom_${custom.id}',
+      personaId: 'custom_${custom.id}',
+      name: custom.personalityName,
+      tagline: '${custom.moodDisplayName} mood  •  Custom',
+      difficultyLevel: custom.difficultyLevel,
+      chaosLevel: custom.chaosLevel,
+      previewQuotes: custom.previewQuotes,
+      premiumFlag: false,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncJudges = ref.watch(activeJudgesProvider);
+    final customJudgesAsync = ref.watch(availableCustomJudgesProvider);
+
     return asyncJudges.when(
       loading: () => const Center(
         child: CircularProgressIndicator(color: AppTheme.primary),
@@ -41,7 +62,15 @@ class JudgeSelectionScreen extends ConsumerWidget {
       ),
       data: (judges) {
         final userGender = ref.watch(userProfileMetaProvider).gender;
-        if (judges.isEmpty) {
+        final customJudges = customJudgesAsync.value ?? [];
+
+        // Merge: standard judges + custom judges converted to Judge objects
+        final allJudges = [
+          ...judges,
+          ...customJudges.map(_customToJudge),
+        ];
+
+        if (allJudges.isEmpty) {
           return Center(
             child: Text(
               'No judges right now',
@@ -50,10 +79,21 @@ class JudgeSelectionScreen extends ConsumerWidget {
           );
         }
         return _JudgeSelectionContent(
-          judges: judges,
+          judges: allJudges,
           userGender: userGender,
-          isJudgeLocked: isJudgeLocked,
-          onSelect: onSelect,
+          isJudgeLocked: (personaId) {
+            // Custom judges are never locked
+            if (personaId.startsWith('custom_')) return false;
+            return isJudgeLocked(personaId);
+          },
+          onSelect: (personaId, difficulty) {
+            if (personaId.startsWith('custom_') && onSelectCustom != null) {
+              final customId = personaId.replaceFirst('custom_', '');
+              onSelectCustom!(customId, difficulty);
+            } else {
+              onSelect(personaId, difficulty);
+            }
+          },
         );
       },
     );

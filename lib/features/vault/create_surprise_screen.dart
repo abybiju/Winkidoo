@@ -44,6 +44,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   final AudioRecorder _recorder = AudioRecorder();
   String _unlockMethod = AppConstants.unlockPersuade;
   String _judgePersona = AppConstants.personaSassyCupid;
+  String? _customJudgeId;
   int _difficulty = 2;
   int _autoDeleteHours = 0;
   DateTime? _unlockAfter;
@@ -244,6 +245,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'content_encrypted': encrypted,
         'unlock_method': _unlockMethod,
         'judge_persona': _judgePersona,
+        if (_customJudgeId != null) 'custom_judge_id': _customJudgeId,
         'difficulty_level': _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
@@ -312,6 +314,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'content_encrypted': '',
         'unlock_method': _unlockMethod,
         'judge_persona': _judgePersona,
+        if (_customJudgeId != null) 'custom_judge_id': _customJudgeId,
         'difficulty_level': _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
@@ -378,6 +381,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'content_encrypted': '',
         'unlock_method': _unlockMethod,
         'judge_persona': _judgePersona,
+        if (_customJudgeId != null) 'custom_judge_id': _customJudgeId,
         'difficulty_level': _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
@@ -440,6 +444,18 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
               onSelect: (personaId, difficulty) {
                 setState(() {
                   _judgePersona = personaId;
+                  _customJudgeId = null;
+                  _difficulty = difficulty;
+                  _showJudgeSelection = false;
+                });
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _formFadeController.forward();
+                });
+              },
+              onSelectCustom: (customJudgeId, difficulty) {
+                setState(() {
+                  _judgePersona = 'custom';
+                  _customJudgeId = customJudgeId;
                   _difficulty = difficulty;
                   _showJudgeSelection = false;
                 });
