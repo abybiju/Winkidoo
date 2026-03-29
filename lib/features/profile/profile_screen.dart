@@ -13,6 +13,7 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
+import 'package:winkidoo/features/profile/couple_wrapped_card.dart';
 import 'package:winkidoo/models/achievement.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/achievements_provider.dart';
@@ -70,6 +71,18 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   const _AchievementsSection(),
                   const SizedBox(height: 16),
+                  _ProfileActionCard(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'Couple Wrapped',
+                    subtitle: 'Your relationship, by the numbers',
+                    onTap: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const CoupleWrappedSheet(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   _ProfileActionCard(
                     icon: Icons.style_rounded,
                     label: 'Judge Collection',

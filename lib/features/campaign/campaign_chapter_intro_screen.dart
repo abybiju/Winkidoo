@@ -1,9 +1,11 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/confetti_overlay.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/features/home/home_screen.dart';
 import 'package:winkidoo/providers/campaign_provider.dart';
@@ -28,6 +30,7 @@ class _CampaignChapterIntroScreenState
     extends ConsumerState<CampaignChapterIntroScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _typewriterController;
+  late ConfettiController _confettiController;
   String _displayText = '';
   String _fullText = '';
 
@@ -38,12 +41,19 @@ class _CampaignChapterIntroScreenState
       vsync: this,
       duration: const Duration(seconds: 4),
     );
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
     HapticFeedback.mediumImpact();
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) _confettiController.play();
+    });
   }
 
   @override
   void dispose() {
     _typewriterController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -69,11 +79,13 @@ class _CampaignChapterIntroScreenState
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      body: CosmicBackground(
-        showStars: true,
-        glowColor: AppTheme.secondaryViolet,
-        child: SafeArea(
-          child: detailAsync.when(
+      body: Stack(
+        children: [
+          CosmicBackground(
+            showStars: true,
+            glowColor: AppTheme.secondaryViolet,
+            child: SafeArea(
+              child: detailAsync.when(
             loading: () => const Center(
               child:
                   CircularProgressIndicator(color: AppTheme.secondaryViolet),
@@ -237,6 +249,9 @@ class _CampaignChapterIntroScreenState
             },
           ),
         ),
+      ),
+          ConfettiOverlay(controller: _confettiController),
+        ],
       ),
     );
   }

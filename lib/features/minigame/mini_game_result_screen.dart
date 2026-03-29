@@ -1,9 +1,11 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/widgets/confetti_overlay.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/features/home/home_screen.dart';
 import 'package:winkidoo/providers/mini_game_provider.dart';
@@ -20,10 +22,14 @@ class _MiniGameResultScreenState extends ConsumerState<MiniGameResultScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _scoreAnimController;
   late Animation<double> _scoreAnim;
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
     _scoreAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -33,7 +39,10 @@ class _MiniGameResultScreenState extends ConsumerState<MiniGameResultScreen>
       curve: Curves.easeOutCubic,
     );
     Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _scoreAnimController.forward();
+      if (mounted) {
+        _scoreAnimController.forward();
+        _confettiController.play();
+      }
     });
     HapticFeedback.mediumImpact();
   }
@@ -41,6 +50,7 @@ class _MiniGameResultScreenState extends ConsumerState<MiniGameResultScreen>
   @override
   void dispose() {
     _scoreAnimController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -78,11 +88,13 @@ class _MiniGameResultScreenState extends ConsumerState<MiniGameResultScreen>
     final personaName = HomeScreen.personaDisplayName(game.judgePersona);
 
     return Scaffold(
-      body: CosmicBackground(
-        showStars: true,
-        glowColor: AppTheme.secondaryViolet,
-        child: SafeArea(
-          child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          CosmicBackground(
+            showStars: true,
+            glowColor: AppTheme.secondaryViolet,
+            child: SafeArea(
+              child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
             child: Column(
               children: [
@@ -226,6 +238,9 @@ class _MiniGameResultScreenState extends ConsumerState<MiniGameResultScreen>
             ),
           ),
         ),
+      ),
+          ConfettiOverlay(controller: _confettiController),
+        ],
       ),
     );
   }

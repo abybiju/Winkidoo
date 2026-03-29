@@ -16,6 +16,7 @@ import 'package:winkidoo/features/home/widgets/battle_card.dart';
 import 'package:winkidoo/features/home/widgets/hero_section.dart';
 import 'package:winkidoo/features/home/widgets/judge_spotlight_card.dart';
 import 'package:winkidoo/features/home/widgets/daily_dare_card.dart';
+import 'package:winkidoo/core/widgets/stagger_entrance.dart';
 import 'package:winkidoo/features/home/widgets/campaign_banner_card.dart';
 import 'package:winkidoo/features/home/widgets/pack_banner_card.dart';
 import 'package:winkidoo/features/minigame/mini_game_card.dart';
@@ -258,74 +259,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onAvatarTap: (_) => _goToCreateWithProfileGate(),
                     ),
                     SizedBox(height: gap),
-                    PackBannerCard(
-                      compact: isCompact,
-                      onExplorePacks: () => context.push('/shell/packs'),
+                    StaggerEntrance(
+                      index: 0,
+                      child: PackBannerCard(
+                        compact: isCompact,
+                        onExplorePacks: () => context.push('/shell/packs'),
+                      ),
                     ),
                     SizedBox(height: gap),
-                    CampaignBannerCard(
-                      compact: isCompact,
-                      onTap: (campaignId) =>
-                          context.push('/shell/campaign/$campaignId'),
-                      onBrowseCampaigns: () =>
-                          context.push('/shell/campaigns'),
+                    StaggerEntrance(
+                      index: 1,
+                      child: CampaignBannerCard(
+                        compact: isCompact,
+                        onTap: (campaignId) =>
+                            context.push('/shell/campaign/$campaignId'),
+                        onBrowseCampaigns: () =>
+                            context.push('/shell/campaigns'),
+                      ),
                     ),
                     SizedBox(height: gap),
-                    DailyDareCard(
-                      compact: isCompact,
-                      height: dareHeight,
-                      onTakeDare: () {
-                        final dare = ref.read(dailyDareProvider).value?.dare;
-                        if (dare == null) return;
-                        showModalBottomSheet<bool>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => DareResponseSheet(dare: dare),
-                        );
-                      },
-                      onViewResult: () =>
-                          context.push('/shell/dare/result'),
+                    StaggerEntrance(
+                      index: 2,
+                      child: DailyDareCard(
+                        compact: isCompact,
+                        height: dareHeight,
+                        onTakeDare: () {
+                          final dare = ref.read(dailyDareProvider).value?.dare;
+                          if (dare == null) return;
+                          showModalBottomSheet<bool>(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => DareResponseSheet(dare: dare),
+                          );
+                        },
+                        onViewResult: () =>
+                            context.push('/shell/dare/result'),
+                      ),
                     ),
                     SizedBox(height: gap),
-                    MiniGameCard(
-                      compact: isCompact,
-                      height: gameHeight,
-                      onPlay: () {
-                        final game = ref.read(miniGameProvider).value?.game;
-                        if (game == null) return;
-                        showModalBottomSheet<bool>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => MiniGamePlaySheet(game: game),
-                        );
-                      },
-                      onViewResult: () =>
-                          context.push('/shell/minigame/result'),
+                    StaggerEntrance(
+                      index: 3,
+                      child: MiniGameCard(
+                        compact: isCompact,
+                        height: gameHeight,
+                        onPlay: () {
+                          final game = ref.read(miniGameProvider).value?.game;
+                          if (game == null) return;
+                          showModalBottomSheet<bool>(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => MiniGamePlaySheet(game: game),
+                          );
+                        },
+                        onViewResult: () =>
+                            context.push('/shell/minigame/result'),
+                      ),
                     ),
                     SizedBox(height: gap),
-                    BattleCard(
-                      onInviteTap: _goToCreateWithProfileGate,
-                      compact: isCompact,
-                      height: battleHeight,
+                    StaggerEntrance(
+                      index: 4,
+                      child: BattleCard(
+                        onInviteTap: _goToCreateWithProfileGate,
+                        compact: isCompact,
+                        height: battleHeight,
+                      ),
                     ),
                     SizedBox(height: gap),
-                    JudgeSpotlightCard(
-                      judge: judge,
-                      judges: spotlightJudges,
-                      onExplore: _goToCreateWithProfileGate,
-                      compact: isCompact,
-                      height: judgeHeight,
+                    StaggerEntrance(
+                      index: 5,
+                      child: JudgeSpotlightCard(
+                        judge: judge,
+                        judges: spotlightJudges,
+                        onExplore: _goToCreateWithProfileGate,
+                        compact: isCompact,
+                        height: judgeHeight,
+                      ),
                     ),
                     SizedBox(height: gap),
-                    _QuestSection(questsAsync: questsAsync),
+                    StaggerEntrance(
+                      index: 6,
+                      child: _QuestSection(questsAsync: questsAsync),
+                    ),
                     SizedBox(height: gap),
-                    RecentWins(
-                      surprises: recent,
-                      judgeNameForPersona: HomeScreen.personaDisplayName,
-                      onSeeAll: () => context.go('/shell/vault'),
-                      itemHeight: recentItemHeight,
+                    StaggerEntrance(
+                      index: 7,
+                      child: RecentWins(
+                        surprises: recent,
+                        judgeNameForPersona: HomeScreen.personaDisplayName,
+                        onSeeAll: () => context.go('/shell/vault'),
+                        itemHeight: recentItemHeight,
+                      ),
                     ),
                   ],
                 ),
