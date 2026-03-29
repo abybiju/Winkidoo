@@ -250,14 +250,56 @@ class CustomJudgeService {
   }
 
   /// Deletes a custom judge (only the creator's couple).
-  static Future<void> deleteJudge(
+  /// Deletes a custom judge. Published judges cannot be deleted (only admin can).
+  static Future<bool> deleteJudge(
     SupabaseClient client,
     String judgeId,
   ) async {
     try {
+      // Block delete for published judges
+      final row = await client
+          .from('custom_judges')
+          .select('is_published')
+          .eq('id', judgeId)
+          .maybeSingle();
+      if (row != null && row['is_published'] == true) {
+        debugPrint('CustomJudgeService.deleteJudge: Cannot delete published judge');
+        return false;
+      }
       await client.from('custom_judges').delete().eq('id', judgeId);
+      return true;
     } catch (e) {
       debugPrint('CustomJudgeService.deleteJudge: $e');
+      return false;
+    }
+  }
+
+  /// Publishes a judge, but checks for duplicate personality names first.
+  static Future<bool> publishJudgeUnique(
+    SupabaseClient client,
+    String judgeId,
+    String personalityName,
+  ) async {
+    try {
+      // Check for existing published judge with same name
+      final existing = await client
+          .from('custom_judges')
+          .select('id')
+          .eq('is_published', true)
+          .eq('is_flagged', false)
+          .ilike('personality_name', personalityName)
+          .neq('id', judgeId)
+          .limit(1);
+      if ((existing as List).isNotEmpty) return false;
+
+      await client
+          .from('custom_judges')
+          .update({'is_published': true})
+          .eq('id', judgeId);
+      return true;
+    } catch (e) {
+      debugPrint('CustomJudgeService.publishJudgeUnique: $e');
+      return false;
     }
   }
 }

@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/stagger_entrance.dart';
@@ -31,6 +35,7 @@ class _CreateCustomJudgeScreenState
     extends ConsumerState<CreateCustomJudgeScreen> {
   final _nameController = TextEditingController();
   final Set<String> _selectedMoods = {'funny'};
+  Uint8List? _avatarBytes;
   int _step = 0; // 0=name, 1=mood, 2=generating, 3=preview, 4=saved
   String _generatingStatus = ''; // searching, generating, ready
   CustomJudge? _createdJudge;
@@ -50,6 +55,171 @@ class _CreateCustomJudgeScreenState
     final (_, remaining) =
         await RateLimitService.canCreateCustomJudge(client, couple.id);
     if (mounted) setState(() => _remainingToday = remaining);
+  }
+
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+        source: ImageSource.gallery, maxWidth: 400, imageQuality: 85);
+    if (file != null && mounted) {
+      final bytes = await file.readAsBytes();
+      setState(() => _avatarBytes = bytes);
+
+      // Upload to Supabase Storage if judge already created
+      if (_createdJudge != null) {
+        final client = Supabase.instance.client;
+        final userId = client.auth.currentUser?.id ?? 'unknown';
+        final path = 'custom_judges/$userId/${_createdJudge!.id}.jpg';
+        await client.storage.from('surprises').uploadBinary(path, bytes,
+            fileOptions: const FileOptions(upsert: true));
+        await client
+            .from('custom_judges')
+            .update({'avatar_storage_path': path})
+            .eq('id', _createdJudge!.id);
+        ref.invalidate(myCustomJudgesProvider);
+      }
+    }
+  }
+
+  Future<void> _deleteJudge() async {
+    if (_createdJudge == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface2,
+        title: Text('Delete Judge?',
+            style: GoogleFonts.inter(color: AppTheme.homeTextPrimary)),
+        content: Text('This will permanently delete ${_createdJudge!.personalityName}.',
+            style: GoogleFonts.inter(color: AppTheme.homeTextSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.inter(color: AppTheme.textMuted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Delete', style: GoogleFonts.inter(color: AppTheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final client = ref.read(supabaseClientProvider);
+    await CustomJudgeService.deleteJudge(client, _createdJudge!.id);
+    ref.invalidate(myCustomJudgesProvider);
+    if (mounted) context.pop();
+  }
+
+  void _showPublishDialog() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final brightness = Theme.of(ctx).brightness;
+        return Container(
+          decoration: BoxDecoration(
+            color: brightness == Brightness.dark
+                ? AppTheme.surface2
+                : AppTheme.lightSurface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.textMuted.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Share with the community?',
+                      style: GoogleFonts.inter(
+                        fontSize: 18, fontWeight: FontWeight.w700,
+                        color: AppTheme.homeTextPrimary,
+                      )),
+                  const SizedBox(height: 6),
+                  Text('Let other couples use your ${_createdJudge?.personalityName ?? ''} judge!',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 14, color: AppTheme.homeTextSecondary,
+                      )),
+                  const SizedBox(height: 24),
+                  // Add to Marketplace
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        gradient: const LinearGradient(
+                            colors: [AppTheme.ctaOrangeA, AppTheme.ctaOrangeB]),
+                      ),
+                      child: MaterialButton(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          final client = ref.read(supabaseClientProvider);
+                          final success = await CustomJudgeService.publishJudgeUnique(
+                              client, _createdJudge!.id, _createdJudge!.personalityName);
+                          ref.invalidate(myCustomJudgesProvider);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(success
+                                    ? 'Published to marketplace!'
+                                    : 'This personality already exists in the marketplace.'),
+                                backgroundColor: success ? AppTheme.success : AppTheme.error,
+                              ),
+                            );
+                            context.pop();
+                          }
+                        },
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25)),
+                        child: Text('Add to Marketplace',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16, fontWeight: FontWeight.w700,
+                              color: const Color(0xFF4A2800),
+                            )),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Maybe Later
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.pop();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppTheme.glassBorder),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25)),
+                      ),
+                      child: Text('Maybe Later',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16, fontWeight: FontWeight.w600,
+                            color: AppTheme.homeTextPrimary,
+                          )),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -378,10 +548,55 @@ class _CreateCustomJudgeScreenState
 
                 // Step 3: Preview
                 if (_step == 3 && _createdJudge != null) ...[
-                  _JudgePreview(judge: _createdJudge!),
-                  const SizedBox(height: 24),
+                  _JudgePreview(
+                    judge: _createdJudge!,
+                    avatarBytes: _avatarBytes,
+                  ),
+                  const SizedBox(height: 16),
 
-                  // Test This Judge CTA (opens audition with post-play options)
+                  // Photo picker
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickAvatar,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: AppTheme.glassFill,
+                          border: Border.all(color: AppTheme.glassBorder),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _avatarBytes != null
+                                  ? Icons.check_circle_rounded
+                                  : Icons.add_photo_alternate_rounded,
+                              size: 18,
+                              color: _avatarBytes != null
+                                  ? AppTheme.success
+                                  : AppTheme.textMuted,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _avatarBytes != null
+                                  ? 'Change Photo'
+                                  : 'Add Photo from Gallery',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.homeTextPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Test This Judge CTA
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -428,55 +643,52 @@ class _CreateCustomJudgeScreenState
                   ),
                   const SizedBox(height: 12),
 
-                  // Secondary actions
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            setState(() { _step = 0; _createdJudge = null; });
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppTheme.glassBorder),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(26)),
-                          ),
-                          child: Text('Try Again',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w600,
-                                color: AppTheme.homeTextPrimary,
-                              )),
-                        ),
+                  // Save (triggers publish dialog)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: _showPublishDialog,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppTheme.glassBorder),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(26)),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => context.pop(),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppTheme.glassBorder),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(26)),
-                          ),
-                          child: Text('Skip & Save',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w600,
-                                color: AppTheme.homeTextPrimary,
-                              )),
-                        ),
+                      child: Text('Save Judge',
+                          style: GoogleFonts.poppins(
+                            fontSize: 15, fontWeight: FontWeight.w600,
+                            color: AppTheme.homeTextPrimary,
+                          )),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Try Again / Delete row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _step = 0;
+                            _createdJudge = null;
+                            _avatarBytes = null;
+                          });
+                        },
+                        child: Text('Try Again',
+                            style: GoogleFonts.inter(
+                              fontSize: 13, color: AppTheme.textMuted,
+                            )),
+                      ),
+                      const SizedBox(width: 16),
+                      TextButton(
+                        onPressed: _deleteJudge,
+                        child: Text('Delete',
+                            style: GoogleFonts.inter(
+                              fontSize: 13, color: AppTheme.error,
+                            )),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Text(
-                      'Test the judge first, then choose to publish, share, or keep private.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 12, color: AppTheme.textMuted,
-                      ),
-                    ),
                   ),
                 ],
               ],
@@ -540,22 +752,31 @@ class _MoodChip extends StatelessWidget {
 }
 
 class _JudgePreview extends StatelessWidget {
-  const _JudgePreview({required this.judge});
+  const _JudgePreview({required this.judge, this.avatarBytes});
 
   final CustomJudge judge;
+  final Uint8List? avatarBytes;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final moods = judge.mood.split('+');
     final moodColor = _moodOptions
-        .firstWhere((m) => m.mood == judge.mood,
+        .firstWhere((m) => moods.contains(m.mood),
             orElse: () => _moodOptions.first)
         .color;
 
     return Column(
       children: [
-        // Avatar + name
-        Text(judge.avatarEmoji, style: const TextStyle(fontSize: 56)),
+        // Avatar: photo if available, emoji fallback
+        if (avatarBytes != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(40),
+            child: Image.memory(avatarBytes!, width: 80, height: 80,
+                fit: BoxFit.cover),
+          )
+        else
+          Text(judge.avatarEmoji, style: const TextStyle(fontSize: 56)),
         const SizedBox(height: 8),
         Text(judge.personalityName,
             style: GoogleFonts.inter(
@@ -570,7 +791,8 @@ class _JudgePreview extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: moodColor.withValues(alpha: 0.3)),
           ),
-          child: Text(judge.moodDisplayName,
+          child: Text(
+              moods.map((m) => m[0].toUpperCase() + m.substring(1)).join(' + '),
               style: GoogleFonts.poppins(
                 fontSize: 12, fontWeight: FontWeight.w600, color: moodColor,
               )),
