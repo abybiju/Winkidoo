@@ -10,9 +10,9 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   // BRAND COLORS — Cosmic Orange Identity
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color primaryOrange = Color(0xFFFF8C42);
-  static const Color primaryOrangeLight = Color(0xFFFFB067);
-  static const Color primaryOrangeDark = Color(0xFFE06B20);
+  static const Color primaryOrange = Color(0xFFFF6200);
+  static const Color primaryOrangeLight = Color(0xFFFF8C42);
+  static const Color primaryOrangeDark = Color(0xFFCC4E00);
   static const Color secondaryViolet = Color(0xFF7C5CFC);
   static const Color secondaryVioletMuted = Color(0xFF5A3EBF);
   static const Color secondaryVioletFaint = Color(0xFF3D2A8A);
@@ -85,10 +85,10 @@ class AppTheme {
   static const Color battleGradientB = Color(0xFFFF6B1A);
 
   /// CTA gradient (orange capsule — Holla-inspired)
-  static const Color ctaOrangeA = Color(0xFFFF9A42);
-  static const Color ctaOrangeB = Color(0xFFFF6B1A);
-  static const Color ctaInnerGlow = Color(0x4DFFC88C); // warm highlight
-  static const Color ctaOuterGlow = Color(0x59FF6A1A); // shadow glow
+  static const Color ctaOrangeA = Color(0xFFFF8C42);
+  static const Color ctaOrangeB = Color(0xFFFF6200);
+  static const Color ctaInnerGlow = Color(0x66FFC88C); // warm highlight
+  static const Color ctaOuterGlow = Color(0x80FF6200); // shadow glow
 
   /// Gold CTA gradient (premium)
   static const Color ctaGoldA = Color(0xFFFFD666);
@@ -107,8 +107,8 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   static const Color homeBgTop = Color(0xFF050810);
   static const Color homeBgBottom = Color(0xFF0D0620);
-  static const Color homeGlowOrange = Color(0xFFFF8C42);
-  static const Color homeGlowPink = Color(0xFFFF6B1A); // now orange-red
+  static const Color homeGlowOrange = Color(0xFFFF6200);
+  static const Color homeGlowPink = Color(0xFFD631E8); // deep purple/pink magic glow
   static const Color homeTextPrimary = Color(0xFFF0EDF8);
   static const Color homeTextSecondary = Color(0xB3D2CAE6);
   static const Color homeSurfaceMuted = Color(0x26130E26);
@@ -139,9 +139,9 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   static const Color footerBase = Color(0xFF0A0B18);
   static const Color footerStroke = Color(0x33786AAA);
-  static const Color footerActive = Color(0xFFFF8C42);
+  static const Color footerActive = Color(0xFFFF6200);
   static const Color footerInactive = Color(0xFF6B6080);
-  static const Color footerCenter = Color(0xFFFF7A2E);
+  static const Color footerCenter = Color(0xFFFF6200);
   static const Color footerCenterOn = Color(0xFFFFFFFF);
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -278,10 +278,10 @@ class AppTheme {
   static List<BoxShadow> elevation1(Brightness brightness) => [
         BoxShadow(
           color: brightness == Brightness.dark
-              ? Colors.black.withValues(alpha: 0.30)
-              : const Color(0x14000000),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
+              ? Colors.black.withValues(alpha: 0.40)
+              : const Color(0x18000000),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
         ),
       ];
 
@@ -289,17 +289,17 @@ class AppTheme {
   static List<BoxShadow> elevation2(Brightness brightness) => [
         BoxShadow(
           color: brightness == Brightness.dark
-              ? Colors.black.withValues(alpha: 0.35)
-              : const Color(0x1A000000),
-          blurRadius: 24,
-          offset: const Offset(0, 8),
+              ? Colors.black.withValues(alpha: 0.45)
+              : const Color(0x20000000),
+          blurRadius: 36,
+          offset: const Offset(0, 16),
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? secondaryViolet.withValues(alpha: 0.10)
-              : secondaryViolet.withValues(alpha: 0.06),
-          blurRadius: 12,
-          offset: const Offset(0, 2),
+              ? secondaryViolet.withValues(alpha: 0.15)
+              : secondaryViolet.withValues(alpha: 0.08),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
         ),
       ];
 
@@ -307,24 +307,24 @@ class AppTheme {
   static List<BoxShadow> elevation3(Brightness brightness) => [
         BoxShadow(
           color: brightness == Brightness.dark
-              ? Colors.black.withValues(alpha: 0.40)
-              : const Color(0x22000000),
-          blurRadius: 28,
-          offset: const Offset(0, 12),
+              ? Colors.black.withValues(alpha: 0.50)
+              : const Color(0x26000000),
+          blurRadius: 48,
+          offset: const Offset(0, 24),
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? primaryOrange.withValues(alpha: 0.12)
-              : primaryOrange.withValues(alpha: 0.08),
-          blurRadius: 18,
-          offset: const Offset(0, 6),
+              ? primaryOrange.withValues(alpha: 0.16)
+              : primaryOrange.withValues(alpha: 0.10),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? secondaryViolet.withValues(alpha: 0.08)
-              : secondaryViolet.withValues(alpha: 0.06),
-          blurRadius: 10,
-          offset: const Offset(0, 2),
+              ? secondaryViolet.withValues(alpha: 0.12)
+              : secondaryViolet.withValues(alpha: 0.08),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
         ),
       ];
 

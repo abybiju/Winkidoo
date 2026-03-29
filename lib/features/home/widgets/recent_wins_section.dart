@@ -29,9 +29,9 @@ class RecentWins extends StatelessWidget {
           children: [
             Text(
               'Recent Wins',
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 fontSize: compact ? 20 : 22,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
                 color: brightness == Brightness.dark
                     ? AppTheme.homeTextPrimary
@@ -58,17 +58,52 @@ class RecentWins extends StatelessWidget {
           ],
         ),
         if (surprises.isEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(2, 6, 2, 0),
-            child: Text(
-              'No resolved battles yet. Your first win will appear here.',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: brightness == Brightness.dark
+                  ? AppTheme.homeSurfaceMuted
+                  : Colors.white.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              border: Border.all(
                 color: brightness == Brightness.dark
-                    ? AppTheme.homeTextSecondary
-                    : AppTheme.lightTextSecondary,
+                    ? AppTheme.glassBorderSubtle
+                    : AppTheme.lightGlassBorder,
               ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.sports_kabaddi_rounded,
+                  size: 36,
+                  color: brightness == Brightness.dark
+                      ? AppTheme.homeTextSecondary.withValues(alpha: 0.5)
+                      : AppTheme.lightTextSecondary.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No resolved battles yet.',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextPrimary
+                        : AppTheme.lightTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Your victories will appear here.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextSecondary
+                        : AppTheme.lightTextSecondary,
+                  ),
+                ),
+              ],
             ),
           )
         else

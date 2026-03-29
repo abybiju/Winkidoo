@@ -112,9 +112,9 @@ class _JudgeSpotlightCardState extends State<JudgeSpotlightCard> {
                         Text(
                           'Meet ${_judgeDisplayName(topJudge)}',
                           maxLines: 2,
-                          style: GoogleFonts.poppins(
-                            fontSize: widget.compact ? 18 : 20,
-                            fontWeight: FontWeight.w800,
+                          style: GoogleFonts.inter(
+                            fontSize: widget.compact ? 19 : 21,
+                            fontWeight: FontWeight.w700,
                             letterSpacing: -0.3,
                             color: AppTheme.homeTextPrimary,
                             height: 1.15,

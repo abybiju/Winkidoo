@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
@@ -209,8 +210,6 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                         child: WinkidooTopBar(
                           showLogo: true,
                           matchLogoToWordmark: true,
-                          logoSize: widget.isDesktopSidebar ? 40 : 42,
-                          logoTextSize: widget.isDesktopSidebar ? 22 : 24,
                           notificationCount: math.min(waiting.length, 9),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -226,15 +225,23 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 8),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.ctaGoldA,
+                                    color: AppTheme.ctaGoldA.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(color: AppTheme.ctaGoldA.withValues(alpha: 0.6)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.ctaGoldA.withValues(alpha: 0.2),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
                                   ),
                                   child: Text(
                                     'Wink+',
-                                    style: GoogleFonts.poppins(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF4A2800),
+                                      color: AppTheme.ctaGoldB,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
                                 ),
@@ -485,7 +492,6 @@ class _LinkedVaultHeroState extends State<_LinkedVaultHero>
         : 'Start your streak';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(34),
         gradient: LinearGradient(
@@ -496,15 +502,17 @@ class _LinkedVaultHeroState extends State<_LinkedVaultHero>
         border: Border.all(color: AppTheme.premiumBorder30(brightness)),
         boxShadow: AppTheme.premiumElevation(brightness),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -8,
-            top: -14,
-            bottom: -8,
-            width: 180,
-            child: IgnorePointer(
-              child: Opacity(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(34),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -8,
+              top: -14,
+              bottom: -8,
+              width: 180,
+              child: IgnorePointer(
+                child: Opacity(
                 opacity: brightness == Brightness.dark ? 0.24 : 0.16,
                 child: ShaderMask(
                   shaderCallback: (bounds) => const LinearGradient(
@@ -591,87 +599,91 @@ class _LinkedVaultHeroState extends State<_LinkedVaultHero>
                 ),
               ),
             ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.08),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.28),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.08),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.28),
+                        ),
+                        boxShadow: [
+                          BoxShadow(color: AppTheme.premiumAmber.withValues(alpha: 0.2), blurRadius: 10),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        PhosphorIconsFill.archive,
+                        color: AppTheme.premiumAmber.withValues(alpha: 0.9),
+                        size: 30,
                       ),
                     ),
-                    padding: const EdgeInsets.all(9),
-                    child: Image.asset(
-                      'assets/images/winkidoo new logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.favorite_rounded,
-                        color: AppTheme.premiumAmber,
-                        size: 26,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: GoogleFonts.inter(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                              height: 1.1,
+                              color: onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            waitingText,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: onSurface.withValues(alpha: 0.76),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            height: 1.1,
-                            color: onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          waitingText,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: onSurface.withValues(alpha: 0.76),
-                          ),
-                        ),
-                      ],
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InfoChip(
+                         icon: Icons.local_fire_department_rounded,
+                        label: streakText,
+                        expanded: true,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _InfoChip(
-                      icon: Icons.local_fire_department_rounded,
-                      label: streakText,
-                      expanded: true,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _InfoChip(
+                        icon: Icons.inventory_2_rounded,
+                         label: widget.waitingCount == 0
+                            ? 'No pending surprises'
+                            : '${widget.waitingCount} pending',
+                        tint: AppTheme.vaultStatusPending,
+                        expanded: true,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _InfoChip(
-                      icon: Icons.inventory_2_rounded,
-                      label: widget.waitingCount == 0
-                          ? 'No pending surprises'
-                          : '${widget.waitingCount} pending',
-                      tint: AppTheme.vaultStatusPending,
-                      expanded: true,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -727,19 +739,51 @@ class _VaultSearchAndActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: PillCta(
-            label: 'Treasure Archive',
-            onTap: onArchiveTap,
-            icon: Icons.auto_awesome,
-            trailing: true,
-            filled: false,
-            style: PillCtaStyle.glass,
+    final brightness = Theme.of(context).brightness;
+    return InkWell(
+      onTap: onArchiveTap,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          color: brightness == Brightness.dark
+              ? AppTheme.glassFill
+              : Colors.white.withValues(alpha: 0.70),
+          border: Border.all(
+            color: AppTheme.primaryOrange.withValues(alpha: 0.22),
           ),
+          boxShadow: AppTheme.elevation1(brightness),
         ),
-      ],
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    'Treasure Archive',
+                    style: GoogleFonts.inter(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primaryOrange,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    PhosphorIconsFill.sparkle,
+                    color: AppTheme.primaryOrange,
+                    size: 18,
+                    shadows: [
+                      Shadow(color: AppTheme.primaryOrange.withValues(alpha: 0.6), blurRadius: 8),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: AppTheme.primaryOrange.withValues(alpha: 0.7)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -907,20 +951,23 @@ class _ChestCallout extends StatelessWidget {
                         height: 108,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(26),
-                          color: AppTheme.premiumAmber,
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [AppTheme.primaryOrange, AppTheme.ctaGoldB],
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.premiumAmber
-                                  .withValues(alpha: 0.42),
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.42),
                               blurRadius: 18,
                               spreadRadius: 1,
                             ),
                           ],
                         ),
                         child: const Icon(
-                          Icons.lock_rounded,
+                          PhosphorIconsFill.lockKey,
                           size: 52,
-                          color: Color(0xFF4A2800),
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -961,8 +1008,8 @@ class _ChestCallout extends StatelessWidget {
               onTap: onEnterVault,
               icon: Icons.chevron_right_rounded,
               trailing: true,
-              filled: false,
-              style: PillCtaStyle.glass,
+              filled: true,
+              style: PillCtaStyle.standard,
             ),
           ),
         ],
@@ -1049,13 +1096,21 @@ class _EmptyVaultState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🔒', style: TextStyle(fontSize: 64)),
+              Icon(
+                PhosphorIconsFill.sparkle,
+                size: 64,
+                color: AppTheme.primaryOrange.withValues(alpha: 0.7),
+                shadows: [
+                  Shadow(color: AppTheme.primaryOrange.withValues(alpha: 0.4), blurRadius: 16)
+                ],
+              ),
               const SizedBox(height: 14),
               Text(
                 'Nothing here yet',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
@@ -1113,9 +1168,10 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
             color: onSurface,
           ),
         ),
@@ -1124,7 +1180,7 @@ class _SectionTitle extends StatelessWidget {
           onPressed: onActionTap,
           child: Text(
             actionLabel,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: onSurface.withValues(alpha: 0.7),
@@ -1156,34 +1212,49 @@ class _SurpriseCard extends StatelessWidget {
     final accent = isTimeLocked
         ? AppTheme.premiumGold
         : isForMe
-            ? AppTheme.vaultCardUrgent
-            : AppTheme.vaultCardOwned;
+            ? AppTheme.primaryOrange
+            : AppTheme.secondaryViolet;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: WinkCard(
-        borderRadius: 24,
-        borderColor: accent.withValues(alpha: 0.38),
-        onTap: isTimeLocked ? null : onTap,
-        child: Row(
-          children: [
-            Container(
-              width: 54,
-              height: 54,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.17),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: accent.withValues(alpha: 0.44)),
-              ),
-              child: Text(
-                isTimeLocked
-                    ? '\u{231B}'
-                    : isForMe
-                        ? '\u{1F48C}'
-                        : '\u{1F512}',
-                style: const TextStyle(fontSize: 24),
-              ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
+          ],
+        ),
+        child: WinkCard(
+          borderRadius: 24,
+          borderColor: accent.withValues(alpha: 0.38),
+          onTap: isTimeLocked ? null : onTap,
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.17),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: accent.withValues(alpha: 0.44)),
+                  boxShadow: [
+                    BoxShadow(color: accent.withValues(alpha: 0.2), blurRadius: 12),
+                  ],
+                ),
+                child: Icon(
+                  isTimeLocked
+                      ? PhosphorIconsFill.hourglassHigh
+                      : isForMe
+                          ? PhosphorIconsFill.envelopeOpen
+                          : PhosphorIconsFill.lockKey,
+                  color: accent.withValues(alpha: 0.9),
+                  size: 26,
+                ),
+              ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1195,9 +1266,10 @@ class _SurpriseCard extends StatelessWidget {
                         : isForMe
                             ? 'Unlock this surprise'
                             : 'Your sealed surprise',
-                    style: GoogleFonts.poppins(
-                      fontSize: 17,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
@@ -1205,7 +1277,7 @@ class _SurpriseCard extends StatelessWidget {
                   if (isTimeLocked)
                     Text(
                       _countdownText(surprise.unlockAfter!),
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.premiumGold,
@@ -1214,7 +1286,7 @@ class _SurpriseCard extends StatelessWidget {
                   else
                     Text(
                       subtitle ?? 'Judge: $personaLabel',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: Theme.of(context)
@@ -1233,6 +1305,7 @@ class _SurpriseCard extends StatelessWidget {
               Icon(Icons.chevron_right_rounded, color: accent),
           ],
         ),
+      ),
       ),
     );
   }
@@ -1292,8 +1365,11 @@ class _CollabPieceCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                     color: AppTheme.primaryPink.withValues(alpha: 0.4)),
+                boxShadow: [
+                  BoxShadow(color: AppTheme.primaryPink.withValues(alpha: 0.2), blurRadius: 12),
+                ],
               ),
-              child: const Text('🤝', style: TextStyle(fontSize: 24)),
+              child: const Icon(PhosphorIconsFill.handshake, color: AppTheme.primaryPink, size: 28),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1302,9 +1378,10 @@ class _CollabPieceCard extends StatelessWidget {
                 children: [
                   Text(
                     'Add your piece',
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
+                      letterSpacing: -0.3,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),

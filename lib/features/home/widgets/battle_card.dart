@@ -83,16 +83,16 @@ class BattleCard extends StatelessWidget {
                     children: [
                       Text(
                         'Start a Battle',
-                        style: GoogleFonts.poppins(
-                          fontSize: compact ? 21 : 24,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
+                        style: GoogleFonts.inter(
+                          fontSize: compact ? 22 : 24,
+                          fontWeight: FontWeight.w700,
                           color: AppTheme.homeTextPrimary,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Challenge a friend. Persuade. Win.',
+                        'Challenge friends. Master words. Claim victory.',
                         style: GoogleFonts.inter(
                           fontSize: compact ? 14 : 15,
                           fontWeight: FontWeight.w400,
@@ -173,15 +173,20 @@ class _BattleActionButtonState extends State<_BattleActionButton>
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppTheme.ctaGoldA, AppTheme.ctaGoldB],
+              colors: [Color(0xFFFF8C42), Color(0xFFFF6200)],
             ),
             border:
-                Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.premiumGold.withValues(alpha: 0.30),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+                color: const Color(0xFFFF6200).withValues(alpha: 0.40),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: const Color(0xFFFF8C42).withValues(alpha: 0.30),
+                blurRadius: 12,
+                spreadRadius: 2,
               ),
             ],
           ),

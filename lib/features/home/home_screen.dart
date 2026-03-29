@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/models/quest.dart';
 import 'package:go_router/go_router.dart';
 import 'package:winkidoo/core/constants/achievement_icons.dart';
@@ -127,22 +128,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         label: 'Ava',
         type: HomeAvatarType.regular,
         color: AppTheme.primaryOrangeLight,
+        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Ava&backgroundColor=ffb067',
       ),
       HomeAvatarOption(
         label: 'Maya',
         type: HomeAvatarType.regular,
         color: AppTheme.primaryOrange,
+        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Maya&backgroundColor=ff8c42',
       ),
       HomeAvatarOption(
         label: 'Kevin',
         type: HomeAvatarType.regular,
         color: AppTheme.premiumAmber,
         badge: '3',
+        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Kevin&backgroundColor=ffaa33',
       ),
       HomeAvatarOption(
         label: 'Ria',
         type: HomeAvatarType.regular,
-        color: AppTheme.secondaryViolet,
+        color: AppTheme.primaryPink,
+        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Ria&backgroundColor=ff4488',
       ),
       HomeAvatarOption(
         label: 'Add',
@@ -369,7 +374,7 @@ class _QuestSection extends StatelessWidget {
                   ? AppTheme.glassFill
                   : Colors.white.withValues(alpha: 0.70),
               border: Border.all(
-                color: AppTheme.primaryPink.withValues(alpha: 0.22),
+                color: AppTheme.primaryOrange.withValues(alpha: 0.22),
               ),
               boxShadow: AppTheme.elevation1(brightness),
             ),
@@ -382,10 +387,10 @@ class _QuestSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         activeQuest.title,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.primaryPink,
+                          color: AppTheme.primaryOrange,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -402,38 +407,78 @@ class _QuestSection extends StatelessWidget {
                       ),
                       child: Text(
                         'Step ${activeQuest.currentStep}/${activeQuest.totalSteps}',
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryPink,
+                          color: AppTheme.primaryOrange,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: activeQuest.currentStep / activeQuest.totalSteps,
-                    minHeight: 6,
-                    backgroundColor:
-                        AppTheme.primaryPink.withValues(alpha: 0.10),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppTheme.primaryPink,
-                    ),
+                const SizedBox(height: 16),
+                Row(
+                  children: List.generate(
+                    activeQuest.totalSteps,
+                    (index) {
+                      final isCompleted = index < activeQuest.currentStep;
+                      final isCurrent = index == activeQuest.currentStep;
+                      return Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: isCurrent ? 14 : 12,
+                              height: isCurrent ? 14 : 12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isCompleted || isCurrent
+                                    ? AppTheme.primaryOrange
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: isCompleted || isCurrent
+                                      ? AppTheme.primaryOrange
+                                      : brightness == Brightness.dark
+                                          ? Colors.white.withValues(alpha: 0.2)
+                                          : Colors.black.withValues(alpha: 0.1),
+                                  width: 1.5,
+                                ),
+                                boxShadow: isCompleted || isCurrent
+                                    ? [
+                                        BoxShadow(
+                                          color: AppTheme.primaryOrange.withValues(alpha: 0.6),
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                            ),
+                            if (index < activeQuest.totalSteps - 1)
+                              Expanded(
+                                child: Container(
+                                  height: 2,
+                                  color: isCompleted
+                                      ? AppTheme.primaryOrange.withValues(alpha: 0.6)
+                                      : brightness == Brightness.dark
+                                          ? Colors.white.withValues(alpha: 0.1)
+                                          : Colors.black.withValues(alpha: 0.05),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   '$progress% complete',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.55),
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextSecondary
+                        : AppTheme.lightTextSecondary,
                   ),
                 ),
               ],

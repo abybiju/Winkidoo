@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/home/widgets/avatar_selector.dart';
 
@@ -97,7 +98,7 @@ class _SmallHeroGlowStripState extends State<SmallHeroGlowStrip>
                   Text(
                     'Tap an avatar to challenge!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       letterSpacing: -0.1,

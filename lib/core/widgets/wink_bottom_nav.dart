@@ -289,8 +289,9 @@ class _CenterAction extends StatefulWidget {
 }
 
 class _CenterActionState extends State<_CenterAction>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _pressController;
+  late final AnimationController _pulseController;
 
   @override
   void initState() {
@@ -302,11 +303,14 @@ class _CenterActionState extends State<_CenterAction>
       upperBound: 1.0,
       value: 0.0,
     );
+    _pulseController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _pressController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -323,11 +327,12 @@ class _CenterActionState extends State<_CenterAction>
         },
         onTapCancel: () => _pressController.reverse(),
         child: AnimatedBuilder(
-          animation: _pressController,
+          animation: Listenable.merge([_pressController, _pulseController]),
           builder: (context, child) {
             final scale = 1.0 - (_pressController.value * 0.06);
+            final pulse = 1.0 + (_pulseController.value * 0.03);
             return Transform.scale(
-              scale: scale,
+              scale: scale * pulse,
               child: Transform.translate(
                 offset: const Offset(0, -8),
                 child: child,

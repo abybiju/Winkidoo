@@ -74,8 +74,8 @@ class WinkidooTopBar extends StatelessWidget {
                   children: [
                     SizedBox(width: compact ? 4 : 6),
                     SizedBox(
-                      height: computedLogoSize,
-                      width: computedLogoSize,
+                      height: compact ? 34 : 38,
+                      width: compact ? 34 : 38,
                       child: Image.asset(
                         'assets/images/winkidoo new logo.png',
                         fit: BoxFit.contain,
@@ -90,11 +90,18 @@ class WinkidooTopBar extends StatelessWidget {
                     Text(
                       'Winkidoo',
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w800,
                         fontSize: logoTextSize,
                         letterSpacing: -0.5,
                         color: Theme.of(context).colorScheme.onSurface,
+                        shadows: [
+                          if (brightness == Brightness.dark)
+                            BoxShadow(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.4),
+                              blurRadius: 16,
+                            ),
+                        ],
                       ),
                     ),
                   ],

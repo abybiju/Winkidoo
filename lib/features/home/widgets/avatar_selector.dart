@@ -11,6 +11,7 @@ class HomeAvatarOption {
     this.color = const Color(0xFFFFB459),
     this.badge,
     this.isHot = false,
+    this.avatarUrl,
   });
 
   final String label;
@@ -18,6 +19,7 @@ class HomeAvatarOption {
   final Color color;
   final String? badge;
   final bool isHot;
+  final String? avatarUrl;
 }
 
 class AvatarSelector extends StatelessWidget {
@@ -48,9 +50,10 @@ class AvatarSelector extends StatelessWidget {
         SizedBox(
           height: listHeight,
           child: ListView.separated(
+            clipBehavior: Clip.none,
             scrollDirection: Axis.horizontal,
             itemCount: items.length,
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             separatorBuilder: (_, __) =>
                 SizedBox(width: homeCompactMode ? 10 : 12),
             itemBuilder: (context, index) {
@@ -64,7 +67,7 @@ class AvatarSelector extends StatelessWidget {
                 onTap: onTap == null ? null : () => onTap!(item),
                 borderRadius: BorderRadius.circular(16),
                 child: SizedBox(
-                  width: showLabels ? 78 : avatarSize + 4,
+                  width: showLabels ? 78 : avatarSize + 8,
                   child: Column(
                     children: [
                       Stack(
@@ -107,12 +110,13 @@ class AvatarSelector extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: _AvatarInner(
-                              isInvite: isInvite,
-                              isLocked: isLocked,
-                              label: label,
-                              compact: homeCompactMode,
-                            ),
+                              child: _AvatarInner(
+                                isInvite: isInvite,
+                                isLocked: isLocked,
+                                label: label,
+                                compact: homeCompactMode,
+                                avatarUrl: item.avatarUrl,
+                              ),
                           ),
                           if (item.badge != null)
                             Positioned(
@@ -122,9 +126,11 @@ class AvatarSelector extends StatelessWidget {
                             ),
                           if (item.isHot)
                             const Positioned(
-                              right: -2,
-                              top: -2,
-                              child: _DotBadge(text: '', isHot: true),
+                              right: -4,
+                              top: -4,
+                              child: _PulseWrapper(
+                                child: _DotBadge(text: '', isHot: true),
+                              ),
                             ),
                           if (isLocked)
                             Positioned(
@@ -159,7 +165,7 @@ class AvatarSelector extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Colors.white.withValues(alpha: 0.88),
@@ -192,6 +198,39 @@ class AvatarSelector extends StatelessWidget {
   }
 }
 
+class _PulseWrapper extends StatefulWidget {
+  const _PulseWrapper({required this.child});
+  final Widget child;
+
+  @override
+  State<_PulseWrapper> createState() => _PulseWrapperState();
+}
+
+class _PulseWrapperState extends State<_PulseWrapper> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+  }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final scale = 1.0 + (_controller.value * 0.08);
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: widget.child,
+    );
+  }
+}
+
 class _DotBadge extends StatelessWidget {
   const _DotBadge({required this.text, required this.isHot});
 
@@ -200,26 +239,48 @@ class _DotBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isHot) {
+      return Container(
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppTheme.primaryOrangeDark,
+          border: Border.all(color: Colors.white, width: 1.5),
+        ),
+        child: const Icon(Icons.local_fire_department_rounded,
+            size: 13, color: AppTheme.premiumAmber),
+      );
+    }
+
+    // Pill badge
     return Container(
-      width: 22,
-      height: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isHot ? AppTheme.primaryOrangeDark : AppTheme.primaryOrangeDark,
+        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.primaryOrange,
         border: Border.all(color: Colors.white, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryOrange.withValues(alpha: 0.60),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: isHot
-          ? const Icon(Icons.local_fire_department_rounded,
-              size: 11, color: AppTheme.premiumAmber)
-          : Text(
-              text,
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+          height: 1.1,
+        ),
+      ),
     );
   }
 }
@@ -230,12 +291,14 @@ class _AvatarInner extends StatelessWidget {
     required this.isLocked,
     required this.label,
     required this.compact,
+    this.avatarUrl,
   });
 
   final bool isInvite;
   final bool isLocked;
   final String label;
   final bool compact;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -252,9 +315,25 @@ class _AvatarInner extends StatelessWidget {
       );
     }
 
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          avatarUrl!,
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildInitialText(),
+        ),
+      );
+    }
+
+    return _buildInitialText();
+  }
+  
+  Widget _buildInitialText() {
     return Text(
       label.isEmpty ? '?' : label[0].toUpperCase(),
-      style: GoogleFonts.poppins(
+      style: GoogleFonts.inter(
         fontSize: compact ? 24 : 26,
         fontWeight: FontWeight.w800,
         color: Colors.white,
