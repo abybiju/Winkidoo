@@ -17,10 +17,12 @@ class TavilySearchService {
     String apiKey,
     String personalityName,
   ) async {
+    debugPrint('TavilySearchService: Starting search for "$personalityName"');
     if (apiKey.trim().isEmpty) {
-      debugPrint('TavilySearchService: No API key, skipping web search');
+      debugPrint('TavilySearchService: No API key provided, skipping web search');
       return '';
     }
+    debugPrint('TavilySearchService: API key present (${apiKey.substring(0, 4)}...), calling Tavily');
 
     try {
       final response = await http.post(
@@ -36,6 +38,7 @@ class TavilySearchService {
         }),
       );
 
+      debugPrint('TavilySearchService: Response status ${response.statusCode}');
       if (response.statusCode != 200) {
         debugPrint(
             'TavilySearchService: HTTP ${response.statusCode} — ${response.body}');

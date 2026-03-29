@@ -42,11 +42,15 @@ class CustomJudgeService {
 
       // Step 2: Search the web for personality info via Tavily
       String webContext = '';
+      debugPrint('CustomJudgeService: tavilyApiKey empty=${tavilyApiKey.isEmpty}');
       if (tavilyApiKey.isNotEmpty) {
         webContext = await TavilySearchService.searchPersonality(
           tavilyApiKey,
           personalityName,
         );
+        debugPrint('CustomJudgeService: Tavily returned ${webContext.length} chars');
+      } else {
+        debugPrint('CustomJudgeService: No Tavily key, skipping web search');
       }
 
       // Step 3: Generate persona via AI with web context
