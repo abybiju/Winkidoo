@@ -34,6 +34,7 @@ import 'package:winkidoo/features/leaderboard/leaderboard_screen.dart';
 import 'package:winkidoo/features/timeline/timeline_screen.dart';
 import 'package:winkidoo/features/dare/dare_result_screen.dart';
 import 'package:winkidoo/features/judges/create_custom_judge_screen.dart';
+import 'package:winkidoo/features/judges/my_judges_screen.dart';
 import 'package:winkidoo/features/judges/custom_judge_marketplace_screen.dart';
 import 'package:winkidoo/features/campaign/campaign_list_screen.dart';
 import 'package:winkidoo/features/campaign/campaign_detail_screen.dart';
@@ -369,6 +370,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/shell/dare/result',
         builder: (_, __) => const DareResultScreen(),
+      ),
+      GoRoute(
+        path: '/shell/my-judges',
+        builder: (_, __) => const MyJudgesScreen(),
       ),
       GoRoute(
         path: '/shell/create-judge',

@@ -33,14 +33,17 @@ class JudgeSelectionScreen extends ConsumerWidget {
 
   /// Converts a CustomJudge into a Judge for display in the carousel.
   static Judge _customToJudge(CustomJudge custom) {
+    final moods = custom.mood.split('+');
+    final moodLabel = moods.map((m) => m[0].toUpperCase() + m.substring(1)).join(' + ');
     return Judge(
       id: 'custom_${custom.id}',
       personaId: 'custom_${custom.id}',
       name: custom.personalityName,
-      tagline: '${custom.moodDisplayName} mood  •  Custom',
+      tagline: '$moodLabel  •  Custom',
       difficultyLevel: custom.difficultyLevel,
       chaosLevel: custom.chaosLevel,
       previewQuotes: custom.previewQuotes,
+      avatarAssetPath: custom.avatarStoragePath,
       premiumFlag: false,
     );
   }
@@ -238,7 +241,7 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
                 child: SelectJudgeButton(
                   judge: judge,
                   locked: locked,
@@ -247,30 +250,56 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TextButton.icon(
-                      onPressed: () => context.push('/shell/create-judge'),
-                      icon: Icon(Icons.add_circle_outline_rounded,
-                          size: 16, color: AppTheme.textOrangeAccent),
-                      label: Text('Create Your Own',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13, fontWeight: FontWeight.w600,
-                            color: AppTheme.textOrangeAccent,
-                          )),
+                    GestureDetector(
+                      onTap: () => context.push('/shell/create-judge'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1B1B22),
+                          borderRadius: BorderRadius.circular(9999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFFFABC4E)),
+                            const SizedBox(width: 6),
+                            Text('Custom Judge',
+                                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFFABC4E))),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    TextButton.icon(
-                      onPressed: () => context.push('/shell/judge-marketplace'),
-                      icon: Icon(Icons.explore_rounded,
-                          size: 16, color: AppTheme.secondaryViolet),
-                      label: Text('Marketplace',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13, fontWeight: FontWeight.w600,
-                            color: AppTheme.secondaryViolet,
-                          )),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () => context.push('/shell/judge-marketplace'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1B1B22),
+                          borderRadius: BorderRadius.circular(9999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.explore_rounded, size: 16, color: Color(0xFFCFC2D6)),
+                            const SizedBox(width: 6),
+                            Text('Marketplace',
+                                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFCFC2D6))),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -554,7 +583,7 @@ class JudgePortrait extends StatelessWidget {
         );
       },
       child: Container(
-        height: 330,
+        height: 270,
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(32),

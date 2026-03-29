@@ -99,9 +99,9 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _ProfileActionCard(
                     icon: Icons.style_rounded,
-                    label: 'Judge Collection',
-                    subtitle: 'Collectible cards earned in battle',
-                    onTap: () => context.push('/shell/collection'),
+                    label: 'My Judges',
+                    subtitle: 'Manage your custom judges & add to battle',
+                    onTap: () => context.push('/shell/my-judges'),
                   ),
                   const SizedBox(height: 12),
                   _ProfileActionCard(

@@ -21,11 +21,14 @@ final adoptedJudgesProvider = FutureProvider<List<CustomJudge>>((ref) async {
 });
 
 /// All custom judges available to the couple (own + adopted).
+/// Custom judges active for battle (own with is_active_for_battle + adopted).
 final availableCustomJudgesProvider =
     FutureProvider<List<CustomJudge>>((ref) async {
   final mine = await ref.watch(myCustomJudgesProvider.future);
   final adopted = await ref.watch(adoptedJudgesProvider.future);
-  return [...mine, ...adopted];
+  // Only include own judges that are toggled for battle
+  final activeMine = mine.where((j) => j.isActiveForBattle).toList();
+  return [...activeMine, ...adopted];
 });
 
 /// Marketplace judges (with optional search query).
