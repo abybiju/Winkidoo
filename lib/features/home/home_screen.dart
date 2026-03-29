@@ -17,6 +17,9 @@ import 'package:winkidoo/features/home/widgets/hero_section.dart';
 import 'package:winkidoo/features/home/widgets/judge_spotlight_card.dart';
 import 'package:winkidoo/features/home/widgets/daily_dare_card.dart';
 import 'package:winkidoo/features/home/widgets/pack_banner_card.dart';
+import 'package:winkidoo/features/minigame/mini_game_card.dart';
+import 'package:winkidoo/features/minigame/mini_game_play_sheet.dart';
+import 'package:winkidoo/providers/mini_game_provider.dart';
 import 'package:winkidoo/features/home/widgets/recent_wins_section.dart';
 import 'package:winkidoo/features/dare/dare_response_sheet.dart';
 import 'package:winkidoo/providers/daily_dare_provider.dart';
@@ -221,6 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final heroHeight = _clamped(contentWidth, 0.22, 132, 170);
     final dareHeight = _clamped(contentWidth, 0.33, 168, 214);
+    final gameHeight = _clamped(contentWidth, 0.33, 168, 214);
     final battleHeight = _clamped(contentWidth, 0.37, 188, 232);
     final judgeHeight = _clamped(contentWidth, 0.33, 168, 214);
     final recentItemHeight = _clamped(contentWidth, 0.14, 88, 108);
@@ -273,6 +277,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                       onViewResult: () =>
                           context.push('/shell/dare/result'),
+                    ),
+                    SizedBox(height: gap),
+                    MiniGameCard(
+                      compact: isCompact,
+                      height: gameHeight,
+                      onPlay: () {
+                        final game = ref.read(miniGameProvider).value?.game;
+                        if (game == null) return;
+                        showModalBottomSheet<bool>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => MiniGamePlaySheet(game: game),
+                        );
+                      },
+                      onViewResult: () =>
+                          context.push('/shell/minigame/result'),
                     ),
                     SizedBox(height: gap),
                     BattleCard(

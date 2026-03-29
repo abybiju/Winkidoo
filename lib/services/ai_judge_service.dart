@@ -644,6 +644,137 @@ Return JSON only:
     }
   }
 
+  // ── Couple Mini-Games ──
+
+  /// Generates a mini-game prompt based on game type.
+  Future<({String prompt, List<String>? options})> generateMiniGame({
+    required String persona,
+    required String gameType,
+    List<String> judgeMemories = const [],
+    String? packPromptHint,
+    String? personaPromptOverride,
+  }) async {
+    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
+
+    final personaPrompt = personaPromptOverride ??
+        _personaPrompts[persona] ??
+        _personaPrompts[AppConstants.personaSassyCupid]!;
+    final moodContext = _buildMoodContext();
+    final moodBlock = moodContext.isNotEmpty ? '\nCurrent mood: $moodContext\n' : '';
+    final memoriesBlock = judgeMemories.isNotEmpty
+        ? '\nYour memories of past battles with this couple:\n${judgeMemories.map((m) => '- $m').join('\n')}\nUse these to personalize the game.\n'
+        : '';
+    final packBlock = packPromptHint != null
+        ? '\nTHEMED PACK CONTEXT: $packPromptHint\n'
+        : '';
+
+    final typeInstruction = switch (gameType) {
+      'would_you_rather' =>
+        'Generate a fun, romantic "Would You Rather" dilemma with exactly 2 options. Return JSON: {"prompt": "<the dilemma question>", "options": ["<option A>", "<option B>"]}',
+      'love_trivia' =>
+        'Generate a personal trivia question about this couple using their battle history and your memories. Make it specific and fun. Return JSON: {"prompt": "<the trivia question>"}',
+      'caption_this' =>
+        'Generate a funny or romantic scenario that both partners will caption. Be specific and visual. Return JSON: {"prompt": "<the scenario description>"}',
+      'finish_my_sentence' =>
+        'Generate an interesting, romantic, or funny sentence starter that one partner begins and the other finishes. Return JSON: {"prompt": "<the sentence starter ending with ...>"}',
+      _ =>
+        'Generate a fun couple game prompt. Return JSON: {"prompt": "<the prompt>"}',
+    };
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+$personaPrompt
+$moodBlock$memoriesBlock$packBlock
+You are creating a quick MINI-GAME for a couple. Game type: $gameType.
+
+$typeInstruction
+
+Stay fully in character. Keep it wholesome, PG-13, and fun. Be specific, not generic.
+Respond with JSON only, no markdown.
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      final json = _parseJsonFromResponse(text);
+      final gamePrompt = json['prompt'] as String? ?? 'Tell your partner something unexpected about yourself.';
+      final options = json['options'] as List?;
+      return (
+        prompt: gamePrompt,
+        options: options?.cast<String>(),
+      );
+    } catch (e) {
+      debugPrint('generateMiniGame error: $e');
+      return (
+        prompt: 'Tell your partner the funniest thing that happened to you this week.',
+        options: null,
+      );
+    }
+  }
+
+  /// Grades a mini-game after both partners respond.
+  Future<({String commentary, int score, String emoji})> gradeMiniGame({
+    required String persona,
+    required String gameType,
+    required String gamePrompt,
+    required String responseA,
+    required String responseB,
+    String? personaPromptOverride,
+  }) async {
+    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
+
+    final personaPrompt = personaPromptOverride ??
+        _personaPrompts[persona] ??
+        _personaPrompts[AppConstants.personaSassyCupid]!;
+
+    final typeContext = switch (gameType) {
+      'would_you_rather' =>
+        'Both partners picked an option from a "Would You Rather" dilemma. Comment on their compatibility based on their choices.',
+      'love_trivia' =>
+        'Both partners answered a trivia question about their relationship. Grade who got closer to the truth.',
+      'caption_this' =>
+        'Both partners captioned a scenario. Pick the funnier/better caption and roast the other lovingly.',
+      'finish_my_sentence' =>
+        'One partner started a sentence, the other finished it. Grade the chemistry and creativity of the completed sentence.',
+      _ => 'Grade both responses for creativity and effort.',
+    };
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+$personaPrompt
+
+Mini-game type: $gameType
+$typeContext
+
+The prompt was: "$gamePrompt"
+Partner A responded: "$responseA"
+Partner B responded: "$responseB"
+
+Grade their combined performance. Score 0-100 based on: creativity, humor, chemistry, and effort.
+Return JSON only: {"commentary": "<your 2-3 sentence in-character grading>", "score": <0-100>, "mood_emoji": "<single emoji>"}
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      final json = _parseJsonFromResponse(text);
+      return (
+        commentary: json['commentary'] as String? ?? 'Not bad at all!',
+        score: (json['score'] as int? ?? 50).clamp(0, 100),
+        emoji: json['mood_emoji'] as String? ?? '✨',
+      );
+    } catch (e) {
+      debugPrint('gradeMiniGame error: $e');
+      return (
+        commentary: 'The judge was impressed! Nice teamwork.',
+        score: 70,
+        emoji: '✨',
+      );
+    }
+  }
+
   /// Parses JSON from model output. Tolerates markdown code fences and surrounding text.
   static Map<String, dynamic> _parseJsonFromResponse(String text) {
     if (text.isEmpty) return {};

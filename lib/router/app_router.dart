@@ -33,6 +33,7 @@ import 'package:winkidoo/features/collection/collection_screen.dart';
 import 'package:winkidoo/features/leaderboard/leaderboard_screen.dart';
 import 'package:winkidoo/features/timeline/timeline_screen.dart';
 import 'package:winkidoo/features/dare/dare_result_screen.dart';
+import 'package:winkidoo/features/minigame/mini_game_result_screen.dart';
 import 'package:winkidoo/features/packs/pack_list_screen.dart';
 import 'package:winkidoo/features/packs/pack_detail_screen.dart';
 import 'package:winkidoo/models/judge_response.dart';
@@ -363,6 +364,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/shell/dare/result',
         builder: (_, __) => const DareResultScreen(),
+      ),
+      GoRoute(
+        path: '/shell/minigame/result',
+        builder: (_, __) => const MiniGameResultScreen(),
       ),
       GoRoute(
         path: '/shell/packs',

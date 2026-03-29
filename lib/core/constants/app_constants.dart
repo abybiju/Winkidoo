@@ -122,6 +122,22 @@ class AppConstants {
     personaDrLove,
   ];
 
+  // ── Couple Mini-Games ──
+
+  /// Activity type for streak tracking.
+  static const String activityMiniGameCompleted = 'minigame_completed';
+
+  /// XP awarded when both partners complete a mini-game.
+  static const int xpPerMiniGameCompleted = 10;
+
+  /// Game type rotation (deterministic: dayOfYear % 4).
+  static const List<String> miniGameRotation = [
+    'would_you_rather',
+    'love_trivia',
+    'caption_this',
+    'finish_my_sentence',
+  ];
+
   // ── XP System (Phase 2 prep) ──
 
   static const int xpPerSurpriseCreated = 10;
