@@ -1062,23 +1062,21 @@ Return JSON only: {"commentary": "<your 2-3 sentence in-character grading>", "sc
     }
     raw = raw.trim();
     if (raw.isEmpty) return {};
-    // Extract JSON object: find first { and matching last }
+
+    // Try direct decode first (works for clean JSON responses)
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {}
+
+    // Fallback: find first { and last } (handles surrounding text)
     final start = raw.indexOf('{');
-    if (start == -1) return {};
-    int depth = 0;
-    int end = -1;
-    for (int i = start; i < raw.length; i++) {
-      if (raw[i] == '{') depth++;
-      if (raw[i] == '}') {
-        depth--;
-        if (depth == 0) {
-          end = i;
-          break;
-        }
-      }
+    final end = raw.lastIndexOf('}');
+    if (start == -1 || end == -1 || end <= start) return {};
+    try {
+      final jsonStr = raw.substring(start, end + 1);
+      return jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (_) {
+      return {};
     }
-    if (end == -1) return {};
-    final jsonStr = raw.substring(start, end + 1);
-    return jsonDecode(jsonStr) as Map<String, dynamic>;
   }
 }
