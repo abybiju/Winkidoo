@@ -8,10 +8,14 @@ class RateLimitService {
 
   /// Checks if the couple can create another custom judge today.
   /// Returns (canCreate, remaining).
+  /// In debug mode, limit is bypassed for testing.
   static Future<(bool, int)> canCreateCustomJudge(
     SupabaseClient client,
     String coupleId,
   ) async {
+    // No limit in debug mode for testing
+    if (kDebugMode) return (true, 999);
+
     try {
       final today = _todayString();
       final rows = await client
@@ -26,7 +30,6 @@ class RateLimitService {
       return (count < maxCustomJudgesPerDay, remaining);
     } catch (e) {
       debugPrint('RateLimitService.canCreateCustomJudge: $e');
-      // On error, allow (don't block users due to check failure)
       return (true, maxCustomJudgesPerDay);
     }
   }
