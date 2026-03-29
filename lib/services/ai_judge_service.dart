@@ -660,12 +660,18 @@ Return JSON only:
     String avatarEmoji,
     int suggestedDifficulty,
     int suggestedChaos,
+    String notificationText,
     String? error,
   })> generateCustomPersona({
     required String personalityName,
     required String mood,
+    String webSearchContext = '',
   }) async {
     if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
+
+    final webBlock = webSearchContext.isNotEmpty
+        ? '\nHere is real web research about "$personalityName":\n---\n$webSearchContext\n---\nUse this research to capture their REAL speaking style, quotes, and mannerisms accurately.\n'
+        : '';
 
     final prompt = '''
 $_winkidooJudgeSystemPrompt
@@ -674,14 +680,15 @@ You are Winkidoo's Custom Judge Creator. Your job is to create an AI judge perso
 
 The user wants a judge based on: "$personalityName"
 The mood they selected: "$mood"
-
+$webBlock
 Your task:
-1. Draw on your knowledge of this person's speaking style, famous quotes, catchphrases, mannerisms, and public personality.
-2. Create a detailed persona prompt (3-5 sentences) that an AI could follow to convincingly roleplay as this person judging a romantic couples game. Include their signature phrases, speaking patterns, and attitude.
+1. Draw on your knowledge AND the web research (if provided) of this person's speaking style, famous quotes, catchphrases, mannerisms, and public personality.
+2. Create a detailed persona prompt (3-5 sentences) that an AI could follow to convincingly roleplay as this person judging a romantic couples game. Include their REAL signature phrases, speaking patterns, and attitude.
 3. Apply the "$mood" filter — if "funny" make them extra humorous, if "savage" make them brutally honest, if "romantic" make them sweet, if "strict" make them demanding, if "chaotic" make them wild, if "chill" make them laid-back.
-4. Generate 3 sample quotes this judge would say during a battle (in their voice, referencing their known style).
+4. Generate 3 sample quotes this judge would say during a battle (in their voice, using their REAL catchphrases and style).
 5. Suggest a single emoji that represents this personality.
 6. Suggest a difficulty level (1-5) and chaos level (1-5) based on their personality.
+7. Generate a short push notification message (1 sentence, max 80 chars) in their voice announcing they are ready to judge. Examples: "Gordon Ramsay here. Ready to judge. It better not be RAW." or "Drake judging your love story... started from the bottom now we here."
 
 Safety rules:
 - If the personality is a private individual (not a public figure or fictional character), return {"error": "Please choose a public figure or fictional character."}
@@ -689,7 +696,7 @@ Safety rules:
 - Keep everything PG-13 and fun. The persona should be entertaining, not offensive.
 
 Return JSON only, no markdown:
-{"persona_prompt": "<3-5 sentence persona description>", "how_to_impress": "<1-2 sentences>", "preview_quotes": ["<quote 1>", "<quote 2>", "<quote 3>"], "avatar_emoji": "<single emoji>", "suggested_difficulty": <1-5>, "suggested_chaos": <1-5>}
+{"persona_prompt": "<3-5 sentence persona description>", "how_to_impress": "<1-2 sentences>", "preview_quotes": ["<quote 1>", "<quote 2>", "<quote 3>"], "avatar_emoji": "<single emoji>", "suggested_difficulty": <1-5>, "suggested_chaos": <1-5>, "notification_text": "<push notification in their voice>"}
 
 If there is a safety issue, return: {"error": "<message>"}
 ''';
@@ -707,6 +714,7 @@ If there is a safety issue, return: {"error": "<message>"}
           avatarEmoji: '🎭',
           suggestedDifficulty: 2,
           suggestedChaos: 2,
+          notificationText: '',
           error: json['error'] as String?,
         );
       }
@@ -723,6 +731,8 @@ If there is a safety issue, return: {"error": "<message>"}
         avatarEmoji: json['avatar_emoji'] as String? ?? '🎭',
         suggestedDifficulty: (json['suggested_difficulty'] as int? ?? 2).clamp(1, 5),
         suggestedChaos: (json['suggested_chaos'] as int? ?? 2).clamp(1, 5),
+        notificationText: json['notification_text'] as String? ??
+            '$personalityName is ready to judge you!',
         error: null,
       );
     } catch (e) {
@@ -734,6 +744,7 @@ If there is a safety issue, return: {"error": "<message>"}
         avatarEmoji: '🎭',
         suggestedDifficulty: 2,
         suggestedChaos: 2,
+        notificationText: '$personalityName is ready to judge you!',
         error: null,
       );
     }

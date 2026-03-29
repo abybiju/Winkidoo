@@ -12,9 +12,12 @@ import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
+import 'package:winkidoo/services/rate_limit_service.dart';
 
 const _geminiApiKey =
     String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+const _tavilyApiKey =
+    String.fromEnvironment('TAVILY_API_KEY', defaultValue: '');
 
 class CreateCustomJudgeScreen extends ConsumerStatefulWidget {
   const CreateCustomJudgeScreen({super.key});
@@ -29,8 +32,25 @@ class _CreateCustomJudgeScreenState
   final _nameController = TextEditingController();
   String _selectedMood = 'funny';
   int _step = 0; // 0=name, 1=mood, 2=generating, 3=preview, 4=saved
+  String _generatingStatus = ''; // searching, generating, ready
   CustomJudge? _createdJudge;
   String? _error;
+  int _remainingToday = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRateLimit();
+  }
+
+  Future<void> _checkRateLimit() async {
+    final couple = ref.read(coupleProvider).value;
+    if (couple == null) return;
+    final client = ref.read(supabaseClientProvider);
+    final (_, remaining) =
+        await RateLimitService.canCreateCustomJudge(client, couple.id);
+    if (mounted) setState(() => _remainingToday = remaining);
+  }
 
   @override
   void dispose() {
@@ -42,22 +62,37 @@ class _CreateCustomJudgeScreenState
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    setState(() { _step = 2; _error = null; });
-    HapticFeedback.lightImpact();
-
     final couple = ref.read(coupleProvider).value;
     if (couple == null) {
-      setState(() { _step = 0; _error = 'No couple found.'; });
+      setState(() { _error = 'No couple found.'; });
       return;
     }
 
+    // Rate limit check
     final client = ref.read(supabaseClientProvider);
+    final (canCreate, remaining) =
+        await RateLimitService.canCreateCustomJudge(client, couple.id);
+    if (!canCreate) {
+      setState(() {
+        _error = 'Daily limit reached (3 per day). Try again tomorrow!';
+        _remainingToday = 0;
+      });
+      return;
+    }
+
+    setState(() { _step = 2; _error = null; _generatingStatus = 'searching'; });
+    HapticFeedback.lightImpact();
+
     final judge = await CustomJudgeService.createJudge(
       client,
       _geminiApiKey,
       coupleId: couple.id,
       personalityName: name,
       mood: _selectedMood,
+      tavilyApiKey: _tavilyApiKey,
+      onStatusUpdate: (status) {
+        if (mounted) setState(() => _generatingStatus = status);
+      },
     );
 
     if (judge == null) {
@@ -69,7 +104,11 @@ class _CreateCustomJudgeScreenState
     }
 
     ref.invalidate(myCustomJudgesProvider);
-    setState(() { _createdJudge = judge; _step = 3; });
+    setState(() {
+      _createdJudge = judge;
+      _step = 3;
+      _remainingToday = remaining - 1;
+    });
     HapticFeedback.mediumImpact();
   }
 
@@ -284,9 +323,18 @@ class _CreateCustomJudgeScreenState
                       ),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      '$_remainingToday of ${RateLimitService.maxCustomJudgesPerDay} creations remaining today',
+                      style: GoogleFonts.inter(
+                        fontSize: 12, color: AppTheme.textMuted,
+                      ),
+                    ),
+                  ),
                 ],
 
-                // Step 2: Generating
+                // Step 2: Generating with progress stages
                 if (_step == 2)
                   SizedBox(
                     height: 300,
@@ -298,9 +346,22 @@ class _CreateCustomJudgeScreenState
                               color: AppTheme.primaryOrange),
                           const SizedBox(height: 20),
                           Text(
-                            'Studying ${_nameController.text.trim()}\'s personality...',
+                            _generatingStatus == 'searching'
+                                ? '🔍 Searching the web for ${_nameController.text.trim()}...'
+                                : _generatingStatus == 'generating'
+                                    ? '🧠 Building personality from research...'
+                                    : '✅ Almost ready...',
                             style: GoogleFonts.inter(
                               fontSize: 16, color: AppTheme.homeTextSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _generatingStatus == 'searching'
+                                ? 'Finding quotes, mannerisms, and style...'
+                                : 'Creating your custom judge...',
+                            style: GoogleFonts.inter(
+                              fontSize: 13, color: AppTheme.textMuted,
                             ),
                           ),
                         ],

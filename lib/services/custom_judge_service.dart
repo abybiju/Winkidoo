@@ -2,45 +2,87 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/models/custom_judge.dart';
 import 'package:winkidoo/services/ai_judge_service.dart';
+import 'package:winkidoo/services/tavily_search_service.dart';
 
 /// Service for custom AI judge creation and marketplace.
 class CustomJudgeService {
-  /// Creates a custom judge by generating the persona via AI.
+  /// Creates a custom judge with web search + AI persona generation.
+  /// Flow: insert row as 'generating' → search web → generate persona → update to 'ready'.
+  /// [onStatusUpdate] is called at each stage for UI progress.
   static Future<CustomJudge?> createJudge(
     SupabaseClient client,
-    String apiKey, {
+    String geminiApiKey, {
     required String coupleId,
     required String personalityName,
     required String mood,
     String? avatarStoragePath,
+    String tavilyApiKey = '',
+    void Function(String status)? onStatusUpdate,
   }) async {
     try {
-      final judge = AiJudgeService(apiKey: apiKey);
-      final result = await judge.generateCustomPersona(
-        personalityName: personalityName,
-        mood: mood,
-      );
-
-      if (result.error != null) {
-        debugPrint('CustomJudgeService.createJudge: ${result.error}');
-        return null;
-      }
-
-      final row = await client
+      // Step 1: Insert row with 'generating' status
+      onStatusUpdate?.call('searching');
+      final insertRow = await client
           .from('custom_judges')
           .insert({
             'couple_id': coupleId,
             'personality_name': personalityName,
             'personality_query': personalityName,
             'mood': mood,
+            'generated_persona_prompt': 'Generating...',
+            'avatar_storage_path': avatarStoragePath,
+            'avatar_emoji': '🎭',
+            'difficulty_level': 2,
+            'chaos_level': 2,
+            'status': 'generating',
+          })
+          .select()
+          .single();
+      final judgeId = insertRow['id'] as String;
+
+      // Step 2: Search the web for personality info via Tavily
+      String webContext = '';
+      if (tavilyApiKey.isNotEmpty) {
+        webContext = await TavilySearchService.searchPersonality(
+          tavilyApiKey,
+          personalityName,
+        );
+      }
+
+      // Step 3: Generate persona via AI with web context
+      onStatusUpdate?.call('generating');
+      final judge = AiJudgeService(apiKey: geminiApiKey);
+      final result = await judge.generateCustomPersona(
+        personalityName: personalityName,
+        mood: mood,
+        webSearchContext: webContext,
+      );
+
+      if (result.error != null) {
+        // Mark as failed
+        await client
+            .from('custom_judges')
+            .update({'status': 'failed'})
+            .eq('id', judgeId);
+        debugPrint('CustomJudgeService.createJudge: ${result.error}');
+        return null;
+      }
+
+      // Step 4: Update row with generated data + 'ready' status
+      onStatusUpdate?.call('ready');
+      final row = await client
+          .from('custom_judges')
+          .update({
             'generated_persona_prompt': result.personaPrompt,
             'generated_how_to_impress': result.howToImpress,
             'preview_quotes': result.previewQuotes,
-            'avatar_storage_path': avatarStoragePath,
             'avatar_emoji': result.avatarEmoji,
             'difficulty_level': result.suggestedDifficulty,
             'chaos_level': result.suggestedChaos,
+            'notification_text': result.notificationText,
+            'status': 'ready',
           })
+          .eq('id', judgeId)
           .select()
           .single();
 
