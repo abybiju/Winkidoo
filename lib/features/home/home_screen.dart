@@ -15,7 +15,10 @@ import 'package:winkidoo/features/home/widgets/avatar_selector.dart';
 import 'package:winkidoo/features/home/widgets/battle_card.dart';
 import 'package:winkidoo/features/home/widgets/hero_section.dart';
 import 'package:winkidoo/features/home/widgets/judge_spotlight_card.dart';
+import 'package:winkidoo/features/home/widgets/daily_dare_card.dart';
 import 'package:winkidoo/features/home/widgets/recent_wins_section.dart';
+import 'package:winkidoo/features/dare/dare_response_sheet.dart';
+import 'package:winkidoo/providers/daily_dare_provider.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
 import 'package:winkidoo/features/season/season_recap_screen.dart';
 import 'package:winkidoo/models/achievement.dart';
@@ -246,6 +249,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       height: heroHeight,
                       items: _avatarOptions(),
                       onAvatarTap: (_) => _goToCreateWithProfileGate(),
+                    ),
+                    SizedBox(height: gap),
+                    DailyDareCard(
+                      compact: isCompact,
+                      onTakeDare: () {
+                        final dare = ref.read(dailyDareProvider).value?.dare;
+                        if (dare == null) return;
+                        showModalBottomSheet<bool>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => DareResponseSheet(dare: dare),
+                        );
+                      },
+                      onViewResult: () =>
+                          context.push('/shell/dare/result'),
                     ),
                     SizedBox(height: gap),
                     BattleCard(

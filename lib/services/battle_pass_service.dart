@@ -41,6 +41,7 @@ class BattlePassService {
   static const int pointsBattleWon = 10;
   static const int pointsQuestStep = 5;
   static const int pointsQuestCompleted = 25;
+  static const int pointsDareCompleted = 3;
 
   static Future<BattlePassProgress?> getProgress(
     SupabaseClient client,

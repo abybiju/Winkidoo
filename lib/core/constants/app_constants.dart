@@ -96,6 +96,32 @@ class AppConstants {
   static const String activityBattleResolved = 'battle_resolved';
   static const String activityQuestStep = 'quest_step';
 
+  // ── Daily Love Dares ──
+
+  /// Activity type for streak tracking.
+  static const String activityDareCompleted = 'dare_completed';
+
+  /// XP awarded when both partners complete a dare.
+  static const int xpPerDareCompleted = 15;
+
+  /// Dare categories.
+  static const List<String> dareCategories = [
+    'romantic',
+    'playful',
+    'nostalgic',
+    'adventurous',
+    'chaotic',
+  ];
+
+  /// Persona rotation order for daily dares (deterministic: dayOfYear % 5).
+  static const List<String> darePersonaRotation = [
+    personaSassyCupid,
+    personaPoeticRomantic,
+    personaChaosGremlin,
+    personaTheEx,
+    personaDrLove,
+  ];
+
   // ── XP System (Phase 2 prep) ──
 
   static const int xpPerSurpriseCreated = 10;

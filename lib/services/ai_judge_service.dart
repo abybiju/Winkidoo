@@ -517,6 +517,128 @@ Respond with JSON only, no markdown.
     return buffer.toString();
   }
 
+  // ── Daily Love Dares ──
+
+  /// Generates a daily dare in-character for the given persona.
+  /// [recentDareTexts] last 3 dare texts to avoid repeats.
+  /// [totalBattles] couple's battle count (0 = new couple, get an easy icebreaker).
+  /// [streakDays] current streak for difficulty calibration.
+  Future<({String dareText, String category})> generateDare({
+    required String persona,
+    List<String> recentDareTexts = const [],
+    List<String> judgeMemories = const [],
+    int totalBattles = 0,
+    int streakDays = 0,
+  }) async {
+    if (_apiKey.trim().isEmpty) {
+      throw GeminiApiKeyMissingException();
+    }
+    final personaPrompt =
+        _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
+    final moodContext = _buildMoodContext();
+    final moodBlock = moodContext.isNotEmpty ? '\nCurrent mood: $moodContext\n' : '';
+
+    final recentBlock = recentDareTexts.isNotEmpty
+        ? '\nRecent dares (DO NOT repeat these or anything similar):\n${recentDareTexts.map((d) => '- $d').join('\n')}\n'
+        : '';
+
+    final memoriesBlock = judgeMemories.isNotEmpty
+        ? '\nYour memories of past battles with this couple:\n${judgeMemories.map((m) => '- $m').join('\n')}\nUse these to personalize the dare.\n'
+        : '';
+
+    final coupleContext = totalBattles == 0
+        ? 'This couple is brand new to Winkidoo — give them a fun, easy icebreaker dare to get started.'
+        : 'This couple has completed $totalBattles battles${streakDays > 0 ? ' and has a $streakDays-day streak' : ''}. Match the dare to their experience level.';
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+$personaPrompt
+$moodBlock$memoriesBlock
+You are generating a DAILY LOVE DARE for a couple. This is a fun daily challenge that both partners complete (via text, photo, or voice note). It should take under 5 minutes.
+
+$coupleContext
+$recentBlock
+Rules:
+- The dare must be specific and actionable (not vague like "do something nice")
+- It must be completable within the app (text message, photo, or voice note)
+- Keep it wholesome, PG-13, and fun
+- Stay fully in character — a Chaos Gremlin dare should be wild; a Poetic Romantic dare should be lyrical
+- Category must be one of: romantic, playful, nostalgic, adventurous, chaotic
+
+Return JSON only: {"dare_text": "<the dare in your voice, 1-3 sentences>", "category": "<category>"}
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      final json = _parseJsonFromResponse(text);
+      return (
+        dareText: json['dare_text'] as String? ?? 'Send your partner a voice note telling them why they make you smile.',
+        category: json['category'] as String? ?? 'playful',
+      );
+    } catch (e) {
+      debugPrint('generateDare error: $e');
+      return (
+        dareText: 'Send your partner a message describing your favorite moment together — in exactly 3 sentences.',
+        category: 'nostalgic',
+      );
+    }
+  }
+
+  /// Grades both partners' dare responses in-character.
+  /// Returns commentary, score, emoji, and a "roast" quote for the share card.
+  Future<({String commentary, int score, String emoji, String roast})> gradeDare({
+    required String persona,
+    required String dareText,
+    required String responseA,
+    required String responseB,
+  }) async {
+    if (_apiKey.trim().isEmpty) {
+      throw GeminiApiKeyMissingException();
+    }
+    final personaPrompt =
+        _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+$personaPrompt
+
+You gave this couple a Daily Love Dare:
+"$dareText"
+
+Partner A responded: "$responseA"
+Partner B responded: "$responseB"
+
+Grade their combined effort. Score 0-100 based on: creativity, effort, emotional depth, humor/charm, and how well they matched the dare.
+
+Return JSON only:
+{"commentary": "<your 2-4 sentence in-character grading — be entertaining, reference specific things they said>", "score": <0-100>, "mood_emoji": "<single emoji>", "best_quote": "<your single wittiest/most memorable line from the commentary, perfect for a share card>"}
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      final json = _parseJsonFromResponse(text);
+      final commentary = json['commentary'] as String? ?? 'Not bad, not bad at all.';
+      return (
+        commentary: commentary,
+        score: (json['score'] as int? ?? 50).clamp(0, 100),
+        emoji: json['mood_emoji'] as String? ?? '✨',
+        roast: json['best_quote'] as String? ?? commentary,
+      );
+    } catch (e) {
+      debugPrint('gradeDare error: $e');
+      return (
+        commentary: 'The judge was too impressed to form words. Well done!',
+        score: 75,
+        emoji: '✨',
+        roast: 'The judge was too impressed to form words.',
+      );
+    }
+  }
+
   /// Parses JSON from model output. Tolerates markdown code fences and surrounding text.
   static Map<String, dynamic> _parseJsonFromResponse(String text) {
     if (text.isEmpty) return {};
