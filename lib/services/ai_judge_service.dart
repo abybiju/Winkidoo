@@ -773,9 +773,13 @@ Return JSON only, no markdown. Follow the exact field names from the example abo
 ''';
 
     try {
+      debugPrint('generateCustomPersona: calling Gemini with ${prompt.length} char prompt...');
       final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
+      debugPrint('generateCustomPersona: Gemini returned ${text.length} chars');
+      debugPrint('generateCustomPersona: first 200 chars: ${text.substring(0, text.length.clamp(0, 200))}');
       final json = _parseJsonFromResponse(text);
+      debugPrint('generateCustomPersona: parsed ${json.length} JSON keys: ${json.keys.toList()}');
 
       if (json.containsKey('error')) {
         return (
@@ -806,8 +810,9 @@ Return JSON only, no markdown. Follow the exact field names from the example abo
             '$personalityName is ready to judge you!',
         error: null,
       );
-    } catch (e) {
-      debugPrint('generateCustomPersona error: $e');
+    } catch (e, st) {
+      debugPrint('generateCustomPersona ERROR: $e');
+      debugPrint('generateCustomPersona STACK: $st');
       return (
         personaPrompt: 'You are $personalityName judging a romantic couples game. Stay in character and be entertaining.',
         howToImpress: 'Be creative and genuine.',
