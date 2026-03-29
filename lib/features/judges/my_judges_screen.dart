@@ -124,6 +124,7 @@ class _MyJudgeCard extends ConsumerStatefulWidget {
 
 class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
   bool _loading = false;
+  String? _localAvatarUrl; // Updated immediately after upload
 
   Future<void> _toggleBattlefield() async {
     setState(() => _loading = true);
@@ -175,6 +176,11 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
         .from('custom_judges')
         .update({'avatar_storage_path': path})
         .eq('id', widget.judge.id);
+    // Get signed URL immediately so the UI updates
+    final signedUrl = await client.storage
+        .from('surprises')
+        .createSignedUrl(path, 3600);
+    if (mounted) setState(() => _localAvatarUrl = signedUrl);
     ref.invalidate(myCustomJudgesProvider);
   }
 
@@ -253,32 +259,41 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
                     color: AppTheme.glassFillHover,
                     border: Border.all(color: AppTheme.glassBorder),
                   ),
-                  child: hasAvatar
-                      ? FutureBuilder<String>(
-                          future: Supabase.instance.client.storage
-                              .from('surprises')
-                              .createSignedUrl(j.avatarStoragePath!, 3600),
-                          builder: (ctx, snap) {
-                            if (!snap.hasData) {
-                              return Center(
+                  child: _localAvatarUrl != null
+                      ? ClipOval(
+                          child: Image.network(_localAvatarUrl!,
+                              width: 48, height: 48, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Center(
                                 child: Text(j.avatarEmoji,
                                     style: const TextStyle(fontSize: 24)),
-                              );
-                            }
-                            return ClipOval(
-                              child: Image.network(snap.data!,
-                                  width: 48, height: 48, fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Center(
+                              )),
+                        )
+                      : hasAvatar
+                          ? FutureBuilder<String>(
+                              future: Supabase.instance.client.storage
+                                  .from('surprises')
+                                  .createSignedUrl(j.avatarStoragePath!, 3600),
+                              builder: (ctx, snap) {
+                                if (!snap.hasData) {
+                                  return Center(
                                     child: Text(j.avatarEmoji,
                                         style: const TextStyle(fontSize: 24)),
-                                  )),
-                            );
-                          },
-                        )
-                      : Center(
-                          child: Text(j.avatarEmoji,
-                              style: const TextStyle(fontSize: 24)),
-                        ),
+                                  );
+                                }
+                                return ClipOval(
+                                  child: Image.network(snap.data!,
+                                      width: 48, height: 48, fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Center(
+                                        child: Text(j.avatarEmoji,
+                                            style: const TextStyle(fontSize: 24)),
+                                      )),
+                                );
+                              },
+                            )
+                          : Center(
+                              child: Text(j.avatarEmoji,
+                                  style: const TextStyle(fontSize: 24)),
+                            ),
                 ),
               ),
               const SizedBox(width: 14),
