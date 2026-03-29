@@ -592,8 +592,10 @@ class _JudgePreview extends StatelessWidget {
                 ),
               ),
               child: Text('"$quote"',
-                  style: GoogleFonts.caveat(
-                    fontSize: 18, color: AppTheme.homeTextPrimary, height: 1.3,
+                  style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w400,
+                    fontStyle: FontStyle.italic,
+                    color: AppTheme.homeTextPrimary, height: 1.5,
                   )),
             )),
 
