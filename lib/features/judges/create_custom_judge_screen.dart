@@ -69,12 +69,13 @@ class _CreateCustomJudgeScreenState
       if (_createdJudge != null) {
         final client = Supabase.instance.client;
         final userId = client.auth.currentUser?.id ?? 'unknown';
-        final path = 'custom_judges/$userId/${_createdJudge!.id}.jpg';
-        await client.storage.from('surprises').uploadBinary(path, bytes,
+        final path = '$userId/${_createdJudge!.id}.jpg';
+        await client.storage.from('judge-avatars').uploadBinary(path, bytes,
             fileOptions: const FileOptions(upsert: true));
+        final storagePath = 'judge-avatars:$path';
         await client
             .from('custom_judges')
-            .update({'avatar_storage_path': path})
+            .update({'avatar_storage_path': storagePath})
             .eq('id', _createdJudge!.id);
         ref.invalidate(myCustomJudgesProvider);
       }

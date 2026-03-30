@@ -104,7 +104,7 @@ class JudgeSelectionScreen extends ConsumerWidget {
   }
 }
 
-class _JudgeSelectionContent extends StatefulWidget {
+class _JudgeSelectionContent extends ConsumerStatefulWidget {
   const _JudgeSelectionContent({
     required this.judges,
     required this.userGender,
@@ -118,10 +118,10 @@ class _JudgeSelectionContent extends StatefulWidget {
   final void Function(String personaId, int difficulty) onSelect;
 
   @override
-  State<_JudgeSelectionContent> createState() => _JudgeSelectionContentState();
+  ConsumerState<_JudgeSelectionContent> createState() => _JudgeSelectionContentState();
 }
 
-class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
+class _JudgeSelectionContentState extends ConsumerState<_JudgeSelectionContent>
     with TickerProviderStateMixin {
   late PageController _pageController;
   late AnimationController _auraController;
@@ -132,6 +132,17 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
   Timer? _quoteTimer;
   bool _isSealing = false;
   BattleSoundService? _soundService;
+  // Cache signed URL futures for custom judges to prevent blink on rebuild
+  final Map<String, Future<String>> _signedUrlCache = {};
+
+  Future<String>? _getCachedSignedUrl(Judge judge) {
+    if (!judge.personaId.startsWith('custom_')) return null;
+    final rawPath = judge.avatarAssetPath;
+    if (rawPath == null || rawPath.isEmpty) return null;
+    return _signedUrlCache.putIfAbsent(judge.personaId, () {
+      return JudgePortrait._resolveSignedUrl(rawPath);
+    });
+  }
 
   @override
   void initState() {
@@ -241,6 +252,7 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
                           quoteIndex: index == _currentIndex ? _quoteIndex : 0,
                           sealingProgress:
                               index == _currentIndex ? sealingProgress : 0.0,
+                          cachedAvatarFuture: _getCachedSignedUrl(j),
                         ),
                         if (isCustom)
                           Positioned(
@@ -282,6 +294,9 @@ class _JudgeSelectionContentState extends State<_JudgeSelectionContent>
                                     .from('custom_judges')
                                     .update({'is_active_for_battle': false})
                                     .eq('id', customId);
+                                debugPrint('Battlefield: removed judge $customId from battle');
+                                ref.invalidate(myCustomJudgesProvider);
+                                ref.invalidate(availableCustomJudgesProvider);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -462,6 +477,7 @@ class _JudgeCard extends StatelessWidget {
     required this.portraitFloat,
     required this.quoteIndex,
     this.sealingProgress = 0,
+    this.cachedAvatarFuture,
   });
 
   final Judge judge;
@@ -469,6 +485,7 @@ class _JudgeCard extends StatelessWidget {
   final Animation<double> portraitFloat;
   final int quoteIndex;
   final double sealingProgress;
+  final Future<String>? cachedAvatarFuture;
 
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -485,6 +502,7 @@ class _JudgeCard extends StatelessWidget {
                 userGender: userGender,
                 floatAnimation: portraitFloat,
                 sealingProgress: sealingProgress,
+                cachedAvatarFuture: cachedAvatarFuture,
               ),
               Positioned(
                 top: 8,
@@ -628,12 +646,30 @@ class JudgePortrait extends StatelessWidget {
     required this.userGender,
     required this.floatAnimation,
     this.sealingProgress = 0,
+    this.cachedAvatarFuture,
   });
 
   final Judge judge;
   final String userGender;
   final Animation<double> floatAnimation;
   final double sealingProgress;
+  final Future<String>? cachedAvatarFuture;
+
+  /// Resolves a signed URL from either "bucket:path" (new) or plain path (old/surprises).
+  static Future<String> _resolveSignedUrl(String rawPath) {
+    final String bucket;
+    final String path;
+    if (rawPath.contains(':')) {
+      bucket = rawPath.split(':').first;
+      path = rawPath.split(':').skip(1).join(':');
+    } else {
+      bucket = 'surprises';
+      path = rawPath;
+    }
+    return Supabase.instance.client.storage
+        .from(bucket)
+        .createSignedUrl(path, 3600);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -682,9 +718,7 @@ class JudgePortrait extends StatelessWidget {
             Positioned.fill(
               child: isCustom && customStoragePath.isNotEmpty
                   ? FutureBuilder<String>(
-                      future: Supabase.instance.client.storage
-                          .from('surprises')
-                          .createSignedUrl(customStoragePath, 3600),
+                      future: cachedAvatarFuture ?? _resolveSignedUrl(customStoragePath),
                       builder: (ctx, snap) {
                         if (!snap.hasData) return _placeholder(judge);
                         return Image.network(

@@ -1,8 +1,13 @@
-// Battle-aware push notifications. Triggered by Database Webhooks on public.surprises and public.judges (INSERT/UPDATE).
-// Requires: FIREBASE_SERVICE_ACCOUNT (JSON string) in Supabase secrets. No client-triggered sends.
-// Idempotency: for UPDATE we only send when a relevant field changed (avoids duplicate sends when unrelated columns update).
-// Judges: one-time "New Judge Has Arrived" when seasonal judge's season starts; season_push_sent prevents duplicates.
-// Future: rate-limit reinforcement notifications (e.g. first reinforcement per surprise in 10s window).
+// Push notifications for Winkidoo. Triggered by Database Webhooks on:
+//   public.surprises (INSERT/UPDATE) — battle notifications
+//   public.judges (INSERT/UPDATE) — seasonal judge arrival
+//   public.daily_dares (INSERT/UPDATE) — dare lifecycle
+//   public.daily_mini_games (INSERT/UPDATE) — mini-game lifecycle
+//   public.couple_campaign_progress (INSERT) — campaign started
+//   public.custom_judges (UPDATE) — custom judge ready
+//
+// Requires: FIREBASE_SERVICE_ACCOUNT (JSON string) in Supabase secrets.
+// Idempotency: for UPDATE we only send when a relevant field changed.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -10,7 +15,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
 
-// Duplicate of app battle math for "Resistance Weakened" detection (do not change Dart battle_math).
+// ── Battle math (duplicated from Dart for resistance-weakened detection) ──
 const DIFFICULTY_EASY = 80;
 const DIFFICULTY_MEDIUM = 100;
 const DIFFICULTY_HARD = 130;
@@ -48,6 +53,7 @@ function effectiveResistance(
   return raw < 0 ? 0 : raw;
 }
 
+// ── Types ──
 interface WebhookPayload {
   type: "INSERT" | "UPDATE" | "DELETE";
   table: string;
@@ -76,11 +82,125 @@ interface JudgeRecord {
   season_push_sent?: boolean;
 }
 
+interface DareRecord {
+  id: string;
+  couple_id: string;
+  dare_text: string;
+  judge_persona: string;
+  status: string;
+  user_a_submitted_at: string | null;
+  user_b_submitted_at: string | null;
+  grade_emoji: string | null;
+  grade_score: number | null;
+}
+
+interface MiniGameRecord {
+  id: string;
+  couple_id: string;
+  game_type: string;
+  game_prompt: string;
+  status: string;
+  user_a_submitted_at: string | null;
+  user_b_submitted_at: string | null;
+  grade_emoji: string | null;
+}
+
+interface CampaignProgressRecord {
+  id: string;
+  couple_id: string;
+  campaign_id: string;
+}
+
+interface CustomJudgeRecord {
+  id: string;
+  couple_id: string;
+  personality_name: string;
+  status: string;
+  notification_text: string | null;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ── Shared helpers ──
+function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return text.substring(0, maxLen - 1) + "…";
+}
+
+const supabaseAdmin = () => createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+async function getCoupleMembers(coupleId: string): Promise<{ userA: string; userB: string | null }> {
+  const { data, error } = await supabaseAdmin()
+    .from("couples")
+    .select("user_a_id, user_b_id")
+    .eq("id", coupleId)
+    .single();
+  if (error || !data) return { userA: "", userB: null };
+  return { userA: data.user_a_id as string, userB: data.user_b_id as string | null };
+}
+
+async function getSeekerId(coupleId: string, creatorId: string): Promise<string | null> {
+  const { userA, userB } = await getCoupleMembers(coupleId);
+  if (creatorId === userA) return userB;
+  if (creatorId === userB) return userA;
+  return userB ?? userA;
+}
+
+async function getTokens(userIds: string[]): Promise<{ token: string; platform: string }[]> {
+  if (userIds.length === 0) return [];
+  const { data: rows, error } = await supabaseAdmin()
+    .from("user_push_tokens")
+    .select("push_token, push_platform")
+    .in("user_id", userIds)
+    .not("push_token", "is", null);
+  if (error || !rows) return [];
+  return rows
+    .filter((r: { push_token: string | null }) => r.push_token)
+    .map((r: { push_token: string; push_platform: string }) => ({
+      token: r.push_token,
+      platform: r.push_platform,
+    }));
+}
+
+async function sendNotifications(
+  notifications: { userId: string; title: string; body: string; data: Record<string, string> }[]
+): Promise<number> {
+  if (notifications.length === 0 || !FIREBASE_SERVICE_ACCOUNT) {
+    if (notifications.length > 0 && !FIREBASE_SERVICE_ACCOUNT) {
+      console.log("FIREBASE_SERVICE_ACCOUNT missing, skipping FCM");
+    }
+    return 0;
+  }
+  let sent = 0;
+  try {
+    const sa = JSON.parse(FIREBASE_SERVICE_ACCOUNT) as {
+      client_email: string;
+      private_key: string;
+      project_id: string;
+    };
+    const accessToken = await getGoogleAccessToken(sa.client_email, sa.private_key);
+    const projectId = sa.project_id;
+    for (const n of notifications) {
+      const recipientTokens = await getTokens([n.userId]);
+      for (const { token } of recipientTokens) {
+        try {
+          await sendFCM(projectId, accessToken, token, n.title, n.body, n.data);
+          sent++;
+        } catch (e) {
+          console.error(`FCM send failed for token ${token.substring(0, 10)}...`, e);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("FCM auth/send failed", e);
+  }
+  return sent;
+}
+
+// ── Main handler ──
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -88,55 +208,46 @@ Deno.serve(async (req) => {
 
   try {
     const payload = (await req.json()) as WebhookPayload;
+    const respond = (body: Record<string, unknown>) =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
 
-    // --- Judges: season-launch push (one-time when new seasonal judge becomes active) ---
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // JUDGES — seasonal launch (one-time)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (payload.table === "judges" && (payload.type === "INSERT" || payload.type === "UPDATE")) {
       const record = payload.record as JudgeRecord | null;
       const oldRecord = (payload.old_record as JudgeRecord | null) ?? null;
-      if (!record?.id || !record?.name) {
-        return new Response(JSON.stringify({ ok: true, skipped: "judges no record/id/name" }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (!record?.id || !record?.name) return respond({ ok: true, skipped: "judges no record" });
+
       const isSeasonal = record.season_start != null && record.season_end != null;
       const now = new Date();
       const seasonStartDate = record.season_start ? new Date(record.season_start) : null;
       const seasonActiveNow = seasonStartDate != null && seasonStartDate <= now;
       const oldSeasonStart = oldRecord?.season_start ? new Date(oldRecord.season_start) : null;
       const seasonJustStarted =
-        payload.type === "INSERT" ||
-        !oldRecord ||
-        (oldSeasonStart != null && oldSeasonStart > now);
+        payload.type === "INSERT" || !oldRecord || (oldSeasonStart != null && oldSeasonStart > now);
       const isNew = record.is_new === true;
       const notYetSent = record.season_push_sent !== true;
-      if (
-        !isSeasonal ||
-        !seasonActiveNow ||
-        !seasonJustStarted ||
-        !isNew ||
-        !notYetSent
-      ) {
-        return new Response(JSON.stringify({ ok: true, skipped: "judges not season launch" }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+
+      if (!isSeasonal || !seasonActiveNow || !seasonJustStarted || !isNew || !notYetSent) {
+        return respond({ ok: true, skipped: "judges not season launch" });
       }
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      // Future: filter tokens updated in last 90 days, or only users in a couple, or paginate sends.
-      const { data: tokenRows, error: tokensError } = await supabase
+
+      const { data: tokenRows } = await supabaseAdmin()
         .from("user_push_tokens")
         .select("push_token")
         .not("push_token", "is", null);
-      const allTokens: string[] =
-        tokensError || !tokenRows
-          ? []
-          : (tokenRows as { push_token: string }[])
-              .filter((r) => r.push_token)
-              .map((r) => r.push_token);
+      const allTokens: string[] = (tokenRows ?? [])
+        .filter((r: { push_token: string }) => r.push_token)
+        .map((r: { push_token: string }) => r.push_token);
+
       const title = "✨ A New Judge Has Arrived";
       const body = `Meet ${record.name}. Dare to persuade?`;
       const data: Record<string, string> = { type: "season_launch", judge_id: record.id };
+
       if (FIREBASE_SERVICE_ACCOUNT && allTokens.length > 0) {
         try {
           const sa = JSON.parse(FIREBASE_SERVICE_ACCOUNT) as {
@@ -145,86 +256,241 @@ Deno.serve(async (req) => {
             project_id: string;
           };
           const accessToken = await getGoogleAccessToken(sa.client_email, sa.private_key);
-          const projectId = sa.project_id;
           for (const token of allTokens) {
             try {
-              await sendFCM(projectId, accessToken, token, title, body, data);
+              await sendFCM(sa.project_id, accessToken, token, title, body, data);
             } catch (e) {
-              console.error("FCM season_launch send failed for token", e);
+              console.error("FCM season_launch send failed", e);
             }
           }
         } catch (e) {
           console.error("FCM season_launch failed", e);
         }
-      } else if (allTokens.length > 0 && !FIREBASE_SERVICE_ACCOUNT) {
-        console.log("FIREBASE_SERVICE_ACCOUNT missing, skipping season_launch FCM");
       }
-      await supabase.from("judges").update({ season_push_sent: true }).eq("id", record.id);
-      return new Response(JSON.stringify({ ok: true, season_launch: true }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      await supabaseAdmin().from("judges").update({ season_push_sent: true }).eq("id", record.id);
+      return respond({ ok: true, season_launch: true });
     }
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // DAILY DARES
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (payload.table === "daily_dares" && (payload.type === "INSERT" || payload.type === "UPDATE")) {
+      const record = payload.record as DareRecord | null;
+      const oldRecord = (payload.old_record as DareRecord | null) ?? null;
+      if (!record?.id || !record?.couple_id) return respond({ ok: true, skipped: "dare no record" });
+
+      const { userA, userB } = await getCoupleMembers(record.couple_id);
+      const notifications: { userId: string; title: string; body: string; data: Record<string, string> }[] = [];
+
+      if (payload.type === "INSERT") {
+        // New dare generated — notify both partners
+        const darePreview = truncate(record.dare_text, 60);
+        const bothUsers = [userA, userB].filter(Boolean) as string[];
+        for (const uid of bothUsers) {
+          notifications.push({
+            userId: uid,
+            title: "💘 Today's Love Dare",
+            body: darePreview,
+            data: { type: "dare", dare_id: record.id },
+          });
+        }
+      } else if (payload.type === "UPDATE" && oldRecord) {
+        const oldStatus = oldRecord.status;
+        const newStatus = record.status;
+
+        // Partner submitted — notify the other partner
+        if (!oldRecord.user_a_submitted_at && record.user_a_submitted_at && userB) {
+          notifications.push({
+            userId: userB,
+            title: "Your Partner Responded 💬",
+            body: "They completed the dare. Your turn!",
+            data: { type: "dare", dare_id: record.id },
+          });
+        }
+        if (!oldRecord.user_b_submitted_at && record.user_b_submitted_at && userA) {
+          notifications.push({
+            userId: userA,
+            title: "Your Partner Responded 💬",
+            body: "They completed the dare. Your turn!",
+            data: { type: "dare", dare_id: record.id },
+          });
+        }
+
+        // Dare graded — notify both
+        if (oldStatus !== "graded" && newStatus === "graded") {
+          const emoji = record.grade_emoji ?? "🏆";
+          const score = record.grade_score ?? 0;
+          const bothUsers = [userA, userB].filter(Boolean) as string[];
+          for (const uid of bothUsers) {
+            notifications.push({
+              userId: uid,
+              title: "Dare Results Are In",
+              body: `${emoji} Score: ${score}/100`,
+              data: { type: "dare_result", dare_id: record.id },
+            });
+          }
+        }
+      }
+
+      const sent = await sendNotifications(notifications);
+      return respond({ ok: true, table: "daily_dares", sent });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // DAILY MINI-GAMES
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (payload.table === "daily_mini_games" && (payload.type === "INSERT" || payload.type === "UPDATE")) {
+      const record = payload.record as MiniGameRecord | null;
+      const oldRecord = (payload.old_record as MiniGameRecord | null) ?? null;
+      if (!record?.id || !record?.couple_id) return respond({ ok: true, skipped: "game no record" });
+
+      const { userA, userB } = await getCoupleMembers(record.couple_id);
+      const notifications: { userId: string; title: string; body: string; data: Record<string, string> }[] = [];
+
+      const gameNames: Record<string, string> = {
+        would_you_rather: "Would You Rather",
+        love_trivia: "Love Trivia",
+        caption_this: "Caption This",
+        finish_my_sentence: "Finish My Sentence",
+      };
+      const gameName = gameNames[record.game_type] ?? record.game_type;
+
+      if (payload.type === "INSERT") {
+        const promptPreview = truncate(record.game_prompt, 50);
+        const bothUsers = [userA, userB].filter(Boolean) as string[];
+        for (const uid of bothUsers) {
+          notifications.push({
+            userId: uid,
+            title: "🎮 Game Time!",
+            body: `${gameName}: ${promptPreview}`,
+            data: { type: "mini_game", game_id: record.id },
+          });
+        }
+      } else if (payload.type === "UPDATE" && oldRecord) {
+        // Partner played
+        if (!oldRecord.user_a_submitted_at && record.user_a_submitted_at && userB) {
+          notifications.push({
+            userId: userB,
+            title: "Partner Made Their Move 🎯",
+            body: `${gameName} — jump in before time runs out!`,
+            data: { type: "mini_game", game_id: record.id },
+          });
+        }
+        if (!oldRecord.user_b_submitted_at && record.user_b_submitted_at && userA) {
+          notifications.push({
+            userId: userA,
+            title: "Partner Made Their Move 🎯",
+            body: `${gameName} — jump in before time runs out!`,
+            data: { type: "mini_game", game_id: record.id },
+          });
+        }
+
+        // Game graded
+        if (oldRecord.status !== "graded" && record.status === "graded") {
+          const emoji = record.grade_emoji ?? "🏆";
+          const bothUsers = [userA, userB].filter(Boolean) as string[];
+          for (const uid of bothUsers) {
+            notifications.push({
+              userId: uid,
+              title: "Game Over! 🎮",
+              body: `${emoji} ${gameName} results are ready`,
+              data: { type: "mini_game_result", game_id: record.id },
+            });
+          }
+        }
+      }
+
+      const sent = await sendNotifications(notifications);
+      return respond({ ok: true, table: "daily_mini_games", sent });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // CAMPAIGN PROGRESS — new campaign started
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (payload.table === "couple_campaign_progress" && payload.type === "INSERT") {
+      const record = payload.record as CampaignProgressRecord | null;
+      if (!record?.id || !record?.couple_id) return respond({ ok: true, skipped: "campaign no record" });
+
+      // Fetch campaign title
+      const { data: campaign } = await supabaseAdmin()
+        .from("campaigns")
+        .select("title")
+        .eq("id", record.campaign_id)
+        .single();
+      const title = (campaign?.title as string) ?? "a new campaign";
+
+      const { userA, userB } = await getCoupleMembers(record.couple_id);
+      const bothUsers = [userA, userB].filter(Boolean) as string[];
+      const notifications = bothUsers.map((uid) => ({
+        userId: uid,
+        title: "📖 New Adventure Begins",
+        body: `Start your journey: ${title}`,
+        data: { type: "campaign", campaign_id: record.campaign_id },
+      }));
+
+      const sent = await sendNotifications(notifications);
+      return respond({ ok: true, table: "couple_campaign_progress", sent });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // CUSTOM JUDGES — judge ready after generation
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (payload.table === "custom_judges" && payload.type === "UPDATE") {
+      const record = payload.record as CustomJudgeRecord | null;
+      const oldRecord = (payload.old_record as CustomJudgeRecord | null) ?? null;
+      if (!record?.id || !record?.couple_id) return respond({ ok: true, skipped: "custom_judge no record" });
+
+      // Only notify when status changes to 'ready'
+      if (oldRecord?.status === "ready" || record.status !== "ready") {
+        return respond({ ok: true, skipped: "custom_judge not newly ready" });
+      }
+
+      const notifText = record.notification_text || `${record.personality_name} is ready to judge!`;
+      const { userA, userB } = await getCoupleMembers(record.couple_id);
+      const bothUsers = [userA, userB].filter(Boolean) as string[];
+      const notifications = bothUsers.map((uid) => ({
+        userId: uid,
+        title: "🎭 Your Custom Judge Is Ready",
+        body: truncate(notifText, 80),
+        data: { type: "custom_judge_ready", judge_id: record.id },
+      }));
+
+      const sent = await sendNotifications(notifications);
+      return respond({ ok: true, table: "custom_judges", sent });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SURPRISES — battle notifications (original)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (payload.table !== "surprises" || (payload.type !== "INSERT" && payload.type !== "UPDATE")) {
-      return new Response(JSON.stringify({ ok: true, skipped: "not surprises insert/update" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return respond({ ok: true, skipped: `unhandled table=${payload.table} type=${payload.type}` });
     }
 
     const record = payload.record as SurpriseRecord | null;
     const oldRecord = (payload.old_record as SurpriseRecord | null) ?? null;
-    if (!record?.id) {
-      return new Response(JSON.stringify({ ok: true, skipped: "no record" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!record?.id) return respond({ ok: true, skipped: "no record" });
 
-    // For UPDATE: exit early if no relevant field changed (avoids noise from unrelated column updates).
-    const relevantKeys = ["battle_status", "creator_defense_count", "fatigue_level", "difficulty_level", "seeker_score", "resistance_score"];
-    function relevantFieldsChanged(newR: Record<string, unknown>, oldR: Record<string, unknown>): boolean {
+    // For UPDATE: exit early if no relevant field changed
+    const relevantKeys = [
+      "battle_status", "creator_defense_count", "fatigue_level",
+      "difficulty_level", "seeker_score", "resistance_score",
+    ];
+    function relevantFieldsChanged(
+      newR: Record<string, unknown>,
+      oldR: Record<string, unknown>
+    ): boolean {
       for (const key of relevantKeys) {
         if (newR[key] !== oldR[key]) return true;
       }
       return false;
     }
-    if (payload.type === "UPDATE" && oldRecord && !relevantFieldsChanged(record as Record<string, unknown>, oldRecord as Record<string, unknown>)) {
-      return new Response(JSON.stringify({ ok: true, skipped: "no relevant field change" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (
+      payload.type === "UPDATE" &&
+      oldRecord &&
+      !relevantFieldsChanged(record as Record<string, unknown>, oldRecord as Record<string, unknown>)
+    ) {
+      return respond({ ok: true, skipped: "no relevant field change" });
     }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    const getSeekerId = async (coupleId: string, creatorId: string): Promise<string | null> => {
-      const { data: couple, error } = await supabase
-        .from("couples")
-        .select("user_a_id, user_b_id")
-        .eq("id", coupleId)
-        .single();
-      if (error || !couple) return null;
-      const a = couple.user_a_id as string;
-      const b = couple.user_b_id as string | null;
-      if (creatorId === a) return b;
-      if (creatorId === b) return a;
-      return b ?? a;
-    };
-
-    const getTokens = async (userIds: string[]): Promise<{ token: string; platform: string }[]> => {
-      if (userIds.length === 0) return [];
-      const { data: rows, error } = await supabase
-        .from("user_push_tokens")
-        .select("push_token, push_platform")
-        .in("user_id", userIds)
-        .not("push_token", "is", null);
-      if (error || !rows) return [];
-      return rows
-        .filter((r: { push_token: string | null }) => r.push_token)
-        .map((r: { push_token: string; push_platform: string }) => ({ token: r.push_token, platform: r.push_platform }));
-    };
 
     const notifications: { userId: string; title: string; body: string; data: Record<string, string> }[] = [];
 
@@ -250,7 +516,7 @@ Deno.serve(async (req) => {
       const diffLevel = (record.difficulty_level as number) ?? 2;
       const defCount = (record.creator_defense_count as number) ?? 0;
 
-      if (newStatus === "resolved") {
+      if (newStatus === "resolved" && oldStatus !== "resolved") {
         if (creatorId) {
           notifications.push({
             userId: creatorId,
@@ -293,37 +559,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    const userIds = [...new Set(notifications.map((n) => n.userId))];
-    const tokens = await getTokens(userIds);
-    if (tokens.length === 0 && notifications.length > 0) {
-      console.log("No push tokens for recipients", userIds);
-    }
-
-    if (FIREBASE_SERVICE_ACCOUNT && tokens.length > 0) {
-      let accessToken: string;
-      try {
-        const sa = JSON.parse(FIREBASE_SERVICE_ACCOUNT) as {
-          client_email: string;
-          private_key: string;
-          project_id: string;
-        };
-        accessToken = await getGoogleAccessToken(sa.client_email, sa.private_key);
-        const projectId = sa.project_id;
-        for (const n of notifications) {
-          const recipientTokens = await getTokens([n.userId]);
-          for (const { token } of recipientTokens) {
-            await sendFCM(projectId, accessToken, token, n.title, n.body, n.data);
-          }
-        }
-      } catch (e) {
-        console.error("FCM send failed", e);
-      }
-    }
-
-    return new Response(JSON.stringify({ ok: true, notifications: notifications.length }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const sent = await sendNotifications(notifications);
+    return respond({ ok: true, table: "surprises", sent });
   } catch (e) {
     console.error(e);
     return new Response(JSON.stringify({ error: String(e) }), {
@@ -332,6 +569,8 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// ── FCM / Google OAuth helpers ──
 
 async function getGoogleAccessToken(clientEmail: string, privateKeyPem: string): Promise<string> {
   const pemContents = privateKeyPem

@@ -69,14 +69,36 @@ class _WinkidooAppState extends ConsumerState<WinkidooApp> {
   }
 
   void _navigateFromPush(Map<String, dynamic> data) {
+    final router = ref.read(goRouterProvider);
     final type = data['type'] as String?;
-    if (type == 'season_launch') {
-      ref.read(goRouterProvider).go('/shell/create');
-      return;
+    switch (type) {
+      case 'season_launch':
+        router.go('/shell/create');
+        return;
+      case 'dare':
+      case 'dare_result':
+        router.go('/shell/home');
+        return;
+      case 'mini_game':
+      case 'mini_game_result':
+        router.go('/shell/home');
+        return;
+      case 'campaign':
+        final campaignId = data['campaign_id'] as String?;
+        if (campaignId != null) {
+          router.go('/shell/campaign/$campaignId');
+        } else {
+          router.go('/shell/campaigns');
+        }
+        return;
+      case 'custom_judge_ready':
+        router.go('/shell/my-judges');
+        return;
     }
+    // Fallback: battle notification (surprise_id based)
     final surpriseId = data['surprise_id'] as String?;
     if (surpriseId == null || surpriseId.isEmpty) return;
-    ref.read(goRouterProvider).go('/shell/battle/$surpriseId');
+    router.go('/shell/battle/$surpriseId');
   }
 
   @override

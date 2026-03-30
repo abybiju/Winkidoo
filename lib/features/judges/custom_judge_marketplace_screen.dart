@@ -9,6 +9,7 @@ import 'package:winkidoo/models/custom_judge.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
 
 class CustomJudgeMarketplaceScreen extends ConsumerStatefulWidget {
@@ -244,7 +245,7 @@ class _JudgeMarketCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(judge.avatarEmoji, style: const TextStyle(fontSize: 36)),
+          _JudgeAvatar(judge: judge, size: 44, emojiSize: 28),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -300,6 +301,59 @@ class _JudgeMarketCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Reusable avatar widget that resolves signed URLs from the correct storage bucket.
+class _JudgeAvatar extends StatelessWidget {
+  const _JudgeAvatar({required this.judge, this.size = 44, this.emojiSize = 28});
+
+  final CustomJudge judge;
+  final double size;
+  final double emojiSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final rawPath = judge.avatarStoragePath;
+    final hasAvatar = rawPath != null && rawPath.isNotEmpty;
+    if (!hasAvatar) {
+      return SizedBox(
+        width: size, height: size,
+        child: Center(child: Text(judge.avatarEmoji,
+            style: TextStyle(fontSize: emojiSize))),
+      );
+    }
+    final String bucket;
+    final String path;
+    if (rawPath.contains(':')) {
+      bucket = rawPath.split(':').first;
+      path = rawPath.split(':').skip(1).join(':');
+    } else {
+      bucket = 'surprises';
+      path = rawPath;
+    }
+    return SizedBox(
+      width: size, height: size,
+      child: FutureBuilder<String>(
+        future: Supabase.instance.client.storage
+            .from(bucket)
+            .createSignedUrl(path, 3600),
+        builder: (ctx, snap) {
+          if (!snap.hasData || (snap.data?.isEmpty ?? true)) {
+            return Center(child: Text(judge.avatarEmoji,
+                style: TextStyle(fontSize: emojiSize)));
+          }
+          return ClipOval(
+            child: Image.network(snap.data!,
+                width: size, height: size, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Center(
+                  child: Text(judge.avatarEmoji,
+                      style: TextStyle(fontSize: emojiSize)),
+                )),
+          );
+        },
       ),
     );
   }

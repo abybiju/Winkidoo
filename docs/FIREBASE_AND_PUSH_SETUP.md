@@ -68,7 +68,22 @@ Summary of what was done and what remains for Winkidoo push (FCM) and Firebase.
 | Firebase web config | `web/index.html` (Firebase SDK + firebaseConfig) |
 | Service account key | Never in repo; `supabase secrets set FIREBASE_SERVICE_ACCOUNT='...'` |
 | Deploy function | `supabase functions deploy send_battle_notification` |
-| Webhooks | Dashboard → Database → Webhooks: (1) `public.surprises` INSERT+UPDATE, (2) `public.judges` INSERT+UPDATE; same function URL |
+| Webhooks | Dashboard → Database → Webhooks — all point to same function URL. See table below |
+
+### Database Webhooks (all → `send_battle_notification`)
+
+| # | Table | Events | Purpose |
+|---|-------|--------|---------|
+| 1 | `public.surprises` | INSERT + UPDATE | Battle notifications (created, reinforced, weakened, resolved) |
+| 2 | `public.judges` | INSERT + UPDATE | Seasonal judge arrival |
+| 3 | `public.daily_dares` | INSERT + UPDATE | Dare available, partner submitted, grading complete |
+| 4 | `public.daily_mini_games` | INSERT + UPDATE | Game available, partner played, results ready |
+| 5 | `public.couple_campaign_progress` | INSERT | Campaign started |
+| 6 | `public.custom_judges` | UPDATE | Custom judge ready after AI generation |
+
+**Webhook URL:** `https://<PROJECT_REF>.supabase.co/functions/v1/send_battle_notification`
+**Payload:** Include `record` and `old_record` (needed for UPDATE change detection).
+**Headers:** `Authorization: Bearer <SUPABASE_ANON_KEY>`, `Content-Type: application/json`
 | Migrations 001–013 | See supabase/migrations/README.md |
 
 ---
@@ -77,4 +92,4 @@ Summary of what was done and what remains for Winkidoo push (FCM) and Firebase.
 
 **Note for future sessions:** This file is the single place that records what was done for Firebase and push. Deploy, secret, webhook, and migration 010 are done. Remaining: optional git rm --cached for JSON/plist if ever committed; Hosting/domain when going live.
 
-*Last updated: February 2026 — Firebase (Android/iOS/Web), Gradle/CocoaPods, web index.html, .gitignore, README; migrations 009–013; Edge Function deployed (surprises + judges); FIREBASE_SERVICE_ACCOUNT set; Database webhooks on surprises and judges. Season-launch push when new seasonal judge becomes active; deep link season_launch → /shell/create. Ready for manual testing.*
+*Last updated: March 2026 — Extended Edge Function with 8 new notification types for dares, mini-games, campaigns, and custom judges. 4 new Database Webhooks needed (daily_dares, daily_mini_games, couple_campaign_progress, custom_judges). App deep link handler updated for all new notification types.*

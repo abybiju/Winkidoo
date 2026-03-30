@@ -99,6 +99,7 @@ class MyJudgesScreen extends ConsumerWidget {
                       itemCount: judges.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) => _MyJudgeCard(
+                        key: ValueKey(judges[index].id),
                         judge: judges[index],
                       ),
                     );
@@ -114,7 +115,7 @@ class MyJudgesScreen extends ConsumerWidget {
 }
 
 class _MyJudgeCard extends ConsumerStatefulWidget {
-  const _MyJudgeCard({required this.judge});
+  const _MyJudgeCard({super.key, required this.judge});
 
   final CustomJudge judge;
 
@@ -125,6 +126,50 @@ class _MyJudgeCard extends ConsumerStatefulWidget {
 class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
   bool _loading = false;
   String? _localAvatarUrl; // Updated immediately after upload
+  Future<String>? _avatarUrlFuture; // Cached to avoid re-triggering on rebuild
+
+  @override
+  void initState() {
+    super.initState();
+    _initAvatarFuture();
+  }
+
+  void _initAvatarFuture() {
+    final rawPath = widget.judge.avatarStoragePath;
+    if (rawPath != null && rawPath.isNotEmpty) {
+      // Support both formats: "judge-avatars:userId/judgeId.jpg" (new) and "custom_judges/..." (old/surprises bucket)
+      final String bucket;
+      final String path;
+      if (rawPath.contains(':')) {
+        bucket = rawPath.split(':').first;
+        path = rawPath.split(':').skip(1).join(':');
+      } else {
+        bucket = 'surprises';
+        path = rawPath;
+      }
+      debugPrint('MyJudges: fetching signed URL from bucket=$bucket path=$path');
+      _avatarUrlFuture = Supabase.instance.client.storage
+          .from(bucket)
+          .createSignedUrl(path, 3600)
+          .then((url) {
+        debugPrint('MyJudges: signed URL for ${widget.judge.personalityName}: $url');
+        return url;
+      }).catchError((e) {
+        debugPrint('MyJudges: signed URL ERROR for $bucket/$path: $e');
+        return '';
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _MyJudgeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-fetch signed URL if avatar path changed — but don't clear _localAvatarUrl
+    // because it may have JUST been set by _changeAvatar before the provider refresh
+    if (oldWidget.judge.avatarStoragePath != widget.judge.avatarStoragePath) {
+      _initAvatarFuture();
+    }
+  }
 
   Future<void> _toggleBattlefield() async {
     setState(() => _loading = true);
@@ -161,27 +206,50 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
   }
 
   Future<void> _changeAvatar() async {
+    debugPrint('MyJudges: _changeAvatar TAPPED for ${widget.judge.personalityName}');
+    // Capture judge ID before await — widget may be unmounted after gallery returns
+    final judgeId = widget.judge.id;
+    final judgeName = widget.judge.personalityName;
     final picker = ImagePicker();
     final file = await picker.pickImage(
         source: ImageSource.gallery, maxWidth: 400, imageQuality: 85);
-    if (file == null || !mounted) return;
+    debugPrint('MyJudges: _changeAvatar file=${file?.path ?? "NULL (cancelled)"} mounted=$mounted');
+    if (file == null) return;
 
-    final bytes = await file.readAsBytes();
-    final client = Supabase.instance.client;
-    final userId = client.auth.currentUser?.id ?? 'unknown';
-    final path = 'custom_judges/$userId/${widget.judge.id}.jpg';
-    await client.storage.from('surprises').uploadBinary(path, bytes,
-        fileOptions: const FileOptions(upsert: true));
-    await client
-        .from('custom_judges')
-        .update({'avatar_storage_path': path})
-        .eq('id', widget.judge.id);
-    // Get signed URL immediately so the UI updates
-    final signedUrl = await client.storage
-        .from('surprises')
-        .createSignedUrl(path, 3600);
-    if (mounted) setState(() => _localAvatarUrl = signedUrl);
-    ref.invalidate(myCustomJudgesProvider);
+    // Proceed with upload even if widget was unmounted during gallery pick —
+    // the upload is fire-and-forget, UI update is optional.
+    try {
+      final bytes = await file.readAsBytes();
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser?.id ?? 'unknown';
+      final path = '$userId/$judgeId.jpg';
+      debugPrint('MyJudges: uploading avatar to judge-avatars/$path (${bytes.length} bytes)');
+      await client.storage.from('judge-avatars').uploadBinary(path, bytes,
+          fileOptions: const FileOptions(upsert: true));
+      // Store bucket:path so we know which bucket to read from
+      final storagePath = 'judge-avatars:$path';
+      await client
+          .from('custom_judges')
+          .update({'avatar_storage_path': storagePath})
+          .eq('id', judgeId);
+      // Get signed URL immediately so the UI updates
+      final signedUrl = await client.storage
+          .from('judge-avatars')
+          .createSignedUrl(path, 3600);
+      debugPrint('MyJudges: avatar uploaded for $judgeName, signedUrl=$signedUrl');
+      if (mounted) setState(() => _localAvatarUrl = signedUrl);
+      ref.invalidate(myCustomJudgesProvider);
+    } catch (e, st) {
+      debugPrint('MyJudges: avatar upload ERROR: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not update photo. Try again.'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _deleteJudge() async {
@@ -287,13 +355,11 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
                                     style: const TextStyle(fontSize: 24)),
                               )),
                         )
-                      : hasAvatar
+                      : hasAvatar && _avatarUrlFuture != null
                           ? FutureBuilder<String>(
-                              future: Supabase.instance.client.storage
-                                  .from('surprises')
-                                  .createSignedUrl(j.avatarStoragePath!, 3600),
+                              future: _avatarUrlFuture,
                               builder: (ctx, snap) {
-                                if (!snap.hasData) {
+                                if (!snap.hasData || (snap.data?.isEmpty ?? true)) {
                                   return Center(
                                     child: Text(j.avatarEmoji,
                                         style: const TextStyle(fontSize: 24)),

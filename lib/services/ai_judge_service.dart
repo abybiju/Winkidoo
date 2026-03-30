@@ -70,7 +70,7 @@ class AiJudgeService {
           generationConfig: GenerationConfig(
             responseMimeType: 'application/json',
             temperature: 0.8,
-            maxOutputTokens: 2048,
+            maxOutputTokens: 4096,
           ),
         );
 
@@ -1071,11 +1071,35 @@ Return JSON only: {"commentary": "<your 2-3 sentence in-character grading>", "sc
     // Fallback: find first { and last } (handles surrounding text)
     final start = raw.indexOf('{');
     final end = raw.lastIndexOf('}');
-    if (start == -1 || end == -1 || end <= start) return {};
+    if (start == -1 || end == -1 || end <= start) {
+      debugPrint('_parseJsonFromResponse: no valid JSON brackets found');
+      return {};
+    }
     try {
       final jsonStr = raw.substring(start, end + 1);
       return jsonDecode(jsonStr) as Map<String, dynamic>;
-    } catch (_) {
+    } catch (_) {}
+
+    // Last resort: try to repair truncated JSON by closing open strings/arrays/objects
+    try {
+      var truncated = raw.substring(start);
+      debugPrint('_parseJsonFromResponse: attempting truncated JSON repair (${truncated.length} chars)');
+      // Close any unclosed string
+      final quoteCount = '"'.allMatches(truncated).length;
+      if (quoteCount.isOdd) truncated += '"';
+      // Close unclosed arrays
+      final openBrackets = '['.allMatches(truncated).length - ']'.allMatches(truncated).length;
+      for (var i = 0; i < openBrackets; i++) truncated += ']';
+      // Close unclosed objects
+      final openBraces = '{'.allMatches(truncated).length - '}'.allMatches(truncated).length;
+      for (var i = 0; i < openBraces; i++) truncated += '}';
+      // Remove trailing comma before closing bracket/brace
+      truncated = truncated.replaceAll(RegExp(r',\s*([}\]])'), r'$1');
+      final result = jsonDecode(truncated) as Map<String, dynamic>;
+      debugPrint('_parseJsonFromResponse: repaired! Keys: ${result.keys.toList()}');
+      return result;
+    } catch (e) {
+      debugPrint('_parseJsonFromResponse: repair failed: $e');
       return {};
     }
   }

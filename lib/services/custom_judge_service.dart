@@ -108,9 +108,11 @@ class CustomJudgeService {
           .select()
           .eq('couple_id', coupleId)
           .order('created_at', ascending: false);
-      return (rows as List).map((r) => CustomJudge.fromJson(r)).toList();
-    } catch (e) {
-      debugPrint('CustomJudgeService.getMyJudges: $e');
+      final result = (rows as List).map((r) => CustomJudge.fromJson(r)).toList();
+      debugPrint('CustomJudgeService.getMyJudges: found ${result.length} judges for couple $coupleId');
+      return result;
+    } catch (e, st) {
+      debugPrint('CustomJudgeService.getMyJudges ERROR: $e\n$st');
       return [];
     }
   }
@@ -165,9 +167,11 @@ class CustomJudgeService {
       final rows = await query
           .order('use_count', ascending: false)
           .limit(limit);
-      return (rows as List).map((r) => CustomJudge.fromJson(r)).toList();
-    } catch (e) {
-      debugPrint('CustomJudgeService.getMarketplaceJudges: $e');
+      final result = (rows as List).map((r) => CustomJudge.fromJson(r)).toList();
+      debugPrint('CustomJudgeService.getMarketplaceJudges: found ${result.length} judges (search=$searchQuery)');
+      return result;
+    } catch (e, st) {
+      debugPrint('CustomJudgeService.getMarketplaceJudges ERROR: $e\n$st');
       return [];
     }
   }
@@ -267,9 +271,10 @@ class CustomJudgeService {
         return false;
       }
       await client.from('custom_judges').delete().eq('id', judgeId);
+      debugPrint('CustomJudgeService.deleteJudge: success for $judgeId');
       return true;
-    } catch (e) {
-      debugPrint('CustomJudgeService.deleteJudge: $e');
+    } catch (e, st) {
+      debugPrint('CustomJudgeService.deleteJudge ERROR: $e\n$st');
       return false;
     }
   }
