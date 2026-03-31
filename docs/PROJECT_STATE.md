@@ -136,6 +136,24 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 029: custom_judges status + notification_text columns (web search + async generation).
 - 030: custom_judges is_active_for_battle column (battlefield toggle).
 - 031: judge-avatars storage bucket with RLS (dedicated bucket for custom judge photos).
+- 032: character_chat_rooms + character_chat_members + character_chat_messages + user_friends (AI Character Chat + Friends system).
+
+### March 31, 2026 — UX overhaul + AI Character Chat
+- **Home screen simplified**: removed Daily Dare, Mini-Game, Battle Packs, Campaigns, Judge Spotlight cards. Home now shows only: Hero avatar rail, Start a Battle CTA, Quest progress, Recent Wins.
+- **Play tab replaces Winks**: new bottom nav tab (game controller icon, index 2, route `/shell/play`). Houses all activity cards moved from Home: Daily Dare, Mini-Game, Battle Packs, Campaigns, Judge Spotlight, plus new Character Chat entry.
+- **Winks balance → Profile**: compact card with balance display added above subscription card in Profile screen.
+- **AI Character Chat** (new feature — UI complete, RLS needs fix):
+  - 4 screens: ChatRoomsScreen, CharacterChatScreen, AddFriendsScreen, CreateRoomScreen
+  - 8 built-in character presets: Normal, Trump, Shakespeare, Pirate, Valley Girl, Corporate, Yoda, Gordon Ramsay
+  - Custom judges also selectable as chat characters
+  - Gemini `_textModel` (plain text, no JSON) for message transformation
+  - Optimistic send: message appears immediately, Gemini transforms in background
+  - Tap-to-reveal: see original vs transformed text on own messages
+  - Friend system with invite codes and friend requests
+  - Group chat support (1-on-1 + 3+ members)
+  - Supabase Realtime on `character_chat_messages` for live updates
+  - **Known issue**: RLS circular reference on `character_chat_rooms`/`character_chat_members` causes "Failed to load chats". Fix: simplify policies to avoid self-referential subqueries.
+- **Bug fixes**: judge quote font changed from Caveat to Inter for readability; avatar loading glitch fixed with SizedBox.expand + loadingBuilder
 
 ### March 30, 2026 — Bug fixes + Push notifications expansion
 - **Bug fixes**: judge delete working, avatar upload 403 fixed (new judge-avatars bucket), avatar upload surviving gallery picker unmount, battlefield carousel remove refreshing providers, carousel avatar blink fixed (cached signed URL futures), Gemini maxOutputTokens increased to 4096 with truncated JSON repair, marketplace showing avatar photos
@@ -157,6 +175,8 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Next / optional
 
+- Fix Character Chat RLS circular policy so chats load.
+- Test Character Chat end-to-end with two accounts.
 - IAP/Stripe for Wink+ (RevenueCat — wink_plus_until set by backend).
 - Onboarding polish (guided first experience, welcome gift, first surprise prompt).
 - Test push notifications end-to-end with two accounts.

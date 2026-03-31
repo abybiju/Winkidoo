@@ -39,8 +39,19 @@ lib/features/
     (SeasonRecapScreen + SeasonRecapStorageService; recap on season judge end)
   onboarding/
     onboarding_screen.dart         # 3 slides: value, couple link, first surprise
+  play/
+    play_screen.dart               # Play tab: Daily Dare, Mini-Game, Packs, Campaigns, Judges, Character Chat
+  character_chat/
+    chat_rooms_screen.dart         # List of all chat rooms (couple/friend/group)
+    character_chat_screen.dart     # Live chat with character selector + Gemini transform
+    add_friends_screen.dart        # Join by invite code + friends list
+    create_room_screen.dart        # Create 1-on-1 or group chat
+    widgets/
+      character_selector.dart      # Horizontal scrollable character chips
+      chat_message_bubble.dart     # Message bubble with tap-to-reveal + transform shimmer
+      chat_input_bar.dart          # Character selector + text input + send button
   winks/
-    winks_tab_screen.dart          # Winks economy overview + Wink+ CTA
+    winks_tab_screen.dart          # Winks economy (legacy, replaced by Play tab — balance moved to Profile)
 ```
 
 **Rule:** Feature screens import from `lib/providers/`, `lib/services/`, `lib/models/`, and `lib/core/`. Never import from another feature directory.
@@ -184,7 +195,7 @@ Authenticated + has couple + linked
 ```
 index 0: /shell/home    → HomeScreen
 index 1: /shell/vault   → RealtimeSurprisesSubscription > ResponsiveVaultShell > VaultListScreen
-index 2: /shell/winks   → WinksTabScreen
+index 2: /shell/play    → PlayScreen
 index 3: /shell/profile → ProfileScreen
 ```
 
@@ -195,6 +206,10 @@ index 3: /shell/profile → ProfileScreen
 /shell/deliberation  (extra map)     → JudgeDeliberationScreen(surpriseId, judgeResponse, creatorId)
 /shell/reveal/:id    (extra map)     → RevealScreen(surpriseId, judgeResponse, creatorId)
 /shell/wink-plus                     → WinkPlusScreen
+/shell/chat                          → ChatRoomsScreen
+/shell/chat/:roomId                  → CharacterChatScreen(roomId)
+/shell/chat/add-friends              → AddFriendsScreen
+/shell/chat/create-room              → CreateRoomScreen
 /shell/treasure-archive              → TreasureArchiveScreen
 /shell/treasure-archive/:surpriseId  → TreasureDetailScreen(surpriseId)
 ```

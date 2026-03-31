@@ -24,6 +24,25 @@ Migrations in `supabase/migrations/` must be run **manually** in numeric order v
 | 011 | `011_judges_data_driven.sql` | Extends `judges` with `tagline`, `difficulty_level`, `chaos_level`, `tone_tags`, `preview_quotes`, `primary_color_hex`, `is_premium`; backfills all 5 persona rows; drops legacy `premium_flag` |
 | 012 | `012_judges_is_new.sql` | Adds `is_new bool` to `judges` (seasonal badge) |
 | 013 | `013_judges_season_push_sent.sql` | Adds `season_push_sent bool` to `judges` (one-time push guard) |
+| 014 | `014_quests_and_time_capsule.sql` | `quests` table + `quest_id`, `quest_step`, `unlock_after` on `surprises` |
+| 015 | `015_daily_activity_log.sql` | `daily_activity_log` for streak tracking |
+| 016 | `016_couple_xp.sql` | `couple_xp` (total_xp, current_level) for Love Levels |
+| 017 | `017_judge_memory.sql` | `judge_memory` for persistent AI judge personality |
+| 018 | `018_battle_pass.sql` | `battle_pass_seasons` + `battle_pass_progress`; seeds Season 1 |
+| 019 | `019_referrals.sql` | `referrals` for couple referral system |
+| 020 | `020_collaborative_vault.sql` | Collaborative vault columns on `surprises` |
+| 021 | `021_collectibles.sql` | `judge_collectibles` (rarity: common/rare/legendary) |
+| 022 | `022_leaderboard.sql` | Public read policy on `couple_xp` for leaderboard |
+| 023 | `023_daily_dares.sql` | `daily_dares` for Daily Love Dares |
+| 024 | `024_themed_packs.sql` | `judge_packs` + `judge_pack_judges` + `pack_dare_templates` + `couple_active_pack` |
+| 025 | `025_mini_games.sql` | `mini_game_types` + `daily_mini_games` + `pack_mini_game_templates` |
+| 026 | `026_campaigns.sql` | `campaigns` + `campaign_chapters` + `couple_campaign_progress` + `campaign_rewards` |
+| 027 | `027_content_expansion.sql` | Seed data: 3 new campaigns + 3 themed packs |
+| 028 | `028_custom_judges.sql` | `custom_judges` + `custom_judge_uses` (Custom AI Judge Creator + Marketplace) |
+| 029 | `029_custom_judge_search.sql` | `status` + `notification_text` columns on `custom_judges` |
+| 030 | `030_custom_judge_battlefield.sql` | `is_active_for_battle` column on `custom_judges` |
+| 031 | `031_judge_avatars_bucket.sql` | `judge-avatars` storage bucket with RLS |
+| 032 | `032_character_chat.sql` | `character_chat_rooms`, `character_chat_members`, `character_chat_messages`, `user_friends`; Realtime on messages |
 
 **Note:** Migrations `010a` and `010b` are independent of each other but both depend on `001`. Run all files in filename order. Both `010_` files must be applied.
 

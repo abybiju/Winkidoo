@@ -25,6 +25,17 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 21. **021_collectibles.sql** — `judge_collectibles` table; rarity: common/rare/legendary based on seeker_score; RLS couple members.
 22. **022_leaderboard.sql** — Public read policy on `couple_xp` to power anonymous global leaderboard.
 
+23. **023_daily_dares.sql** — `daily_dares` table for Daily Love Dares feature
+24. **024_themed_packs.sql** — `judge_packs`, `judge_pack_judges`, `pack_dare_templates`, `couple_active_pack`
+25. **025_mini_games.sql** — `mini_game_types`, `daily_mini_games`, `pack_mini_game_templates`
+26. **026_campaigns.sql** — `campaigns`, `campaign_chapters`, `couple_campaign_progress`, `campaign_rewards`
+27. **027_content_expansion.sql** — Seed data: 3 new campaigns + 3 themed packs
+28. **028_custom_judges.sql** — `custom_judges` + `custom_judge_uses` for Custom AI Judge Creator + Marketplace
+29. **029_custom_judge_search.sql** — `status` + `notification_text` columns on `custom_judges`
+30. **030_custom_judge_battlefield.sql** — `is_active_for_battle` column on `custom_judges`
+31. **031_judge_avatars_bucket.sql** — `judge-avatars` storage bucket with RLS policies
+32. **032_character_chat.sql** — `character_chat_rooms`, `character_chat_members`, `character_chat_messages`, `user_friends`; RLS; Realtime on messages
+
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 
 ### Push notifications (Edge Function + webhook)

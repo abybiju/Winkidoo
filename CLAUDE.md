@@ -61,7 +61,9 @@ lib/
     profile/                       # ProfileScreen (edit, stats, achievements, settings)
     season/                        # Season recap storage service + screen
     onboarding/                    # OnboardingScreen (3 slides)
-    winks/                         # WinksTabScreen (virtual economy)
+    play/                          # PlayScreen (tab: dares, mini-games, packs, campaigns, judges, character chat)
+    character_chat/                # AI Character Chat: rooms, chat, friends, group creation
+    winks/                         # WinksTabScreen (legacy — replaced by Play tab, balance in Profile)
   models/                          # Plain Dart data classes (no business logic)
   providers/                       # Riverpod providers (state layer)
   services/                        # Business logic and external service wrappers
@@ -117,7 +119,7 @@ See `docs/ARCHITECTURE.md` for the full provider dependency graph, service respo
 GoRouter with `StatefulShellRoute.indexedStack`. Shell tabs:
 - `index 0` → `/shell/home`
 - `index 1` → `/shell/vault`
-- `index 2` → `/shell/winks`
+- `index 2` → `/shell/play`
 - `index 3` → `/shell/profile`
 
 Center FAB taps → `context.push('/shell/create')` (not a tab branch).
