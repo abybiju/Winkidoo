@@ -20,7 +20,7 @@ import 'package:winkidoo/features/treasure/treasure_detail_screen.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
 import 'package:winkidoo/features/vault/realtime_surprises_subscription.dart';
 import 'package:winkidoo/features/vault/wink_plus_screen.dart';
-import 'package:winkidoo/features/winks/winks_tab_screen.dart';
+import 'package:winkidoo/features/play/play_screen.dart';
 import 'package:winkidoo/core/layout/responsive_vault_shell.dart';
 import 'package:winkidoo/core/widgets/wink_bottom_nav.dart';
 import 'package:winkidoo/features/quest/quest_create_screen.dart';
@@ -42,6 +42,10 @@ import 'package:winkidoo/features/campaign/campaign_chapter_intro_screen.dart';
 import 'package:winkidoo/features/minigame/mini_game_result_screen.dart';
 import 'package:winkidoo/features/packs/pack_list_screen.dart';
 import 'package:winkidoo/features/packs/pack_detail_screen.dart';
+import 'package:winkidoo/features/character_chat/chat_rooms_screen.dart';
+import 'package:winkidoo/features/character_chat/character_chat_screen.dart';
+import 'package:winkidoo/features/character_chat/add_friends_screen.dart';
+import 'package:winkidoo/features/character_chat/create_room_screen.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
@@ -230,7 +234,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           int index = 0;
           if (loc.startsWith('/shell/vault')) {
             index = 1;
-          } else if (loc.startsWith('/shell/winks')) {
+          } else if (loc.startsWith('/shell/play')) {
             index = 2;
           } else if (loc.startsWith('/shell/profile')) {
             index = 3;
@@ -263,8 +267,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/shell/winks',
-                builder: (_, __) => const WinksTabScreen(),
+                path: '/shell/play',
+                builder: (_, __) => const PlayScreen(),
               ),
             ],
           ),
@@ -421,6 +425,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/shell/chat',
+        builder: (_, __) => const ChatRoomsScreen(),
+      ),
+      GoRoute(
+        path: '/shell/chat/add-friends',
+        builder: (_, __) => const AddFriendsScreen(),
+      ),
+      GoRoute(
+        path: '/shell/chat/create-room',
+        builder: (_, __) => const CreateRoomScreen(),
+      ),
+      GoRoute(
+        path: '/shell/chat/:roomId',
+        builder: (_, state) {
+          final roomId = state.pathParameters['roomId']!;
+          return CharacterChatScreen(roomId: roomId);
+        },
+      ),
+      GoRoute(
         path: '/shell/treasure-archive',
         builder: (_, __) => const TreasureArchiveScreen(),
       ),
@@ -460,7 +483,7 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
     final loc = widget.matchedLocation;
     return loc == '/shell/home' ||
         loc == '/shell/vault' ||
-        loc == '/shell/winks' ||
+        loc == '/shell/play' ||
         loc == '/shell/profile';
   }
 
@@ -508,7 +531,7 @@ class _ShellScaffoldState extends State<_ShellScaffold> {
                 context.go('/shell/vault');
                 break;
               case 2:
-                context.go('/shell/winks');
+                context.go('/shell/play');
                 break;
               case 3:
                 context.go('/shell/profile');

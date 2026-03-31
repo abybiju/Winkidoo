@@ -10,14 +10,14 @@ class WinkNavIconSet {
   const WinkNavIconSet({
     required this.home,
     required this.vault,
-    required this.winks,
+    required this.play,
     required this.profile,
     required this.battle,
   });
 
   final IconData home;
   final IconData vault;
-  final IconData winks;
+  final IconData play;
   final IconData profile;
   final IconData battle;
 }
@@ -64,7 +64,7 @@ class WinkBottomNavStyle {
       icons: const WinkNavIconSet(
         home: PhosphorIconsFill.houseSimple,
         vault: PhosphorIconsFill.archive,
-        winks: PhosphorIconsFill.smileyWink,
+        play: PhosphorIconsFill.gameController,
         profile: PhosphorIconsFill.userCircle,
         battle: PhosphorIconsBold.sword,
       ),
@@ -148,8 +148,8 @@ class WinkBottomNav extends StatelessWidget {
                       child: _NavItem(
                           index: 2,
                           currentIndex: currentIndex,
-                          icon: resolvedStyle.icons.winks,
-                          label: 'Winks',
+                          icon: resolvedStyle.icons.play,
+                          label: 'Play',
                           onTap: onIndexTap,
                           style: resolvedStyle)),
                   Expanded(

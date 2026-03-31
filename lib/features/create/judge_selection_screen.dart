@@ -1067,10 +1067,12 @@ class RotatingQuote extends StatelessWidget {
             ),
             child: Text(
               '"$quote"',
-              style: GoogleFonts.caveat(
-                fontSize: 22,
+              style: GoogleFonts.inter(
+                fontSize: 16,
                 fontStyle: FontStyle.italic,
-                color: Colors.white,
+                fontWeight: FontWeight.w400,
+                height: 1.5,
+                color: Colors.white.withValues(alpha: 0.90),
               ),
               textAlign: TextAlign.center,
             ),

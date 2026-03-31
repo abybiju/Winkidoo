@@ -14,24 +14,13 @@ import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/home/widgets/avatar_selector.dart';
 import 'package:winkidoo/features/home/widgets/battle_card.dart';
 import 'package:winkidoo/features/home/widgets/hero_section.dart';
-import 'package:winkidoo/features/home/widgets/judge_spotlight_card.dart';
-import 'package:winkidoo/features/home/widgets/daily_dare_card.dart';
 import 'package:winkidoo/core/widgets/stagger_entrance.dart';
-import 'package:winkidoo/features/home/widgets/campaign_banner_card.dart';
-import 'package:winkidoo/features/home/widgets/pack_banner_card.dart';
-import 'package:winkidoo/features/minigame/mini_game_card.dart';
-import 'package:winkidoo/features/minigame/mini_game_play_sheet.dart';
-import 'package:winkidoo/providers/mini_game_provider.dart';
 import 'package:winkidoo/features/home/widgets/recent_wins_section.dart';
-import 'package:winkidoo/features/dare/dare_response_sheet.dart';
-import 'package:winkidoo/providers/daily_dare_provider.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
 import 'package:winkidoo/features/season/season_recap_screen.dart';
 import 'package:winkidoo/models/achievement.dart';
-import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/achievements_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
-import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/quest_provider.dart';
 import 'package:winkidoo/providers/season_recap_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
@@ -174,7 +163,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final surprises = ref.watch(surprisesListProvider).value ?? [];
-    final judgesAsync = ref.watch(activeJudgesProvider);
     final achievementsAsync = ref.watch(achievementsProvider);
     final seasonRecapAsync = ref.watch(seasonRecapProvider);
     final streakAsync = ref.watch(streakProvider);
@@ -205,19 +193,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final streakWeeks = streakAsync.value?.currentStreak ?? 0;
     final levelCount = xpAsync.value?.currentLevel ?? 0;
 
-    const fallbackJudge = Judge(
-      id: 'fallback',
-      personaId: AppConstants.personaSassyCupid,
-      name: 'Judge Wizard',
-      tagline: 'Feeling magical. Feeling judgey.',
-    );
-    final judge = judgesAsync.value?.isNotEmpty == true
-        ? judgesAsync.value!.first
-        : fallbackJudge;
-    final spotlightJudges = judgesAsync.value?.isNotEmpty == true
-        ? judgesAsync.value!
-        : const [fallbackJudge];
-
     final width = MediaQuery.sizeOf(context).width;
     final isCompact = width < 380;
     final horizontal = isCompact ? 12.0 : 16.0;
@@ -225,10 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final contentWidth = (width - (horizontal * 2)).clamp(320.0, 760.0);
 
     final heroHeight = _clamped(contentWidth, 0.22, 132, 170);
-    final dareHeight = _clamped(contentWidth, 0.33, 168, 214);
-    final gameHeight = _clamped(contentWidth, 0.33, 168, 214);
     final battleHeight = _clamped(contentWidth, 0.37, 188, 232);
-    final judgeHeight = _clamped(contentWidth, 0.33, 168, 214);
     final recentItemHeight = _clamped(contentWidth, 0.14, 88, 108);
 
     return Scaffold(
@@ -261,65 +233,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     SizedBox(height: gap),
                     StaggerEntrance(
                       index: 0,
-                      child: PackBannerCard(
-                        compact: isCompact,
-                        onExplorePacks: () => context.push('/shell/packs'),
-                      ),
-                    ),
-                    SizedBox(height: gap),
-                    StaggerEntrance(
-                      index: 1,
-                      child: CampaignBannerCard(
-                        compact: isCompact,
-                        onTap: (campaignId) =>
-                            context.push('/shell/campaign/$campaignId'),
-                        onBrowseCampaigns: () =>
-                            context.push('/shell/campaigns'),
-                      ),
-                    ),
-                    SizedBox(height: gap),
-                    StaggerEntrance(
-                      index: 2,
-                      child: DailyDareCard(
-                        compact: isCompact,
-                        height: dareHeight,
-                        onTakeDare: () {
-                          final dare = ref.read(dailyDareProvider).value?.dare;
-                          if (dare == null) return;
-                          showModalBottomSheet<bool>(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => DareResponseSheet(dare: dare),
-                          );
-                        },
-                        onViewResult: () =>
-                            context.push('/shell/dare/result'),
-                      ),
-                    ),
-                    SizedBox(height: gap),
-                    StaggerEntrance(
-                      index: 3,
-                      child: MiniGameCard(
-                        compact: isCompact,
-                        height: gameHeight,
-                        onPlay: () {
-                          final game = ref.read(miniGameProvider).value?.game;
-                          if (game == null) return;
-                          showModalBottomSheet<bool>(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => MiniGamePlaySheet(game: game),
-                          );
-                        },
-                        onViewResult: () =>
-                            context.push('/shell/minigame/result'),
-                      ),
-                    ),
-                    SizedBox(height: gap),
-                    StaggerEntrance(
-                      index: 4,
                       child: BattleCard(
                         onInviteTap: _goToCreateWithProfileGate,
                         compact: isCompact,
@@ -328,23 +241,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     SizedBox(height: gap),
                     StaggerEntrance(
-                      index: 5,
-                      child: JudgeSpotlightCard(
-                        judge: judge,
-                        judges: spotlightJudges,
-                        onExplore: _goToCreateWithProfileGate,
-                        compact: isCompact,
-                        height: judgeHeight,
-                      ),
-                    ),
-                    SizedBox(height: gap),
-                    StaggerEntrance(
-                      index: 6,
+                      index: 1,
                       child: _QuestSection(questsAsync: questsAsync),
                     ),
                     SizedBox(height: gap),
                     StaggerEntrance(
-                      index: 7,
+                      index: 2,
                       child: RecentWins(
                         surprises: recent,
                         judgeNameForPersona: HomeScreen.personaDisplayName,

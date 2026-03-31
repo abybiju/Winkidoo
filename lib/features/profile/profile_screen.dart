@@ -21,6 +21,7 @@ import 'package:winkidoo/services/achievement_storage_service.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/couple_stats_provider.dart';
+import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
@@ -134,6 +135,8 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _TreasureArchiveCard(
                       onTap: () => context.push('/shell/treasure-archive')),
+                  const SizedBox(height: 16),
+                  const _WinksBalanceCard(),
                   const SizedBox(height: 16),
                   _SubscriptionCard(
                     isWinkPlus: effectiveWinkPlus,
@@ -1312,6 +1315,92 @@ class _TreasureArchiveCard extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right_rounded,
             color: AppTheme.textSecondary),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _WinksBalanceCard extends ConsumerWidget {
+  const _WinksBalanceCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final winks = ref.watch(winksBalanceProvider).value;
+    final brightness = Theme.of(context).brightness;
+    final balance = winks?.balance ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        color: brightness == Brightness.dark
+            ? AppTheme.glassFill
+            : Colors.white.withValues(alpha: 0.70),
+        border: Border.all(
+          color: brightness == Brightness.dark
+              ? AppTheme.glassBorder
+              : AppTheme.lightGlassBorder,
+        ),
+        boxShadow: AppTheme.elevation1(brightness),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.ctaGoldA, AppTheme.premiumAmber],
+              ),
+            ),
+            child: const Icon(
+              Icons.emoji_emotions_rounded,
+              size: 22,
+              color: Color(0xFF5A3A00),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Winks Balance',
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextPrimary
+                        : AppTheme.lightTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Hints, boosts & instant unlocks',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: brightness == Brightness.dark
+                        ? AppTheme.homeTextSecondary
+                        : AppTheme.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '$balance',
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              color: AppTheme.premiumAmber,
+            ),
+          ),
+        ],
       ),
     );
   }

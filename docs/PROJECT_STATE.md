@@ -135,6 +135,12 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 028: custom_judges + custom_judge_uses (Custom AI Judge Creator + Marketplace).
 - 029: custom_judges status + notification_text columns (web search + async generation).
 - 030: custom_judges is_active_for_battle column (battlefield toggle).
+- 031: judge-avatars storage bucket with RLS (dedicated bucket for custom judge photos).
+
+### March 30, 2026 — Bug fixes + Push notifications expansion
+- **Bug fixes**: judge delete working, avatar upload 403 fixed (new judge-avatars bucket), avatar upload surviving gallery picker unmount, battlefield carousel remove refreshing providers, carousel avatar blink fixed (cached signed URL futures), Gemini maxOutputTokens increased to 4096 with truncated JSON repair, marketplace showing avatar photos
+- **Push Notifications**: Extended Edge Function with 8 new notification types — daily dares (new/submitted/graded), mini-games (new/played/graded), campaign started, custom judge ready. Added 4 new Database Webhooks. App deep link handler routes all new types to correct screens.
+- **Edge Function deploy**: Use `supabase functions deploy send_battle_notification --use-api` (bypasses Docker file sharing issue)
 
 ### March 29, 2026 — Major feature expansion
 - **Daily Love Dares**: AI daily challenges, photo/voice responses, shareable dare cards, realtime partner notifications
@@ -151,10 +157,9 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Next / optional
 
-- **Known bugs to fix**: judge delete from My Judges, avatar photo display consistency, marketplace published judges visibility
 - IAP/Stripe for Wink+ (RevenueCat — wink_plus_until set by backend).
-- Push notifications for dares, mini-games, campaign chapters, custom judge ready.
 - Onboarding polish (guided first experience, welcome gift, first surprise prompt).
+- Test push notifications end-to-end with two accounts.
 - AI Love Coach (opt-in relationship insights from surprise patterns).
 
 ---

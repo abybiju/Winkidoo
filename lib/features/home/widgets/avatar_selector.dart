@@ -317,12 +317,16 @@ class _AvatarInner extends StatelessWidget {
 
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return ClipOval(
-        child: Image.network(
-          avatarUrl!,
-          width: double.infinity,
-          height: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _buildInitialText(),
+        child: SizedBox.expand(
+          child: Image.network(
+            avatarUrl!,
+            fit: BoxFit.cover,
+            loadingBuilder: (_, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(child: _buildInitialText());
+            },
+            errorBuilder: (_, __, ___) => Center(child: _buildInitialText()),
+          ),
         ),
       );
     }

@@ -72,12 +72,22 @@ class AiJudgeService {
             temperature: 0.8,
             maxOutputTokens: 4096,
           ),
+        ),
+        _textModel = GenerativeModel(
+          model: 'gemini-2.5-flash',
+          apiKey: apiKey,
+          generationConfig: GenerationConfig(
+            temperature: 0.85,
+            maxOutputTokens: 1024,
+          ),
         );
 
   final String _apiKey;
   final GenerativeModel _model;
   /// Model without schema constraint — for custom persona, dare, and mini-game generation.
   final GenerativeModel _freeformModel;
+  /// Plain text model — for character chat text transformation (no JSON wrapping).
+  final GenerativeModel _textModel;
 
   /// Winkidoo v2.0–style base: identity, safety, adaptation, criteria. Persona is layered on top.
   static const _winkidooJudgeSystemPrompt = '''
@@ -1102,5 +1112,45 @@ Return JSON only: {"commentary": "<your 2-3 sentence in-character grading>", "sc
       debugPrint('_parseJsonFromResponse: repair failed: $e');
       return {};
     }
+  }
+
+  // ── Character Chat text transformation ──
+
+  /// Transforms [originalText] into the speaking style of [characterName]
+  /// using [characterSystemPrompt] as voice instructions.
+  /// Returns the transformed plain text.
+  Future<String> transformAsCharacter({
+    required String originalText,
+    required String characterSystemPrompt,
+    required String characterName,
+  }) async {
+    final prompt = '''
+You are a text transformation engine. Your ONLY job is to rewrite the user's message in the voice and speaking style of $characterName.
+
+CHARACTER VOICE INSTRUCTIONS:
+$characterSystemPrompt
+
+RULES:
+- Preserve the MEANING and INTENT of the original message exactly
+- Transform ONLY the style, vocabulary, and tone
+- Keep the output roughly the same length (max 2x the original)
+- Do NOT add new information or change the subject
+- Do NOT include any meta-commentary like "Here's the message:" or quotation marks
+- Output ONLY the transformed message text, nothing else
+- Keep it fun and entertaining
+- If the original is very short (1-3 words), still transform but keep it brief
+
+ORIGINAL MESSAGE:
+$originalText
+
+TRANSFORMED MESSAGE:''';
+
+    final response = await _textModel.generateContent([Content.text(prompt)]);
+    final text = response.text?.trim() ?? originalText;
+    // Strip any accidental wrapping quotes
+    if (text.startsWith('"') && text.endsWith('"')) {
+      return text.substring(1, text.length - 1);
+    }
+    return text;
   }
 }
