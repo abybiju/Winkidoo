@@ -137,6 +137,12 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 030: custom_judges is_active_for_battle column (battlefield toggle).
 - 031: judge-avatars storage bucket with RLS (dedicated bucket for custom judge photos).
 - 032: character_chat_rooms + character_chat_members + character_chat_messages + user_friends (AI Character Chat + Friends system).
+- 033: Fix chat RLS circular reference (partial).
+- 034: Drop all self-referential members policies; RPCs: get_chat_room_members, join_chat_room_by_code, remove_chat_room_member.
+- 035: roulette_result column on surprises (Surprise Roulette).
+- 036: future_letter_judge_persona + surprise_type 'future_letter' (Love Letters from the Future).
+- 037: phantom_events table + had_phantom on surprises (Phantom Judge Takeover).
+- 038: forensics_reports table (Emotional Forensics).
 
 ### March 31, 2026 — UX overhaul + AI Character Chat
 - **Home screen simplified**: removed Daily Dare, Mini-Game, Battle Packs, Campaigns, Judge Spotlight cards. Home now shows only: Hero avatar rail, Start a Battle CTA, Quest progress, Recent Wins.
@@ -152,8 +158,15 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
   - Friend system with invite codes and friend requests
   - Group chat support (1-on-1 + 3+ members)
   - Supabase Realtime on `character_chat_messages` for live updates
-  - **Known issue**: RLS circular reference on `character_chat_rooms`/`character_chat_members` causes "Failed to load chats". Fix: simplify policies to avoid self-referential subqueries.
+  - **RLS FIXED** (April 2): migrations 033+034 dropped all self-referential policies; cross-member ops via SECURITY DEFINER RPCs
 - **Bug fixes**: judge quote font changed from Caveat to Inter for readability; avatar loading glitch fixed with SizedBox.expand + loadingBuilder
+
+### April 2, 2026 — Character Chat RLS fix + 4 new engagement features
+- **Character Chat RLS fix** (migrations 033-034): Dropped self-referential policies causing infinite recursion. Cross-member queries now use SECURITY DEFINER RPCs. Solo room creation + invite code sharing via share_plus.
+- **Surprise Roulette** (migration 035): Toggle "Roulette" on create screen → partner spins a wheel before battle. 5 segments: Easy (30%), Medium (30%), Hard (25%), Chaos Mode (10%), Golden Hour (5%). Chaos = Hard + max temp judge. Golden = Easy + 2x fatigue decay + 3x XP. Custom roulette wheel widget with spring physics.
+- **Love Letters from the Future** (migration 036): New `future_letter` surprise type. Creator writes a message + picks delivery date + judge persona. On delivery, Gemini rewrites the letter in the judge's voice aged 20 years. Split-view reveal screen (original + aged rewrite). Route: `/shell/future-letter/:id`.
+- **Phantom Judge Takeover** (migration 037): ~8% chance per battle a rogue ghost judge hijacks for 2 exchanges. 5 phantom personas: Judge Glitch, The Time Traveler, The Drunk Poet, The Interrogator, The Hype Beast. Glitch overlay animation. Random resistance delta (-20 to +25). `had_phantom` tracked on surprise. `phantom_events` table for history.
+- **Emotional Forensics** (migration 038): "View Forensics" button on reveal screen. AI analyzes battle transcript for Communication DNA (logical/emotional/humorous/poetic %), Hidden Signals (3 observations), Growth Edge, Superpower badge. `forensics_reports` table. Route: `/shell/forensics/:id`.
 
 ### March 30, 2026 — Bug fixes + Push notifications expansion
 - **Bug fixes**: judge delete working, avatar upload 403 fixed (new judge-avatars bucket), avatar upload surviving gallery picker unmount, battlefield carousel remove refreshing providers, carousel avatar blink fixed (cached signed URL futures), Gemini maxOutputTokens increased to 4096 with truncated JSON repair, marketplace showing avatar photos
@@ -175,8 +188,7 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Next / optional
 
-- Fix Character Chat RLS circular policy so chats load.
-- Test Character Chat end-to-end with two accounts.
+- Test Character Chat end-to-end with two accounts (invite code join + realtime messages).
 - IAP/Stripe for Wink+ (RevenueCat — wink_plus_until set by backend).
 - Onboarding polish (guided first experience, welcome gift, first surprise prompt).
 - Test push notifications end-to-end with two accounts.
