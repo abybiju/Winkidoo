@@ -79,13 +79,30 @@ class ChatRoomsScreen extends ConsumerWidget {
                     child: CircularProgressIndicator(
                         color: AppTheme.primaryOrange),
                   ),
-                  error: (_, __) => Center(
-                    child: Text(
-                      'Failed to load chats',
-                      style: GoogleFonts.inter(
-                        color: brightness == Brightness.dark
-                            ? AppTheme.homeTextSecondary
-                            : AppTheme.lightTextSecondary,
+                  error: (err, __) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Failed to load chats',
+                            style: GoogleFonts.inter(
+                              color: brightness == Brightness.dark
+                                  ? AppTheme.homeTextSecondary
+                                  : AppTheme.lightTextSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '$err',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: Colors.red.withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                   ),

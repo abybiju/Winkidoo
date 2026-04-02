@@ -110,9 +110,13 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     final userGender = ref.watch(userProfileMetaProvider).gender;
     final isDesktop = widget.desktopDetailNavigatorKey != null;
 
-    Future<void> pushToBattle(String surpriseId) async {
+    Future<void> pushToBattle(String surpriseId, {bool isFutureLetter = false}) async {
       final ok = await ensureProfileComplete(context, ref);
       if (!context.mounted || !ok) return;
+      if (isFutureLetter) {
+        context.push('/shell/future-letter/$surpriseId');
+        return;
+      }
       if (isDesktop) {
         widget.desktopDetailNavigatorKey?.currentState?.push(
           MaterialPageRoute<void>(
@@ -368,7 +372,8 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                               ...waiting.map((s) => _SurpriseCard(
                                     surprise: s,
                                     isForMe: true,
-                                    onTap: () => pushToBattle(s.id),
+                                    onTap: () => pushToBattle(s.id,
+                                        isFutureLetter: s.isFutureLetter),
                                   )),
                               const SizedBox(height: 8),
                             ],

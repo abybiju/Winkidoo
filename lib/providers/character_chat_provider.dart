@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:winkidoo/models/character_chat_message.dart';
@@ -26,7 +27,26 @@ final myRoomsProvider = FutureProvider<List<ChatRoom>>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return [];
   final service = ref.watch(characterChatServiceProvider);
-  return service.fetchRooms(user.id);
+  try {
+    final rooms = await service.fetchRooms(user.id);
+    debugPrint('[ChatProvider] Loaded ${rooms.length} rooms for ${user.id}');
+    return rooms;
+  } catch (e, st) {
+    debugPrint('[ChatProvider] fetchRooms error: $e');
+    debugPrint('[ChatProvider] stackTrace: $st');
+    rethrow;
+  }
+});
+
+/// A single room by ID (from cached rooms list).
+final chatRoomProvider =
+    FutureProvider.family<ChatRoom?, String>((ref, roomId) async {
+  final rooms = await ref.watch(myRoomsProvider.future);
+  try {
+    return rooms.firstWhere((r) => r.id == roomId);
+  } catch (_) {
+    return null;
+  }
 });
 
 /// Members of a specific room.

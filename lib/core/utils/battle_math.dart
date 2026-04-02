@@ -43,10 +43,29 @@ class BattleMath {
     required int difficultyLevel,
     required int creatorDefenseCount,
     required int fatigueLevel,
+    String? rouletteResult,
   }) {
+    final fatigueMultiplier =
+        rouletteResult == 'golden' ? AppConstants.goldenFatigueMultiplier : 1;
     final raw = baseResistance(difficultyLevel) +
         creatorReinforcement(creatorDefenseCount) -
-        (fatigueLevel * AppConstants.fatigueDecayPerLevel);
+        (fatigueLevel * AppConstants.fatigueDecayPerLevel * fatigueMultiplier);
     return raw < 0 ? 0 : raw;
+  }
+
+  /// Maps a roulette result to a difficulty level for base resistance.
+  static int difficultyForRoulette(String rouletteResult) {
+    switch (rouletteResult) {
+      case 'easy':
+      case 'golden':
+        return 1; // Easy (80)
+      case 'medium':
+        return 3; // Medium (100)
+      case 'hard':
+      case 'chaos':
+        return 5; // Hard (130)
+      default:
+        return 3;
+    }
   }
 }

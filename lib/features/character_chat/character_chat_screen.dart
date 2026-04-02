@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
@@ -132,11 +133,13 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(chatMessagesProvider(widget.roomId));
     final membersAsync = ref.watch(roomMembersProvider(widget.roomId));
+    final roomAsync = ref.watch(chatRoomProvider(widget.roomId));
     final user = ref.watch(currentUserProvider);
     final brightness = Theme.of(context).brightness;
 
     final messages = messagesAsync.value ?? [];
     final memberCount = membersAsync.value?.length ?? 0;
+    final room = roomAsync.value;
 
     // Auto-scroll when new messages arrive
     if (messages.isNotEmpty) _scrollToBottom();
@@ -189,11 +192,15 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                     // Share invite code
                     GestureDetector(
                       onTap: () {
-                        // Copy invite code to clipboard
+                        final code = room?.inviteCode;
+                        if (code == null) return;
                         HapticFeedback.lightImpact();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Invite link copied!')),
+                        Clipboard.setData(ClipboardData(text: code));
+                        SharePlus.instance.share(
+                          ShareParams(
+                            text:
+                                'Join my Character Chat on Winkidoo! Use invite code: $code',
+                          ),
                         );
                       },
                       child: Container(

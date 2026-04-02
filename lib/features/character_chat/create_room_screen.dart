@@ -29,19 +29,21 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
 
   Future<void> _createRoom() async {
     final user = ref.read(currentUserProvider);
-    if (user == null || _selectedFriendIds.isEmpty) return;
+    if (user == null) return;
 
     setState(() => _isCreating = true);
 
     try {
       final service = ref.read(characterChatServiceProvider);
-      final isGroup = _selectedFriendIds.length > 1;
+      final isGroup = _selectedFriendIds.length > 1 ||
+          (_selectedFriendIds.isEmpty &&
+              _nameController.text.trim().isNotEmpty);
       final type = isGroup ? 'group' : 'friend';
-      final name = isGroup ? _nameController.text.trim() : null;
+      final name = _nameController.text.trim();
 
       final roomId = await service.createRoom(
         type: type,
-        name: name?.isNotEmpty == true ? name : null,
+        name: name.isNotEmpty ? name : null,
         memberIds: [user.id, ..._selectedFriendIds],
         createdBy: user.id,
       );
@@ -67,7 +69,6 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
     final brightness = Theme.of(context).brightness;
     final friendsAsync = ref.watch(friendsListProvider);
     final user = ref.watch(currentUserProvider);
-    final isGroup = _selectedFriendIds.length > 1;
 
     return Scaffold(
       body: CosmicBackground(
@@ -103,47 +104,46 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Group name (if 2+ selected)
-              if (isGroup)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+              // Chat room name
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: brightness == Brightness.dark
+                        ? AppTheme.glassFillHover
+                        : Colors.white.withValues(alpha: 0.80),
+                    border: Border.all(color: AppTheme.glassBorder),
+                  ),
+                  child: TextField(
+                    controller: _nameController,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
                       color: brightness == Brightness.dark
-                          ? AppTheme.glassFillHover
-                          : Colors.white.withValues(alpha: 0.80),
-                      border: Border.all(color: AppTheme.glassBorder),
+                          ? AppTheme.homeTextPrimary
+                          : AppTheme.lightTextPrimary,
                     ),
-                    child: TextField(
-                      controller: _nameController,
-                      style: GoogleFonts.inter(
+                    decoration: InputDecoration(
+                      hintText: 'Chat name (e.g. "Squad Chat")',
+                      hintStyle: GoogleFonts.inter(
                         fontSize: 15,
-                        color: brightness == Brightness.dark
-                            ? AppTheme.homeTextPrimary
-                            : AppTheme.lightTextPrimary,
+                        color: AppTheme.homeTextSecondary,
                       ),
-                      decoration: InputDecoration(
-                        hintText: 'Group name (optional)',
-                        hintStyle: GoogleFonts.inter(
-                          fontSize: 15,
-                          color: AppTheme.homeTextSecondary,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
                       ),
                     ),
                   ),
                 ),
+              ),
 
-              // Friend selection
+              // Friend selection header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Select friends to chat with',
+                  'Add friends (optional — share the invite code later)',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -163,7 +163,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                     if (accepted.isEmpty) {
                       return Center(
                         child: Text(
-                          'No friends yet.\nAdd friends first!',
+                          'No friends added yet — no worries!\nCreate the chat and share the invite code.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: 14,
@@ -214,7 +214,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                 ),
               ),
 
-              // Create button
+              // Create button — always enabled
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   16,
@@ -223,10 +223,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                   MediaQuery.of(context).padding.bottom + 16,
                 ),
                 child: GestureDetector(
-                  onTap:
-                      _selectedFriendIds.isEmpty || _isCreating
-                          ? null
-                          : _createRoom,
+                  onTap: _isCreating ? null : _createRoom,
                   child: AnimatedContainer(
                     duration: AppTheme.microDuration,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -234,9 +231,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                     decoration: BoxDecoration(
                       borderRadius:
                           BorderRadius.circular(AppTheme.radiusPill),
-                      color: _selectedFriendIds.isEmpty
-                          ? AppTheme.primaryOrange.withValues(alpha: 0.3)
-                          : AppTheme.primaryOrange,
+                      color: AppTheme.primaryOrange,
                     ),
                     child: _isCreating
                         ? const SizedBox(
@@ -249,7 +244,7 @@ class _CreateRoomScreenState extends ConsumerState<CreateRoomScreen> {
                           )
                         : Text(
                             _selectedFriendIds.isEmpty
-                                ? 'Select friends'
+                                ? 'Create Chat'
                                 : 'Create Chat (${_selectedFriendIds.length} selected)',
                             style: GoogleFonts.poppins(
                               fontSize: 16,

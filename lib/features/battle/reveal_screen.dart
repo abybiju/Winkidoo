@@ -652,6 +652,22 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                     const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          context.push(
+                              '/shell/forensics/${widget.surpriseId}');
+                        },
+                        icon: const Icon(Icons.psychology_rounded),
+                        label: const Text('View Forensics'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.teal,
+                          side: const BorderSide(color: Colors.teal),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
                           context.go('/shell/vault');

@@ -29,6 +29,8 @@ import 'package:winkidoo/features/battle/pre_battle_tease.dart';
 import 'package:winkidoo/services/battle_realtime_service.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
 import 'package:winkidoo/services/judge_memory_service.dart';
+import 'package:winkidoo/services/phantom_judge_service.dart';
+import 'package:winkidoo/features/battle/widgets/phantom_overlay.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 
 class BattleChatScreen extends ConsumerStatefulWidget {
@@ -58,6 +60,13 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
   String? _lastSystemMessageText;
   DateTime? _lastSystemMessageAt;
   bool _showTease = true;
+
+  // Phantom Judge state
+  bool _phantomTriggered = false;
+  bool _phantomChecked = false;
+  PhantomPersona? _activePhantom;
+  int _phantomExchangesLeft = 0;
+  bool _showPhantomOverlay = false;
 
   @override
   void initState() {
@@ -188,6 +197,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
             difficultyLevel: fetchedSurprise.difficultyLevel,
             creatorDefenseCount: fetchedSurprise.creatorDefenseCount,
             fatigueLevel: fetchedSurprise.fatigueLevel,
+            rouletteResult: fetchedSurprise.rouletteResult,
           ),
           'fatigue_level': fetchedSurprise.fatigueLevel,
         }).eq('id', widget.surpriseId);
@@ -254,6 +264,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         difficultyLevel: latestSurprise.difficultyLevel,
         creatorDefenseCount: latestSurprise.creatorDefenseCount,
         fatigueLevel: seekerMessageCount,
+        rouletteResult: latestSurprise.rouletteResult,
       );
       final seekerWins =
           (isVerdictNow && judgeResponse.isUnlocked) || effectiveRes == 0;
@@ -282,6 +293,59 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
       ref.invalidate(battleMessagesProvider(widget.surpriseId));
       ref.invalidate(surpriseByIdProvider(widget.surpriseId));
       ref.invalidate(surprisesListProvider);
+
+      // ── Phantom Judge Takeover ──
+      // Check once per battle if a phantom should appear (seeker messages only)
+      if (senderType == 'seeker' &&
+          !_phantomChecked &&
+          !seekerWins &&
+          !isVerdictNow) {
+        _phantomChecked = true;
+        if (PhantomJudgeService.shouldTrigger()) {
+          final phantom = PhantomJudgeService.pickPhantom();
+          final delta = PhantomJudgeService.rollResistanceDelta();
+          setState(() {
+            _phantomTriggered = true;
+            _activePhantom = phantom;
+            _phantomExchangesLeft = PhantomJudgeService.phantomExchanges;
+            _showPhantomOverlay = true;
+          });
+
+          // Insert phantom takeover message
+          final phantomMsg = await ai.phantomJudgeResponse(
+            seekerMessage: content.trim(),
+            phantomName: phantom.name,
+            phantomSystemPrompt: phantom.systemPrompt,
+            originalJudgeName: surprise.judgePersona,
+            battleContext: messages
+                .take(5)
+                .map((m) => '${m.senderType}: ${m.content}')
+                .toList(),
+          );
+          await client.from('battle_messages').insert({
+            'id': const Uuid().v4(),
+            'surprise_id': widget.surpriseId,
+            'sender_type': 'judge',
+            'sender_id': null,
+            'content': '${phantom.emoji} [${phantom.name}]: $phantomMsg',
+            'is_verdict': false,
+          });
+
+          // Record phantom event + update surprise
+          await client.from('phantom_events').insert({
+            'surprise_id': widget.surpriseId,
+            'phantom_persona': phantom.id,
+            'exchanges_count': PhantomJudgeService.phantomExchanges,
+            'resistance_delta': delta,
+          });
+          await client.from('surprises').update({
+            'had_phantom': true,
+          }).eq('id', widget.surpriseId);
+
+          ref.invalidate(battleMessagesProvider(widget.surpriseId));
+          ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+        }
+      }
 
       if (seekerWins && mounted) {
         _navigatedToVerdict = true;
@@ -482,6 +546,19 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
             judge: judge,
             userGender: userGender,
             surpriseId: widget.surpriseId,
+            isRoulette: surprise.isRoulettePending,
+            onRouletteResult: (result) async {
+              // Update surprise with resolved roulette result + mapped difficulty
+              final mapped = BattleMath.difficultyForRoulette(result);
+              await Supabase.instance.client
+                  .from('surprises')
+                  .update({
+                    'roulette_result': result,
+                    'difficulty_level': mapped,
+                  })
+                  .eq('id', widget.surpriseId);
+              ref.invalidate(surpriseByIdProvider(widget.surpriseId));
+            },
             onBegin: () => setState(() => _showTease = false),
           );
         }
@@ -496,6 +573,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
             difficultyLevel: surprise.difficultyLevel,
             creatorDefenseCount: surprise.creatorDefenseCount,
             fatigueLevel: surprise.fatigueLevel,
+            rouletteResult: surprise.rouletteResult,
           );
           if (_lastResistanceScore == null) {
             setState(() {
@@ -558,7 +636,9 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
           ),
-          body: CosmicBackground(
+          body: Stack(
+            children: [
+              CosmicBackground(
             glowColor: AppTheme.secondaryViolet,
             child: SafeArea(
               child: Column(
@@ -614,6 +694,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                             difficultyLevel: surprise.difficultyLevel,
                             creatorDefenseCount: surprise.creatorDefenseCount,
                             fatigueLevel: surprise.fatigueLevel,
+                            rouletteResult: surprise.rouletteResult,
                           );
 
                       return Expanded(
@@ -803,6 +884,16 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                 ],
               ),
             ),
+          ),
+              // Phantom Judge Overlay
+              if (_showPhantomOverlay && _activePhantom != null)
+                PhantomOverlay(
+                  phantom: _activePhantom!,
+                  onDismiss: () {
+                    if (mounted) setState(() => _showPhantomOverlay = false);
+                  },
+                ),
+            ],
           ),
         );
       },

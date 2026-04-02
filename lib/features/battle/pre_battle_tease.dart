@@ -7,9 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/features/battle/widgets/roulette_wheel.dart';
 import 'package:winkidoo/models/judge.dart';
 
 /// Full-screen pre-battle moment: judge portrait, aura, lock pulse, taunt quote, "Begin Persuasion".
+/// If [isRoulette] is true, shows a roulette wheel spin before the standard tease.
 /// Call [onBegin] when user taps the button or after 1.5s auto-advance.
 class PreBattleTease extends StatefulWidget {
   const PreBattleTease({
@@ -18,12 +20,16 @@ class PreBattleTease extends StatefulWidget {
     required this.userGender,
     required this.surpriseId,
     required this.onBegin,
+    this.isRoulette = false,
+    this.onRouletteResult,
   });
 
   final Judge judge;
   final String userGender;
   final String surpriseId;
   final void Function() onBegin;
+  final bool isRoulette;
+  final void Function(String result)? onRouletteResult;
 
   @override
   State<PreBattleTease> createState() => _PreBattleTeaseState();
@@ -36,6 +42,7 @@ class _PreBattleTeaseState extends State<PreBattleTease>
   Timer? _autoAdvanceTimer;
   bool _hasBegun = false;
   late String _tauntQuote;
+  bool _rouletteComplete = false;
 
   @override
   void initState() {
@@ -54,9 +61,12 @@ class _PreBattleTeaseState extends State<PreBattleTease>
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
 
-    _autoAdvanceTimer = Timer(const Duration(milliseconds: 1500), () {
-      _beginOnce();
-    });
+    // Only auto-advance if NOT roulette (roulette needs spin first)
+    if (!widget.isRoulette) {
+      _autoAdvanceTimer = Timer(const Duration(milliseconds: 1500), () {
+        _beginOnce();
+      });
+    }
   }
 
   void _beginOnce() {
@@ -75,8 +85,34 @@ class _PreBattleTeaseState extends State<PreBattleTease>
     super.dispose();
   }
 
+  void _onRouletteResult(String result) {
+    setState(() => _rouletteComplete = true);
+    widget.onRouletteResult?.call(result);
+    // Auto-advance to battle after roulette result
+    _autoAdvanceTimer = Timer(const Duration(milliseconds: 1200), () {
+      _beginOnce();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Show roulette wheel before the normal tease
+    if (widget.isRoulette && !_rouletteComplete) {
+      return Stack(
+        children: [
+          _TeaseAuraBackground(
+            color: widget.judge.primaryColor,
+            animation: _auraController,
+          ),
+          SafeArea(
+            child: Center(
+              child: RouletteWheel(onResult: _onRouletteResult),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Stack(
       children: [
         _TeaseAuraBackground(

@@ -74,6 +74,29 @@ class AppConstants {
   /// Minimum effective resistance drop (points) to show "Resistance weakened..." (avoids noise from tiny drops).
   static const int fatigueWeakenedMinDrop = 3;
 
+  // ── Surprise Roulette ──
+
+  /// Weighted segments: Easy 30%, Medium 30%, Hard 25%, Chaos 10%, Golden 5%
+  static const Map<String, double> rouletteWeights = {
+    'easy': 0.30,
+    'medium': 0.30,
+    'hard': 0.25,
+    'chaos': 0.10,
+    'golden': 0.05,
+  };
+
+  /// Chaos Mode: random resistance swing per turn
+  static const int chaosResistanceSwing = 15;
+
+  /// Chaos Mode: Gemini temperature override
+  static const double chaosTemperature = 0.95;
+
+  /// Golden Hour: XP multiplier
+  static const int goldenXpMultiplier = 3;
+
+  /// Golden Hour: fatigue decay multiplier
+  static const int goldenFatigueMultiplier = 2;
+
   // ── Love Quests ──
 
   /// Min/max steps in a quest chain.

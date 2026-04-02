@@ -11,7 +11,9 @@ import 'package:winkidoo/features/couple/vault_sealed_screen.dart';
 import 'package:winkidoo/features/auth/welcome_auth_screen.dart';
 import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/features/battle/judge_deliberation_screen.dart';
+import 'package:winkidoo/features/battle/future_letter_reveal_screen.dart';
 import 'package:winkidoo/features/battle/reveal_screen.dart';
+import 'package:winkidoo/features/forensics/forensics_report_screen.dart';
 import 'package:winkidoo/features/home/home_screen.dart';
 import 'package:winkidoo/features/onboarding/onboarding_screen.dart';
 import 'package:winkidoo/features/profile/profile_screen.dart';
@@ -320,6 +322,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             judgeResponse: extra['response']! as JudgeResponse,
             creatorId: extra['creatorId']! as String,
           );
+        },
+      ),
+      GoRoute(
+        path: '/shell/future-letter/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return FutureLetterRevealScreen(surpriseId: id);
+        },
+      ),
+      GoRoute(
+        path: '/shell/forensics/:id',
+        builder: (_, state) {
+          final id = state.pathParameters['id']!;
+          return ForensicsReportScreen(surpriseId: id);
         },
       ),
       GoRoute(

@@ -131,34 +131,16 @@ class CharacterChatService {
     return roomId;
   }
 
-  /// Joins a room via invite code. Returns the room ID or null if code is invalid.
+  /// Joins a room via invite code using RPC (bypasses RLS for lookup).
+  /// Returns the room ID or null if code is invalid.
   Future<String?> joinRoomByCode(String inviteCode, String userId) async {
-    final room = await _client
-        .from('character_chat_rooms')
-        .select('id')
-        .eq('invite_code', inviteCode)
-        .maybeSingle();
+    final result = await _client.rpc(
+      'join_chat_room_by_code',
+      params: {'p_invite_code': inviteCode},
+    );
 
-    if (room == null) return null;
-    final roomId = room['id'] as String;
-
-    // Check if already a member
-    final existing = await _client
-        .from('character_chat_members')
-        .select('id')
-        .eq('room_id', roomId)
-        .eq('user_id', userId)
-        .maybeSingle();
-
-    if (existing == null) {
-      await _client.from('character_chat_members').insert({
-        'room_id': roomId,
-        'user_id': userId,
-        'role': 'member',
-      });
-    }
-
-    return roomId;
+    if (result == null) return null;
+    return result as String;
   }
 
   /// Fetches all chat rooms the user is a member of, ordered by most recent activity.
@@ -181,15 +163,16 @@ class CharacterChatService {
     return rooms.map((r) => ChatRoom.fromJson(r)).toList();
   }
 
-  /// Fetches members of a room.
+  /// Fetches members of a room via RPC (bypasses RLS to see all members).
   Future<List<ChatRoomMember>> fetchMembers(String roomId) async {
-    final rows = await _client
-        .from('character_chat_members')
-        .select()
-        .eq('room_id', roomId)
-        .order('joined_at');
+    final rows = await _client.rpc(
+      'get_chat_room_members',
+      params: {'p_room_id': roomId},
+    ) as List;
 
-    return rows.map((r) => ChatRoomMember.fromJson(r)).toList();
+    return rows
+        .map((r) => ChatRoomMember.fromJson(Map<String, dynamic>.from(r)))
+        .toList();
   }
 
   // ── Message operations ──
@@ -262,12 +245,12 @@ class CharacterChatService {
     });
   }
 
+  /// Removes a member from a room (admin action via RPC).
   Future<void> removeMember(String roomId, String userId) async {
-    await _client
-        .from('character_chat_members')
-        .delete()
-        .eq('room_id', roomId)
-        .eq('user_id', userId);
+    await _client.rpc(
+      'remove_chat_room_member',
+      params: {'p_room_id': roomId, 'p_target_user_id': userId},
+    );
   }
 
   Future<void> leaveRoom(String roomId, String userId) async {

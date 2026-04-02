@@ -35,6 +35,12 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 30. **030_custom_judge_battlefield.sql** — `is_active_for_battle` column on `custom_judges`
 31. **031_judge_avatars_bucket.sql** — `judge-avatars` storage bucket with RLS policies
 32. **032_character_chat.sql** — `character_chat_rooms`, `character_chat_members`, `character_chat_messages`, `user_friends`; RLS; Realtime on messages
+33. **033_fix_chat_rls_circular.sql** — Fix circular RLS policies on chat rooms/members (partial — still had self-referential co-members policy)
+34. **034_fix_chat_rls_recursion_v2.sql** — Drop ALL self-referential policies on character_chat_members; add RPCs: `get_chat_room_members`, `remove_chat_room_member`, `join_chat_room_by_code`
+35. **035_surprise_roulette.sql** — `roulette_result` column on surprises for Surprise Roulette feature
+36. **036_future_letter.sql** — `future_letter_judge_persona` column + `surprise_type` check update for Love Letters from the Future
+37. **037_phantom_judge.sql** — `phantom_events` table + `had_phantom` on surprises for Phantom Judge Takeover
+38. **038_forensics.sql** — `forensics_reports` table for Emotional Forensics post-battle analysis
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 

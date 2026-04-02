@@ -1153,4 +1153,128 @@ TRANSFORMED MESSAGE:''';
     }
     return text;
   }
+
+  // ── Emotional Forensics ──
+
+  /// Analyzes a battle transcript and returns a communication DNA report.
+  /// Returns parsed JSON map or null on failure.
+  Future<Map<String, dynamic>?> generateForensicsReport(
+      String transcript) async {
+    final prompt = '''
+You are a warm, empathetic relationship communication analyst. You specialize in understanding how couples express love, resolve conflict, and persuade each other.
+
+Analyze this battle transcript from a couples persuasion game. The SEEKER is trying to convince an AI judge to unlock a surprise from their partner.
+
+TRANSCRIPT:
+$transcript
+
+ANALYSIS RULES:
+- Always be POSITIVE and growth-oriented
+- Never criticize or judge negatively
+- Frame observations as strengths and opportunities
+- Be specific — reference actual phrases or patterns from the transcript
+
+Return ONLY valid JSON (no markdown, no code blocks) in this exact format:
+{
+  "communication_dna": {
+    "logical": <0-100 how much they use logic/reasoning>,
+    "emotional": <0-100 how much they use emotional appeals>,
+    "humorous": <0-100 how much they use humor/playfulness>,
+    "poetic": <0-100 how much they use poetic/romantic language>
+  },
+  "hidden_signals": [
+    "<observation 1 about an emotional undercurrent>",
+    "<observation 2 about a communication pattern>",
+    "<observation 3 about relationship dynamic>"
+  ],
+  "growth_edge": "<one positive observation about how they could grow as communicators>",
+  "superpower": "<their dominant communication style as a title, e.g. 'Emotional Persuader', 'Logic Master', 'Comedy Genius', 'Poetic Soul', 'Balanced Communicator'>"
+}''';
+
+    try {
+      final response =
+          await _freeformModel.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      return _parseJsonFromResponse(text);
+    } catch (e) {
+      debugPrint('[AiJudgeService] Forensics error: $e');
+      return null;
+    }
+  }
+
+  // ── Phantom Judge Takeover ──
+
+  /// Generates a response from a phantom judge persona during a takeover.
+  /// Returns plain text (not JSON) — the phantom speaks freely.
+  Future<String> phantomJudgeResponse({
+    required String seekerMessage,
+    required String phantomName,
+    required String phantomSystemPrompt,
+    required String originalJudgeName,
+    required List<String> battleContext,
+  }) async {
+    final contextBlock = battleContext.isEmpty
+        ? ''
+        : 'Recent battle messages:\n${battleContext.take(5).join('\n')}\n\n';
+
+    final prompt = '''
+$phantomSystemPrompt
+
+CONTEXT: You have temporarily taken over a persuasion battle from $originalJudgeName.
+The seeker is trying to unlock a surprise. You are NOT the regular judge — you are a PHANTOM who has crashed the battle.
+
+$contextBlock
+The seeker just said: "$seekerMessage"
+
+Respond in character (2-3 sentences max). Be wild, memorable, and entertaining.
+React to what the seeker said but through your unique phantom lens.
+Do NOT include any JSON or metadata. Output ONLY your spoken response.''';
+
+    final response = await _textModel.generateContent([Content.text(prompt)]);
+    return response.text?.trim() ?? 'ERROR: The phantom has vanished...';
+  }
+
+  // ── Love Letters from the Future ──
+
+  /// Rewrites [originalText] in the voice of the judge persona aged 20 years —
+  /// wiser, more tender, but still in character. Uses [coupleMemories] for personalization.
+  Future<String> rewriteAsFutureJudge({
+    required String originalText,
+    required String personaName,
+    required String personaPrompt,
+    List<String> coupleMemories = const [],
+  }) async {
+    final memoriesBlock = coupleMemories.isEmpty
+        ? ''
+        : '''
+COUPLE MEMORIES (from past battles you've judged):
+${coupleMemories.map((m) => '- $m').join('\n')}
+''';
+
+    final prompt = '''
+You are $personaName from Winkidoo — but 20 years in the future. You've watched this couple grow over two decades. You are wiser, more tender, and more philosophical now, but still unmistakably YOU. Your voice has matured but your personality core remains.
+
+YOUR ORIGINAL PERSONALITY:
+$personaPrompt
+
+$memoriesBlock
+YOUR TASK:
+A partner wrote this love letter to their significant other. You have been guarding it through time, waiting for this moment to deliver it. Rewrite the letter in YOUR aged, wiser voice — preserving every core sentiment but adding the weight and wisdom of 20 years.
+
+RULES:
+- Keep the emotional core of the original message intact
+- Add the perspective of time: nostalgia, growth, earned tenderness
+- Stay in character — you are still $personaName, just older and wiser
+- Start with a brief intro line addressing the recipient (e.g., "I've been holding this for you...")
+- Keep it 2-3 paragraphs. Not too long, but deeply felt.
+- Do NOT include meta-commentary. Output ONLY the rewritten letter.
+
+ORIGINAL LETTER:
+$originalText
+
+FUTURE LETTER:''';
+
+    final response = await _textModel.generateContent([Content.text(prompt)]);
+    return response.text?.trim() ?? originalText;
+  }
 }

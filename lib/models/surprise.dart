@@ -28,6 +28,9 @@ class Surprise {
     this.isCollaborative = false,
     this.collabPartnerPieceEncrypted,
     this.collabPartnerStatus = 'pending',
+    this.rouletteResult,
+    this.futureLetterJudgePersona,
+    this.hadPhantom = false,
   });
 
   final String id;
@@ -62,6 +65,20 @@ class Surprise {
   /// pending = partner hasn't added piece yet; added = ready for battle
   final String collabPartnerStatus;
 
+  /// Roulette: null = normal, 'pending' = not spun yet, or result value
+  final String? rouletteResult;
+
+  /// Future Letter: which judge persona to use for the aged rewrite
+  final String? futureLetterJudgePersona;
+
+  /// Whether a phantom judge appeared during this battle
+  final bool hadPhantom;
+
+  bool get isFutureLetter => surpriseType == 'future_letter';
+  bool get isRoulette => rouletteResult != null;
+  bool get isRoulettePending => rouletteResult == 'pending';
+  bool get isChaosMode => rouletteResult == 'chaos';
+  bool get isGoldenHour => rouletteResult == 'golden';
   bool get isPhoto => surpriseType == 'photo';
   bool get isVoice => surpriseType == 'voice';
   bool get isQuestSurprise => questId != null;
@@ -112,6 +129,10 @@ class Surprise {
           json['collab_partner_piece_encrypted'] as String?,
       collabPartnerStatus:
           (json['collab_partner_status'] as String?) ?? 'pending',
+      rouletteResult: json['roulette_result'] as String?,
+      futureLetterJudgePersona:
+          json['future_letter_judge_persona'] as String?,
+      hadPhantom: json['had_phantom'] as bool? ?? false,
     );
   }
 
@@ -145,6 +166,9 @@ class Surprise {
       'is_collaborative': isCollaborative,
       'collab_partner_piece_encrypted': collabPartnerPieceEncrypted,
       'collab_partner_status': collabPartnerStatus,
+      'roulette_result': rouletteResult,
+      'future_letter_judge_persona': futureLetterJudgePersona,
+      'had_phantom': hadPhantom,
     };
   }
 }

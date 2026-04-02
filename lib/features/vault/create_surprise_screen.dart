@@ -46,6 +46,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   String _judgePersona = AppConstants.personaSassyCupid;
   String? _customJudgeId;
   int _difficulty = 2;
+  bool _isRoulette = false;
   int _autoDeleteHours = 0;
   DateTime? _unlockAfter;
   bool _isTimeCapsule = false;
@@ -185,7 +186,29 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   }
 
   Future<void> _submit() async {
-    if (_surpriseType == 'text') {
+    if (_surpriseType == 'future_letter') {
+      final content = _contentController.text.trim();
+      if (content.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Write your letter first!'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+        return;
+      }
+      if (_unlockAfter == null) {
+        // Force time capsule for future letters
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Set a delivery date for your future letter!'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+        return;
+      }
+      await _submitFutureLetter(content);
+    } else if (_surpriseType == 'text') {
       final content = _contentController.text.trim();
       if (content.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -222,6 +245,61 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     }
   }
 
+  Future<void> _submitFutureLetter(String content) async {
+    setState(() => _isLoading = true);
+    try {
+      final client = ref.read(supabaseClientProvider);
+      final couple = ref.read(coupleProvider).value;
+      final userId = ref.read(currentUserProvider)?.id;
+      if (couple == null || userId == null) throw Exception('Not linked');
+
+      final encrypted =
+          await EncryptionService.encrypt(content, coupleId: couple.id);
+      final id = const Uuid().v4();
+
+      await client.from('surprises').insert({
+        'id': id,
+        'couple_id': couple.id,
+        'creator_id': userId,
+        'content_encrypted': encrypted,
+        'unlock_method': 'persuade',
+        'judge_persona': _judgePersona,
+        'difficulty_level': 1,
+        'is_unlocked': false,
+        'battle_status': 'active',
+        'surprise_type': 'future_letter',
+        'future_letter_judge_persona': _judgePersona,
+        if (_unlockAfter != null)
+          'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
+      });
+
+      ref.invalidate(surprisesListProvider);
+      await XpService.awardXp(
+          client, couple.id, AppConstants.xpPerSurpriseCreated);
+      ref.invalidate(coupleXpProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Future letter sealed! It will arrive on the date you chose.'),
+            backgroundColor: AppTheme.primary,
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _submitText(String content) async {
     setState(() => _isLoading = true);
     try {
@@ -246,12 +324,13 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'unlock_method': _unlockMethod,
         'judge_persona': _judgePersona,
         if (_customJudgeId != null) 'custom_judge_id': _customJudgeId,
-        'difficulty_level': _difficulty,
+        'difficulty_level': _isRoulette ? 3 : _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
         'battle_status': 'active',
         'surprise_type': 'text',
         'is_collaborative': _isCollaborative,
+        if (_isRoulette) 'roulette_result': 'pending',
         if (_unlockAfter != null)
           'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
       });
@@ -315,12 +394,13 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'unlock_method': _unlockMethod,
         'judge_persona': _judgePersona,
         if (_customJudgeId != null) 'custom_judge_id': _customJudgeId,
-        'difficulty_level': _difficulty,
+        'difficulty_level': _isRoulette ? 3 : _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
         'battle_status': 'active',
         'surprise_type': 'photo',
         'content_storage_path': path,
+        if (_isRoulette) 'roulette_result': 'pending',
         if (_unlockAfter != null)
           'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
       });
@@ -382,12 +462,13 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
         'unlock_method': _unlockMethod,
         'judge_persona': _judgePersona,
         if (_customJudgeId != null) 'custom_judge_id': _customJudgeId,
-        'difficulty_level': _difficulty,
+        'difficulty_level': _isRoulette ? 3 : _difficulty,
         'auto_delete_at': autoDeleteAt?.toUtc().toIso8601String(),
         'is_unlocked': false,
         'battle_status': 'active',
         'surprise_type': 'voice',
         'content_storage_path': path,
+        if (_isRoulette) 'roulette_result': 'pending',
         if (_unlockAfter != null)
           'unlock_after': _unlockAfter!.toUtc().toIso8601String(),
       });
@@ -507,11 +588,74 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                                 onSelected: () =>
                                     setState(() => _surpriseType = 'voice'),
                               ),
+                              const SizedBox(width: 12),
+                              _ChoiceChip(
+                                label: 'Future Letter',
+                                selected: _surpriseType == 'future_letter',
+                                onSelected: () => setState(() {
+                                  _surpriseType = 'future_letter';
+                                  _isTimeCapsule = true;
+                                }),
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 24),
-                        if (_surpriseType == 'text') ...[
+                        if (_surpriseType == 'future_letter') ...[
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusMedium),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.purple.withValues(alpha: 0.15),
+                                  Colors.indigo.withValues(alpha: 0.10),
+                                ],
+                              ),
+                              border:
+                                  Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Write a letter to your partner\'s future self',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'On the delivery date, the AI judge will rewrite it in their voice — 20 years wiser.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Your letter',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _contentController,
+                            maxLines: 6,
+                            decoration: const InputDecoration(
+                              hintText:
+                                  'Dear future you...\nWrite from the heart.',
+                            ),
+                          ),
+                        ] else if (_surpriseType == 'text') ...[
                           Text(
                             'Your secret message',
                             style: GoogleFonts.poppins(
@@ -669,29 +813,112 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                           ],
                         ),
                         const SizedBox(height: 24),
-                        Text(
-                          'Difficulty (affects score needed)',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _isRoulette
+                                    ? 'Roulette Mode'
+                                    : 'Difficulty (affects score needed)',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _isRoulette = !_isRoulette),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius.circular(AppTheme.radiusPill),
+                                  color: _isRoulette
+                                      ? AppTheme.primaryOrange
+                                      : AppTheme.glassFill,
+                                  border:
+                                      Border.all(color: AppTheme.glassBorder),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.casino,
+                                      size: 16,
+                                      color: _isRoulette
+                                          ? Colors.white
+                                          : AppTheme.homeTextSecondary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Roulette',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: _isRoulette
+                                            ? Colors.white
+                                            : AppTheme.homeTextSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
-                        Row(
-                          children: List.generate(5, (i) {
-                            final level = i + 1;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: ChoiceChip(
-                                label: Text('$level'),
-                                selected: _difficulty == level,
-                                onSelected: (v) =>
-                                    setState(() => _difficulty = level),
-                                selectedColor: AppTheme.primary,
-                              ),
-                            );
-                          }),
-                        ),
+                        if (_isRoulette)
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusMedium),
+                              color: AppTheme.glassFill,
+                              border: Border.all(color: AppTheme.glassBorder),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.casino,
+                                    size: 40, color: AppTheme.primaryOrange),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Your partner will spin the wheel before the battle!',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: AppTheme.homeTextSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Chaos Mode (10%) \u2022 Golden Hour (5%)',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppTheme.primaryOrange,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Row(
+                            children: List.generate(5, (i) {
+                              final level = i + 1;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text('$level'),
+                                  selected: _difficulty == level,
+                                  onSelected: (v) =>
+                                      setState(() => _difficulty = level),
+                                  selectedColor: AppTheme.primary,
+                                ),
+                              );
+                            }),
+                          ),
                         const SizedBox(height: 24),
                         Text(
                           'Auto-delete',
