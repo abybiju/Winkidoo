@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/models/couple.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/subscription_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 
 class CoupleNotifier extends AsyncNotifier<Couple?> {
@@ -52,8 +53,14 @@ class CoupleNotifier extends AsyncNotifier<Couple?> {
 final coupleProvider =
     AsyncNotifierProvider<CoupleNotifier, Couple?>(() => CoupleNotifier());
 
-/// Effective Wink+ status: true when couple has Wink+ or when forceWinkPlusForTesting is on (debug).
+/// Effective Wink+ status: true when couple has Wink+ (DB), RevenueCat entitlement is active,
+/// or forceWinkPlusForTesting is on (debug).
 final effectiveWinkPlusProvider = Provider<bool>((ref) {
   final couple = ref.watch(coupleProvider).value;
-  return (couple?.isWinkPlus ?? false) || AppConstants.forceWinkPlusForTesting;
+  final dbWinkPlus = couple?.isWinkPlus ?? false;
+
+  // RevenueCat entitlement (real-time from SDK).
+  final rcActive = ref.watch(rcEntitlementProvider).value ?? false;
+
+  return dbWinkPlus || rcActive || AppConstants.forceWinkPlusForTesting;
 });

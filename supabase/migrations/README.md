@@ -41,6 +41,7 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 36. **036_future_letter.sql** — `future_letter_judge_persona` column + `surprise_type` check update for Love Letters from the Future
 37. **037_phantom_judge.sql** — `phantom_events` table + `had_phantom` on surprises for Phantom Judge Takeover
 38. **038_forensics.sql** — `forensics_reports` table for Emotional Forensics post-battle analysis
+39. **039_revenuecat_webhook_log.sql** — `revenuecat_events` audit table for RevenueCat webhook events (subscription lifecycle tracking)
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 
@@ -49,5 +50,14 @@ If you see `relation "public.surprises" does not exist`, run **001** first, then
 - Deploy the Edge Function: `supabase functions deploy send_battle_notification`.
 - Set secret: `supabase secrets set FIREBASE_SERVICE_ACCOUNT='<full JSON of Firebase service account>'`.
 - In Dashboard → Database → Webhooks: (1) Create a webhook on table `public.surprises`, events **INSERT** and **UPDATE**, URL `https://<PROJECT_REF>.supabase.co/functions/v1/send_battle_notification`. (2) Create a second webhook on table `public.judges`, events **INSERT** and **UPDATE**, same URL. Payload for both: include record and old_record.
+
+### RevenueCat webhook (Edge Function)
+
+- Deploy: `supabase functions deploy revenuecat-webhook --use-api`
+- Set secret: `supabase secrets set REVENUECAT_WEBHOOK_SECRET='<your_secret>'`
+- In RevenueCat dashboard → Integrations → Webhooks:
+  - URL: `https://<PROJECT_REF>.supabase.co/functions/v1/revenuecat-webhook`
+  - Authorization header: `Bearer <REVENUECAT_WEBHOOK_SECRET>`
+- The function updates `couples.wink_plus_until` on purchase/renewal/expiration events.
 
 *Doc sync: Feb 2026 — migrations 001–010 documented; push (009–010) and Edge Function/webhook steps match docs/FIREBASE_AND_PUSH_SETUP.md.*

@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:winkidoo/services/revenuecat_service.dart';
 import 'app.dart';
 
 void main() async {
@@ -23,6 +24,10 @@ void main() async {
   }
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+
+  // RevenueCat — no-op if REVENUECAT_API_KEY is empty.
+  await RevenueCatService.init();
+
   runApp(
     const ProviderScope(
       child: WinkidooApp(),

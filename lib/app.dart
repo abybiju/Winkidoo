@@ -10,6 +10,7 @@ import 'package:winkidoo/providers/onboarding_provider.dart';
 import 'package:winkidoo/providers/theme_provider.dart';
 import 'package:winkidoo/router/app_router.dart';
 import 'package:winkidoo/services/push_service.dart';
+import 'package:winkidoo/services/revenuecat_service.dart';
 
 class WinkidooApp extends ConsumerStatefulWidget {
   const WinkidooApp({super.key});
@@ -108,6 +109,7 @@ class _WinkidooAppState extends ConsumerState<WinkidooApp> {
       final session = next.value;
       if (session != null) {
         PushService.register(Supabase.instance.client, session.user.id);
+        RevenueCatService.configureUser(session.user.id);
       }
     });
     ref.listen(coupleProvider, (_, __) => _updateRouterState());

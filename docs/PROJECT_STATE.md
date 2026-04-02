@@ -143,6 +143,20 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 036: future_letter_judge_persona + surprise_type 'future_letter' (Love Letters from the Future).
 - 037: phantom_events table + had_phantom on surprises (Phantom Judge Takeover).
 - 038: forensics_reports table (Emotional Forensics).
+- 039: revenuecat_events audit table (RevenueCat webhook lifecycle tracking).
+
+### April 2, 2026 — RevenueCat IAP / Wink+ Monetization
+- **RevenueCat SDK** (`purchases_flutter ^8.1.0`): Full IAP integration for Wink+ subscriptions.
+- **RevenueCatService** (`lib/services/revenuecat_service.dart`): Init SDK, configure user, fetch offerings, purchase, restore, real-time entitlement listener, auto-sync `wink_plus_until` to Supabase.
+- **Subscription providers** (`lib/providers/subscription_provider.dart`): `rcEntitlementProvider` (stream of entitlement status), `rcOfferingsProvider` (pricing), `purchaseNotifierProvider` (purchase state machine).
+- **effectiveWinkPlusProvider** updated: checks RevenueCat entitlement OR DB `wink_plus_until` OR debug override.
+- **WinkPlusScreen rebuilt as paywall**: shows benefits, real product pricing from RevenueCat, monthly/yearly toggle with radio selection, purchase button with loading state, restore purchases link, success/error feedback, legal disclaimer.
+- **Profile settings**: "Restore purchases" option added to `_SettingsCard`.
+- **main.dart**: `RevenueCatService.init()` called after Supabase init; user configured on auth state change in `app.dart`.
+- **Edge Function** (`supabase/functions/revenuecat-webhook/`): Receives RevenueCat webhook events, logs to `revenuecat_events`, updates `couples.wink_plus_until` for purchase/renewal/expiration.
+- **Migration 039**: `revenuecat_events` audit table with service_role-only RLS.
+- **Environment**: `REVENUECAT_API_KEY` via `--dart-define`, `REVENUECAT_WEBHOOK_SECRET` as Supabase secret.
+- **Graceful degradation**: If no API key provided, SDK skips init; paywall shows informational message; all existing functionality unchanged.
 
 ### March 31, 2026 — UX overhaul + AI Character Chat
 - **Home screen simplified**: removed Daily Dare, Mini-Game, Battle Packs, Campaigns, Judge Spotlight cards. Home now shows only: Hero avatar rail, Start a Battle CTA, Quest progress, Recent Wins.
@@ -188,8 +202,11 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Next / optional
 
+- Configure RevenueCat dashboard: create project, add App Store/Google Play apps, create "wink_plus" entitlement, "default" offering with monthly ($4.99) and yearly ($29.99) packages.
+- Create subscription products in App Store Connect and Google Play Console.
+- Deploy revenuecat-webhook Edge Function and set REVENUECAT_WEBHOOK_SECRET.
+- Test full purchase flow on physical device (sandbox accounts).
 - Test Character Chat end-to-end with two accounts (invite code join + realtime messages).
-- IAP/Stripe for Wink+ (RevenueCat — wink_plus_until set by backend).
 - Onboarding polish (guided first experience, welcome gift, first surprise prompt).
 - Test push notifications end-to-end with two accounts.
 - AI Love Coach (opt-in relationship insights from surprise patterns).

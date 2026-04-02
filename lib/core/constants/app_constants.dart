@@ -12,6 +12,24 @@ class AppConstants {
   /// When true (debug only), treat as Wink+ for testing: all personas + 10 free attempts. Must be false in release.
   static const bool forceWinkPlusForTesting = kDebugMode;
 
+  // ── RevenueCat ──
+
+  /// RevenueCat API key — passed via --dart-define=REVENUECAT_API_KEY=...
+  /// Use the Apple API key on iOS/macOS, Google on Android. For simplicity we use one key here;
+  /// to split per-platform, add REVENUECAT_GOOGLE_API_KEY and switch in RevenueCatService.
+  static const String revenueCatApiKey =
+      String.fromEnvironment('REVENUECAT_API_KEY', defaultValue: '');
+
+  /// Entitlement identifier configured in RevenueCat dashboard.
+  static const String rcEntitlementWinkPlus = 'wink_plus';
+
+  /// Offering identifier (default offering).
+  static const String rcOfferingDefault = 'default';
+
+  /// Product identifiers (must match App Store Connect / Google Play Console).
+  static const String rcProductMonthly = 'winkplus_monthly';
+  static const String rcProductYearly = 'winkplus_yearly';
+
   /// Free tier: 3 judge attempts per day
   static const int freeAttemptsPerDay = 3;
 
