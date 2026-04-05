@@ -140,31 +140,63 @@ This is the first release of Winkidoo — the AI-powered couples game where your
 ## Store Graphic Requirements Checklist
 
 ### App Icon
-- [ ] 512×512 px PNG, no alpha, no rounding (Google rounds it)
-- Source: `assets/images/winkidoo new logo.png` — **needs export at 512×512**
+- [x] 512×512 px PNG — `store/icon_512.png` ✅
+- [ ] Still needs: verify no alpha channel, export sharp edges before uploading
 
 ### Feature Graphic (required for any promotion)
-- [ ] 1024×500 px JPG/PNG
-- Design: Dark nebula background, "Winkidoo" wordmark, tagline "Convince the judge. Unlock the love."
+- [x] Generated — `store/feature_graphic_1024x500.png` ✅
+- [ ] Still needs: crop/export to exact **1024×500 px** (current file is square output)
 
-### Screenshots (minimum 2, max 8 per device type)
-Required device types:
-- [ ] **Phone** — at least 2 screenshots (16:9 or 9:16, min 320px, max 3840px on longest side)
-- [ ] **7-inch tablet** — optional but recommended
-- [ ] **10-inch tablet** — optional but recommended
+### Screenshots — Polished Showcase Cards ✅
+All stored in `store/`. Upload these in Play Console → App Content → Store Listing → Phone.
 
-Suggested screenshot scenes:
-1. Home screen / couple dashboard (streak, XP, battle pass)
-2. Battlefield — judge selection screen
-3. Battle chat screen — live scoring in action
-4. Reveal screen — confetti unlock moment
-5. Wink+ paywall
-6. Custom judge creator
-7. Daily Dare screen
-8. Treasure Archive / Vault
+| File | Headline | Screen | Theme |
+|---|---|---|---|
+| `showcase_01_vault.png` | "Your surprise is locked 🔒" | Vault | Amber nebula |
+| `showcase_02_the_ex.png` | "Pick your judge. Win the case 💔" | The Ex judge | Noir crimson |
+| `showcase_03_create_judge.png` | "Any personality. Any mood 🎭" | Create Judge | Purple aurora |
+| `showcase_04_home.png` | "Challenge your partner 🔥" | Home screen | Orange fire |
+| `showcase_05_adventures.png` | "Adventures await 🧙" | Play / Romantic Poet | Mystic violet |
+| `showcase_06_marketplace.png` | "Your judge. Your rules 🏆" | Judge Marketplace | Electric blue |
+| `showcase_07_daily_play.png` | "Daily dares. Daily wins 💕" | Daily Activities | Pink magenta |
+| `showcase_08_profile.png` | "Your love. Your stats 💜" | Profile | Constellation purple |
+| `showcase_09_achievements.png` | "Every win. Remembered 🏆" | Achievements / Features | Gold trophy |
+| `showcase_10_jimmy_fallon.png` | "Celebrity judges. Real reactions 😂" | Jimmy Fallon judge | Spotlight pink |
+
+> **Play Store allows max 8 phone screenshots.** Recommended upload order:
+> 1. `showcase_02_the_ex.png` — most visually striking, first impression
+> 2. `showcase_01_vault.png` — core concept
+> 3. `showcase_04_home.png` — app overview
+> 4. `showcase_03_create_judge.png` — unique feature
+> 5. `showcase_06_marketplace.png` — community depth
+> 6. `showcase_07_daily_play.png` — daily engagement
+> 7. `showcase_05_adventures.png` — content depth
+> 8. `showcase_09_achievements.png` — progression/retention
 
 ### Short promo video (optional, 30 sec max)
-- [ ] Upload to YouTube and link in Play Console
+- [ ] Record screen capture of battle flow → upload to YouTube → link in Play Console
+
+---
+
+## Complete Store Asset Directory
+
+```
+store/
+├── icon_512.png                     ← App icon (512×512) ✅
+├── feature_graphic_1024x500.png     ← Feature graphic (needs crop) ✅
+├── showcase_01_vault.png            ← Screenshot 1 ✅
+├── showcase_02_the_ex.png           ← Screenshot 2 ✅
+├── showcase_03_create_judge.png     ← Screenshot 3 ✅
+├── showcase_04_home.png             ← Screenshot 4 ✅
+├── showcase_05_adventures.png       ← Screenshot 5 ✅
+├── showcase_06_marketplace.png      ← Screenshot 6 ✅
+├── showcase_07_daily_play.png       ← Screenshot 7 ✅
+├── showcase_08_profile.png          ← Screenshot 8 ✅
+├── showcase_09_achievements.png     ← Screenshot 9 ✅
+├── showcase_10_jimmy_fallon.png     ← Screenshot 10 ✅
+├── privacy_policy.md                ← Privacy policy copy ✅
+└── store_listing.md                 ← This file ✅
+```
 
 ---
 
