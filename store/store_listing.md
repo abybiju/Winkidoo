@@ -7,19 +7,19 @@ Winkidoo: AI Couples Surprise Game
 
 ## Short Description (80 chars max)
 ```
-Convince the AI judge, unlock love. The ultimate couples surprise vault.
+Hide surprises. Battle AI judges. Unlock the fun with friends & partners.
 ```
 
 ## Full Description (4,000 chars max)
 
 ```
-💌 Winkidoo — The AI-Powered Couples Surprise Game
+💌 Winkidoo — The AI-Powered Surprise Game
 
-Surprise your partner. Let the judge decide.
+Surprise someone you care about. Let the judge decide.
 
-Winkidoo is the couples relationship game where one of you hides a romantic surprise — a message, photo, or voice note — and the other must convince a sassy AI judge to let you in. The judge scores every argument. The more persuasive you are, the sooner the vault opens.
+Winkidoo is the social game where you hide a surprise — a message, photo, or voice note — and the other person must convince a sassy AI judge to unlock it. The judge scores every argument. The more persuasive you are, the sooner the vault opens.
 
-It's flirty. It's playful. It's you and your partner vs the judge.
+Play with your partner, best friend, or anyone. It's fun, competitive, and totally unpredictable.
 
 ───────────────────────────
 🎭 CHOOSE YOUR JUDGE
@@ -37,9 +37,9 @@ Or create your own custom judge with a name, personality, and avatar — powered
 ───────────────────────────
 💌 HOW IT WORKS
 ───────────────────────────
-1. **Creator** — Lock in a text message, photo, or voice note with a difficulty level.
-2. **Seeker** — Chat with the AI judge and build your case. Every message is scored.
-3. **Verdict** — Hit the unlock threshold and the surprise is revealed with confetti. Fail and get a teasing hint.
+1. Lock in a text message, photo, or voice note with a difficulty level.
+2. Your friend or partner chats with the AI judge and builds their case. Every message is scored.
+3. Hit the unlock threshold and the surprise is revealed with confetti. Fail and get a teasing hint.
 
 No two battles feel the same.
 
@@ -48,11 +48,11 @@ No two battles feel the same.
 ───────────────────────────
 🔐 End-to-end encrypted surprises — we literally cannot read them
 🎮 Battle chat with real-time scoring (persuasion vs resistance)
-📸 Photo and voice note surprises  
-🏆 Couple XP, streaks, and a shared Battle Pass
+📸 Photo and voice note surprises
+🏆 XP, streaks, and a shared Battle Pass
 🃏 Collectible battle cards you can share
-🎯 Daily Love Dares and couple mini-games
-📖 Story Campaigns — guided romantic quest chains
+🎯 Daily Dares and mini-games
+📖 Story Campaigns — guided quest chains
 🗂️ Treasure Archive — relive every unlock
 🤖 Custom judge creator with AI-generated personas
 🌌 Surprise Roulette — randomised chaos battles
@@ -71,14 +71,15 @@ Available as Monthly or Yearly subscription via Google Play.
 ───────────────────────────
 🔒 PRIVACY & SECURITY
 ───────────────────────────
-Your surprises are encrypted end-to-end before they ever reach our servers. Only you and your partner can read them. We never see your content.
+Your surprises are encrypted end-to-end before they ever reach our servers. Only you and the recipient can read them. We never see your content.
 
 ───────────────────────────
-💑 PERFECT FOR
+🎉 PERFECT FOR
 ───────────────────────────
-• Long-distance couples who want to stay connected
-• Couples who love games and friendly competition
-• Anyone who wants to add a spark to their relationship
+• Friends who love games and friendly competition
+• Couples who want to add a spark to their relationship
+• Long-distance friends and partners staying connected
+• Anyone who wants a fun, creative way to surprise someone
 
 Download Winkidoo and start your first battle. 💌
 ```
@@ -94,17 +95,17 @@ Download Winkidoo and start your first battle. 💌
 *(Submit IARC questionnaire during setup)*
 
 ## Target Audience
-- Couples aged 17–35
-- Long-distance relationship users
-- Gamers in relationships
+- Friends and couples aged 17–35
+- Long-distance friends and relationship users
+- Gamers who enjoy social challenges
 
 ---
 
 ## Keywords / Tags (for ASO)
 ```
-couples app, relationship game, romantic game, AI judge, surprise vault,
-love game, couples game, long distance relationship, couple activities,
-anniversary gift, romantic messages, couples challenge
+surprise game, AI judge, friends game, couples game, surprise vault,
+social game, party game, long distance friends, challenge game,
+fun with friends, romantic game, relationship game
 ```
 
 ---
