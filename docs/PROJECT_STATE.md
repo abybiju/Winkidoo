@@ -198,14 +198,35 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - **Rate Limiting**: 3 custom judges/day per couple (bypassed in debug mode), Gemini spend cap guidance
 - **Environment**: Added TAVILY_API_KEY via --dart-define
 
+### April 4, 2026 — Android Launch Prep
+
+- **`store/` directory created** — all Play Store assets live here.
+- **Privacy Policy** (`store/privacy_policy.md`): Full Play Store-compliant policy covering Supabase, Firebase, RevenueCat, Google Gemini API, OAuth providers, E2E encryption disclosure, data retention, GDPR rights, children's policy (17+). Needs hosting at `https://winkidoo.app/privacy`.
+- **Store Listing copy** (`store/store_listing.md`): App name, short description (80 chars), full keyword-optimised description, First Release "What's New" notes, Data Safety form table, and graphics requirements checklist.
+- **Play Store feature graphic** (1024×500): Generated dark nebula background with neon-orange Winkidoo wordmark and golden locked-envelope icon. Needs crop to exact 1024×500 from the generated square.
+- **Showcase cards** (4 generated): Judge Selection, Battle Chat, Reveal/Unlock, Create Surprise — AI-illustrated phone mockup cards with headlines and subtitles. Real app screenshots pending for final production cards.
+- **`android/app/build.gradle.kts`**: Full release signing config wired — reads `android/key.properties` at build time; falls back to debug signing if file absent (local dev friendly). Keystore file itself not yet created.
+- **`android/app/src/main/AndroidManifest.xml`**: Capitalised app label to `"Winkidoo"`; added `INTERNET` and `POST_NOTIFICATIONS` (Android 13+ FCM) permissions.
+- **`.gitignore`**: Added `android/key.properties` and `android/upload-keystore.jks` guards.
+
+**Remaining Android launch blockers (in order):**
+1. Create Google Play Developer account ($25 at play.google.com/console)
+2. Host privacy policy publicly (URL required before Play Console submission)
+3. Generate release keystore (`keytool` command in `store/android_launch_checklist.md` Phase 3)
+4. Export 512×512 app icon PNG from `assets/images/winkidoo new logo.png`
+5. Crop feature graphic to 1024×500 px
+6. Take real app screenshots → polish into showcase cards
+7. Create `winkplus_monthly` + `winkplus_yearly` products in Play Console
+8. Run `flutter build appbundle --release` and upload to Internal Testing
+
 ---
 
 ## Next / optional
 
-- Configure RevenueCat dashboard: create project, add App Store/Google Play apps, create "wink_plus" entitlement, "default" offering with monthly ($4.99) and yearly ($29.99) packages.
-- Create subscription products in App Store Connect and Google Play Console.
-- Deploy revenuecat-webhook Edge Function and set REVENUECAT_WEBHOOK_SECRET.
-- Test full purchase flow on physical device (sandbox accounts).
+- **Android launch** — see blockers list above; Google Play account is the immediate gate.
+- Configure RevenueCat dashboard: create project, add Google Play app, create `wink_plus` entitlement, `default` offering with monthly/yearly packages.
+- Deploy `revenuecat-webhook` Edge Function and set `REVENUECAT_WEBHOOK_SECRET` in Supabase secrets.
+- Test full RevenueCat purchase flow on physical Android device (sandbox account).
 - Test Character Chat end-to-end with two accounts (invite code join + realtime messages).
 - Onboarding polish (guided first experience, welcome gift, first surprise prompt).
 - Test push notifications end-to-end with two accounts.

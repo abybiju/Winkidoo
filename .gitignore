@@ -56,3 +56,8 @@ android/app/google-services.json
 
 # Firebase (per-device; download from Firebase Console for Winkidoo project)
 ios/Runner/GoogleService-Info.plist
+
+# Android signing — NEVER commit these (back up securely outside the repo)
+android/key.properties
+android/upload-keystore.jks
+*.jks
