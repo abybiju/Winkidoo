@@ -153,7 +153,9 @@ userProfileMetaProvider, isProfileCompleteProvider, missingProfileFieldsProvider
 | Service | File | Responsibility | Owns Supabase calls? |
 |---|---|---|---|
 | `AiJudgeService` | `services/ai_judge_service.dart` | Gemini Flash API; `judgeChat()` live chat, `getHint()`. JSON parse with retry. Structured JSON schema validation. | No |
-| `EncryptionService` | `services/encryption_service.dart` | AES-256 encrypt/decrypt. Key from `coupleId + 'winkidoo-v1'`. | No |
+| `EncryptionService` | `services/encryption_service.dart` | AES-256 encrypt/decrypt. Key derived via SHA-256 from coupleId + salt. Backward-compatible decrypt falls back to legacy key. | No |
+| `AuthRateLimiter` | `services/auth_rate_limiter.dart` | In-memory rate limiting for login (5/15min), signup (3/30min), reset (3/hr) per email. Bypassed in debug. | No |
+| `PasswordValidator` | `services/password_validator.dart` | Signup password strength: 8+ chars, uppercase, lowercase, number. | No |
 | `BattleRealtimeService` | `services/battle_realtime_service.dart` | Channel subscribe/unsubscribe for `battle_messages` + `surprises` row during a battle. One channel per `surpriseId`. | Yes (Realtime only) |
 | `BattleService` | `services/battle_service.dart` | `resolveAsSeekerWin()` — single Supabase UPDATE to mark surprise resolved. | Yes |
 | `PushService` | `services/push_service.dart` | FCM token upsert on login; `onTokenRefresh` listener. Multi-device: `user_push_tokens` table. | Yes |

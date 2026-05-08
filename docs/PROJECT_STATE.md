@@ -4,7 +4,14 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ---
 
-## Implemented (as of Mar 2026)
+## Implemented (as of May 2026)
+
+### May 8, 2026 – Authentication security hardening
+- **Client-side rate limiting:** New `AuthRateLimiter` service — login (5/15min), signup (3/30min), password reset (3/hr) per email. Bypassed in debug mode.
+- **Stronger password policy:** New `PasswordValidator` — 8+ chars, uppercase, lowercase, number required on signup.
+- **Email verification enforcement:** Login now checks `emailConfirmedAt` — signs out and blocks unverified users client-side (defense-in-depth; Supabase "Confirm email" is also ON).
+- **SHA-256 encryption keys:** `EncryptionService` key derivation upgraded from naive concat+zero-pad to SHA-256. Backward-compatible decryption falls back to legacy key for existing data.
+- **Supabase dashboard verified:** Rate limits configured (30 signins/5min per IP, 2 emails/hr), refresh token replay detection ON (10s), email confirmation ON. CAPTCHA toggled but NOT saved (needs Flutter hCaptcha integration first). Sessions config locked behind Pro Plan.
 
 ### March 4, 2026 – Home/Vault/Footer redesign + avatar profiles + visual parity pass
 - **Top bar parity:** `WinkidooTopBar` adds `matchLogoToWordmark` so logo scales to wordmark presence on Home/Vault.
