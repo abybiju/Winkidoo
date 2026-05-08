@@ -9,6 +9,7 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/services/auth_rate_limiter.dart';
 import 'package:winkidoo/services/password_validator.dart';
+import 'package:winkidoo/services/security_logger.dart';
 
 const double _kFieldHeight = 58.0;
 const double _kRadius = 20.0;
@@ -52,11 +53,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (_isSignUp) {
       if (!AuthRateLimiter.canAttemptSignUp(email)) {
+        SecurityLogger.rateLimited(email, 'signup');
         _showError('Too many sign-up attempts. Please try again later.');
         return;
       }
     } else {
       if (!AuthRateLimiter.canAttemptLogin(email)) {
+        SecurityLogger.rateLimited(email, 'login');
         final secs = AuthRateLimiter.secondsUntilLoginAllowed(email);
         final mins = (secs / 60).ceil();
         _showError('Too many login attempts. Try again in $mins min.');
@@ -73,9 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           email: email,
           password: _passwordController.text,
         );
-        // Supabase returns a user with identities == [] when email
-        // confirmation is required and the user already exists — treat
-        // as success to avoid leaking whether an account exists.
+        SecurityLogger.authSuccess(email, 'signup');
         if (mounted) {
           if (response.user?.emailConfirmedAt == null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -95,8 +96,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           email: email,
           password: _passwordController.text,
         );
-        // Block unverified email accounts
         if (response.user != null && response.user!.emailConfirmedAt == null) {
+          SecurityLogger.authFailure(email, 'login', 'email_not_verified');
           await client.auth.signOut();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -111,8 +112,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
           return;
         }
+        SecurityLogger.authSuccess(email, 'login');
       }
     } catch (e) {
+      SecurityLogger.authFailure(email, _isSignUp ? 'signup' : 'login', e.toString());
       _showError(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -208,6 +211,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
 
     if (!AuthRateLimiter.canAttemptReset(email)) {
+      SecurityLogger.rateLimited(email, 'password_reset');
       final secs = AuthRateLimiter.secondsUntilResetAllowed(email);
       final mins = (secs / 60).ceil();
       _showError('Too many reset attempts. Try again in $mins min.');
