@@ -10,6 +10,8 @@ import 'package:winkidoo/providers/ai_judge_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 
 /// Reveal screen for Future Letter surprises.
@@ -48,6 +50,18 @@ class _FutureLetterRevealScreenState
 
   Future<void> _loadAndTransform() async {
     try {
+      final userId = ref.read(currentUserProvider)?.id ?? '';
+      final rl = ApiRateLimiter.checkAndRecord('ai_future_letter', userId);
+      if (!rl.allowed) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(rl.userMessage), backgroundColor: AppTheme.error),
+          );
+          setState(() => _loading = false);
+        }
+        return;
+      }
+
       final surprise =
           await ref.read(surpriseByIdProvider(widget.surpriseId).future);
       if (surprise == null) throw Exception('Surprise not found');

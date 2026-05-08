@@ -51,6 +51,8 @@ Migrations in `supabase/migrations/` must be run **manually** in numeric order v
 | 038 | `038_forensics.sql` | `forensics_reports` table for Emotional Forensics |
 | 039 | `039_revenuecat_webhook_log.sql` | `revenuecat_events` audit table for RevenueCat webhook lifecycle |
 | 040 | `040_join_couple_by_code_rpc.sql` | Secure `join_couple_by_code` RPC — ownership validation, duplicate-join prevention, race-condition guard |
+| 041 | `041_security_logs.sql` | `security_logs` table — auth/API event monitoring; write-only from client; indexed by event_type + user_id |
+| 042 | `042_rate_limits.sql` | `rate_limit_entries` table + `check_rate_limit` RPC — server-side sliding-window rate limiting per user/action |
 
 **Note:** Migrations `010a` and `010b` are independent of each other but both depend on `001`. Run all files in filename order. Both `010_` files must be applied.
 

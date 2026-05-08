@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 /// Client-side encryption for surprise content.
 /// Server only stores ciphertext. Key is derived from couple id via SHA-256;
@@ -27,6 +28,8 @@ class EncryptionService {
   }
 
   static Future<String> encrypt(String plainText, {String? coupleId}) async {
+    assert(kDebugMode || coupleId != null,
+        'coupleId must not be null in release builds');
     final keyString = coupleId != null
         ? _keyFromCoupleId(coupleId)
         : 'default-key-for-mvp-32bytes!!';

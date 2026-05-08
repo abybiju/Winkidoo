@@ -14,6 +14,7 @@ import 'package:winkidoo/providers/ai_judge_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/character_chat_provider.dart';
 import 'package:winkidoo/services/character_chat_realtime_service.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/character_chat_service.dart';
 
 class CharacterChatScreen extends ConsumerStatefulWidget {
@@ -72,6 +73,17 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     final user = ref.read(currentUserProvider);
     if (user == null) {
       setState(() => _isSending = false);
+      return;
+    }
+
+    final rl = ApiRateLimiter.checkAndRecord('ai_character_chat', user.id);
+    if (!rl.allowed) {
+      setState(() => _isSending = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(rl.userMessage), backgroundColor: AppTheme.error),
+        );
+      }
       return;
     }
 

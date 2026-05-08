@@ -6,6 +6,23 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 8, 2026 – Abuse protection & rate limiting
+
+**Client-side rate limiting (ApiRateLimiter):**
+- New unified `ApiRateLimiter` service — configurable per-action buckets with sliding windows and burst detection.
+- **AI generation limits:** Battle chat (20/5min), character chat (30/5min), dare grading (10/10min), custom judge creation (3/hr), forensics (3/hr), future letter (5/30min), judge audition (10/10min).
+- **API endpoint limits:** Friend search (15/5min), friend requests (10/10min), couple joining (5/15min), surprise creation (10/10min).
+- **Burst detection:** Blocks rapid-fire calls (5+ within 500ms) with suspicious activity logging.
+- All rate limit denials automatically logged via `SecurityLogger.rateLimited()`.
+
+**Server-side rate limiting (Migration 042):**
+- New `rate_limit_entries` table with user/action/timestamp tracking.
+- `check_rate_limit` RPC — atomic check-and-record with configurable max attempts and window seconds.
+- `cleanup_rate_limit_entries()` function for periodic purge of entries older than 24 hours.
+- RLS policies: users can only insert/read their own entries.
+
+**Integration points:** BattleChatScreen, SubmissionScreen, CharacterChatScreen, FutureLetterRevealScreen, CustomJudgeAuditionSheet, CreateCustomJudgeScreen, CreateSurpriseScreen, CoupleLinkScreen, FriendService, DailyDareProvider.
+
 ### May 8, 2026 – Full security hardening (auth + IDOR)
 
 **Authentication hardening:**

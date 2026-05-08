@@ -18,6 +18,7 @@ import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
 import 'package:winkidoo/services/battle_pass_service.dart';
@@ -186,6 +187,17 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   }
 
   Future<void> _submit() async {
+    final userId = ref.read(currentUserProvider)?.id ?? '';
+    final rl = ApiRateLimiter.checkAndRecord('surprise_create', userId);
+    if (!rl.allowed) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(rl.userMessage), backgroundColor: AppTheme.error),
+        );
+      }
+      return;
+    }
+
     if (_surpriseType == 'future_letter') {
       final content = _contentController.text.trim();
       if (content.isEmpty) {

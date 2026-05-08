@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/models/user_friend.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 
 /// Friend management — search, request, accept, remove.
 class FriendService {
@@ -13,6 +14,10 @@ class FriendService {
     int limit = 20,
   }) async {
     if (query.trim().length < 2) return [];
+
+    final userId = _client.auth.currentUser?.id ?? '';
+    final rl = ApiRateLimiter.checkAndRecord('friend_search', userId);
+    if (!rl.allowed) return [];
 
     // Search auth user metadata via profiles table
     // Profiles have user_id; we join with auth.users via RPC or query metadata
@@ -33,6 +38,9 @@ class FriendService {
 
   /// Sends a friend request. Stores lower UUID as user_a for consistency.
   Future<void> sendFriendRequest(String fromUserId, String toUserId) async {
+    final rl = ApiRateLimiter.checkAndRecord('friend_request', fromUserId);
+    if (!rl.allowed) throw Exception(rl.userMessage);
+
     final sorted = [fromUserId, toUserId]..sort();
     await _client.from('user_friends').insert({
       'user_a_id': sorted[0],

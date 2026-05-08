@@ -13,6 +13,7 @@ import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/services/ai_judge_service.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:uuid/uuid.dart';
 
 class SubmissionScreen extends ConsumerStatefulWidget {
@@ -57,6 +58,15 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
           content: Text('No attempts left today. Get more Winks!'),
           backgroundColor: AppTheme.error,
         ),
+      );
+      return;
+    }
+
+    final userId = ref.read(currentUserProvider)?.id ?? '';
+    final rl = ApiRateLimiter.checkAndRecord('ai_battle_chat', userId);
+    if (!rl.allowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(rl.userMessage), backgroundColor: AppTheme.error),
       );
       return;
     }

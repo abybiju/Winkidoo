@@ -32,7 +32,9 @@
   <title>Winkidoo</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Firebase for web (FCM). Must load and initialize before Flutter. -->
+  <!-- Firebase for web (FCM). Must load and initialize before Flutter.
+       These keys are public by design (security is enforced via Firebase Security Rules).
+       Restrict this API key in Google Cloud Console → Credentials → HTTP referrer restrictions. -->
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
   <script>

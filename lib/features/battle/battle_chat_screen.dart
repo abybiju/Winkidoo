@@ -28,7 +28,9 @@ import 'package:winkidoo/features/battle/persuasion_meter.dart';
 import 'package:winkidoo/features/battle/pre_battle_tease.dart';
 import 'package:winkidoo/services/battle_realtime_service.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/judge_memory_service.dart';
+import 'package:winkidoo/services/security_logger.dart';
 import 'package:winkidoo/services/phantom_judge_service.dart';
 import 'package:winkidoo/features/battle/widgets/phantom_overlay.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
@@ -157,6 +159,18 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
     if (content.trim().isEmpty) return;
     final userId = ref.read(currentUserProvider)?.id;
     if (userId == null) return;
+
+    if (senderType == 'seeker') {
+      final rl = ApiRateLimiter.checkAndRecord('ai_battle_chat', userId);
+      if (!rl.allowed) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(rl.userMessage), backgroundColor: AppTheme.error),
+          );
+        }
+        return;
+      }
+    }
 
     setState(() => _isSending = true);
     _textController.clear();
@@ -367,6 +381,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         });
       }
     } catch (e) {
+      SecurityLogger.apiError('ai_judge', 'battle_chat', e.toString());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

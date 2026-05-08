@@ -15,6 +15,8 @@ import 'package:winkidoo/features/judges/custom_judge_audition_sheet.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
 import 'package:winkidoo/services/rate_limit_service.dart';
 
@@ -243,7 +245,14 @@ class _CreateCustomJudgeScreenState
       return;
     }
 
-    // Rate limit check
+    final userId = ref.read(currentUserProvider)?.id ?? '';
+    final rl = ApiRateLimiter.checkAndRecord('ai_custom_judge', userId);
+    if (!rl.allowed) {
+      setState(() { _error = rl.userMessage; });
+      return;
+    }
+
+    // Rate limit check (server-side daily limit)
     final client = ref.read(supabaseClientProvider);
     final (canCreate, remaining) =
         await RateLimitService.canCreateCustomJudge(client, couple.id);

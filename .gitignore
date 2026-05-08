@@ -61,3 +61,13 @@ ios/Runner/GoogleService-Info.plist
 android/key.properties
 android/upload-keystore.jks
 *.jks
+*.keystore
+
+# Secrets and credentials
+*.pem
+*.p12
+*.p8
+service-account*.json
+credentials.json
+secrets.json
+*.secret

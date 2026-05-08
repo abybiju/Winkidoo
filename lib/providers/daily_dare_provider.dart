@@ -7,6 +7,7 @@ import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/services/battle_pass_service.dart';
 import 'package:winkidoo/services/daily_activity_service.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/daily_dare_service.dart';
 import 'package:winkidoo/services/dare_realtime_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
@@ -84,6 +85,9 @@ class DailyDareNotifier extends AsyncNotifier<DailyDareState> {
     final user = ref.read(currentUserProvider);
     final currentDare = state.value?.dare;
     if (couple == null || user == null || currentDare == null) return;
+
+    final rl = ApiRateLimiter.checkAndRecord('ai_dare_grade', user.id);
+    if (!rl.allowed) return;
 
     final client = ref.read(supabaseClientProvider);
 

@@ -12,6 +12,7 @@ import 'package:winkidoo/models/couple.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:uuid/uuid.dart';
 
 class CoupleLinkScreen extends ConsumerStatefulWidget {
@@ -98,11 +99,22 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
       );
       return;
     }
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    final rl = ApiRateLimiter.checkAndRecord('couple_join', user.id);
+    if (!rl.allowed) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(rl.userMessage), backgroundColor: AppTheme.error),
+        );
+      }
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final client = ref.read(supabaseClientProvider);
-      final user = ref.read(currentUserProvider);
-      if (user == null) return;
 
       final raw = await client.rpc('join_couple_by_code', params: {
         'p_invite_code': code,

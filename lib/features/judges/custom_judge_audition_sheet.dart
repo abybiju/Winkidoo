@@ -8,7 +8,9 @@ import 'package:winkidoo/models/custom_judge.dart';
 import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/models/battle_message.dart';
+import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/services/ai_judge_service.dart';
+import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
 
 const _geminiApiKey =
@@ -42,6 +44,17 @@ class _CustomJudgeAuditionSheetState
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _loading) return;
+
+    final userId = ref.read(currentUserProvider)?.id ?? '';
+    final rl = ApiRateLimiter.checkAndRecord('ai_judge_audition', userId);
+    if (!rl.allowed) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(rl.userMessage), backgroundColor: AppTheme.error),
+        );
+      }
+      return;
+    }
 
     setState(() => _loading = true);
     HapticFeedback.lightImpact();
