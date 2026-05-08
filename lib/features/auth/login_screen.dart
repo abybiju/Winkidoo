@@ -7,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/services/auth_rate_limiter.dart';
+import 'package:winkidoo/services/password_validator.dart';
 
 const double _kFieldHeight = 58.0;
 const double _kRadius = 20.0;
@@ -46,37 +48,82 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final email = _emailController.text.trim();
+
+    if (_isSignUp) {
+      if (!AuthRateLimiter.canAttemptSignUp(email)) {
+        _showError('Too many sign-up attempts. Please try again later.');
+        return;
+      }
+    } else {
+      if (!AuthRateLimiter.canAttemptLogin(email)) {
+        final secs = AuthRateLimiter.secondsUntilLoginAllowed(email);
+        final mins = (secs / 60).ceil();
+        _showError('Too many login attempts. Try again in $mins min.');
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
     try {
       final client = ref.read(supabaseClientProvider);
       if (_isSignUp) {
-        await client.auth.signUp(
-          email: _emailController.text.trim(),
+        AuthRateLimiter.recordSignUpAttempt(email);
+        final response = await client.auth.signUp(
+          email: email,
           password: _passwordController.text,
         );
+        // Supabase returns a user with identities == [] when email
+        // confirmation is required and the user already exists — treat
+        // as success to avoid leaking whether an account exists.
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Check your email to confirm sign up!'),
-              backgroundColor: AppTheme.primary,
-            ),
-          );
+          if (response.user?.emailConfirmedAt == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Check your email to confirm sign up before logging in.',
+                ),
+                backgroundColor: AppTheme.primary,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
         }
       } else {
-        await client.auth.signInWithPassword(
-          email: _emailController.text.trim(),
+        AuthRateLimiter.recordLoginAttempt(email);
+        final response = await client.auth.signInWithPassword(
+          email: email,
           password: _passwordController.text,
         );
+        // Block unverified email accounts
+        if (response.user != null && response.user!.emailConfirmedAt == null) {
+          await client.auth.signOut();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please verify your email before logging in. Check your inbox.',
+                ),
+                backgroundColor: AppTheme.error,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
+          return;
+        }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()), backgroundColor: AppTheme.error),
-        );
-      }
+      _showError(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppTheme.error),
+      );
     }
   }
 
@@ -156,19 +203,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (_isLoading) return;
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Enter a valid email first.'),
-            backgroundColor: AppTheme.error,
-          ),
-        );
-      }
+      _showError('Enter a valid email first.');
+      return;
+    }
+
+    if (!AuthRateLimiter.canAttemptReset(email)) {
+      final secs = AuthRateLimiter.secondsUntilResetAllowed(email);
+      final mins = (secs / 60).ceil();
+      _showError('Too many reset attempts. Try again in $mins min.');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
+      AuthRateLimiter.recordResetAttempt(email);
       final client = ref.read(supabaseClientProvider);
       await client.auth.resetPasswordForEmail(
         email,
@@ -183,12 +231,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()), backgroundColor: AppTheme.error),
-        );
-      }
+      _showError(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -303,8 +346,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     if (v == null || v.isEmpty) {
                                       return 'Enter password';
                                     }
-                                    if (_isSignUp && v.length < 6) {
-                                      return 'At least 6 characters';
+                                    if (_isSignUp) {
+                                      return PasswordValidator.validate(v);
                                     }
                                     return null;
                                   },
