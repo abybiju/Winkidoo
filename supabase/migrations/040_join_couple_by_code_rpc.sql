@@ -1,6 +1,8 @@
 -- Secure RPC for joining a couple by invite code.
 -- Validates: code exists, slot is open, caller isn't the creator,
 -- caller isn't already in another couple.
+drop function if exists public.join_couple_by_code(text, uuid);
+
 create or replace function public.join_couple_by_code(
   p_invite_code text,
   p_user_id uuid
