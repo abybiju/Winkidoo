@@ -43,6 +43,14 @@ Migrations in `supabase/migrations/` must be run **manually** in numeric order v
 | 030 | `030_custom_judge_battlefield.sql` | `is_active_for_battle` column on `custom_judges` |
 | 031 | `031_judge_avatars_bucket.sql` | `judge-avatars` storage bucket with RLS |
 | 032 | `032_character_chat.sql` | `character_chat_rooms`, `character_chat_members`, `character_chat_messages`, `user_friends`; Realtime on messages |
+| 033 | `033_fix_chat_rls_circular.sql` | Fix circular RLS on chat rooms/members |
+| 034 | `034_fix_chat_rls_recursion_v2.sql` | Drop self-referential policies; add RPCs: `get_chat_room_members`, `remove_chat_room_member`, `join_chat_room_by_code` |
+| 035 | `035_surprise_roulette.sql` | `roulette_result` column on `surprises` |
+| 036 | `036_future_letter.sql` | `future_letter_judge_persona` column for Love Letters from the Future |
+| 037 | `037_phantom_judge.sql` | `phantom_events` table + `had_phantom` on `surprises` |
+| 038 | `038_forensics.sql` | `forensics_reports` table for Emotional Forensics |
+| 039 | `039_revenuecat_webhook_log.sql` | `revenuecat_events` audit table for RevenueCat webhook lifecycle |
+| 040 | `040_join_couple_by_code_rpc.sql` | Secure `join_couple_by_code` RPC — ownership validation, duplicate-join prevention, race-condition guard |
 
 **Note:** Migrations `010a` and `010b` are independent of each other but both depend on `001`. Run all files in filename order. Both `010_` files must be applied.
 

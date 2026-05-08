@@ -6,12 +6,21 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
-### May 8, 2026 – Authentication security hardening
+### May 8, 2026 – Full security hardening (auth + IDOR)
+
+**Authentication hardening:**
 - **Client-side rate limiting:** New `AuthRateLimiter` service — login (5/15min), signup (3/30min), password reset (3/hr) per email. Bypassed in debug mode.
 - **Stronger password policy:** New `PasswordValidator` — 8+ chars, uppercase, lowercase, number required on signup.
 - **Email verification enforcement:** Login now checks `emailConfirmedAt` — signs out and blocks unverified users client-side (defense-in-depth; Supabase "Confirm email" is also ON).
 - **SHA-256 encryption keys:** `EncryptionService` key derivation upgraded from naive concat+zero-pad to SHA-256. Backward-compatible decryption falls back to legacy key for existing data.
 - **Supabase dashboard verified:** Rate limits configured (30 signins/5min per IP, 2 emails/hr), refresh token replay detection ON (10s), email confirmation ON. CAPTCHA toggled but NOT saved (needs Flutter hCaptcha integration first). Sessions config locked behind Pro Plan.
+
+**IDOR prevention (ownership enforcement):**
+- **Migration 040:** Secure `join_couple_by_code` RPC — validates code exists, slot open, not own code, not already in a couple, race-condition safe with `WHERE user_b_id IS NULL`.
+- **Custom judge mutations:** `deleteJudge`, `publishJudgeUnique`, `unpublishJudge` now require and verify `coupleId` before any write (defense-in-depth over RLS).
+- **Friend service:** `acceptFriendRequest` and `removeFriend` now filter by current `user_id` alongside friendship ID.
+- **Character chat judges query:** Scoped to couple's own judges + published marketplace judges (was unfiltered top 20).
+- **Full IDOR audit:** All 80+ Supabase queries verified — RLS policies solid across all 20+ tables.
 
 ### March 4, 2026 – Home/Vault/Footer redesign + avatar profiles + visual parity pass
 - **Top bar parity:** `WinkidooTopBar` adds `matchLogoToWordmark` so logo scales to wordmark presence on Home/Vault.

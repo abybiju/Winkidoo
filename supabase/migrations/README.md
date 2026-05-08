@@ -42,6 +42,7 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 37. **037_phantom_judge.sql** — `phantom_events` table + `had_phantom` on surprises for Phantom Judge Takeover
 38. **038_forensics.sql** — `forensics_reports` table for Emotional Forensics post-battle analysis
 39. **039_revenuecat_webhook_log.sql** — `revenuecat_events` audit table for RevenueCat webhook events (subscription lifecycle tracking)
+40. **040_join_couple_by_code_rpc.sql** — Secure `join_couple_by_code` RPC: validates code exists, slot open, not own code, not already in couple, race-condition guard (`WHERE user_b_id IS NULL`)
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 
@@ -60,4 +61,4 @@ If you see `relation "public.surprises" does not exist`, run **001** first, then
   - Authorization header: `Bearer <REVENUECAT_WEBHOOK_SECRET>`
 - The function updates `couples.wink_plus_until` on purchase/renewal/expiration events.
 
-*Doc sync: Feb 2026 — migrations 001–010 documented; push (009–010) and Edge Function/webhook steps match docs/FIREBASE_AND_PUSH_SETUP.md.*
+*Doc sync: May 2026 — migrations 001–040 documented. Push (009–010) and Edge Function/webhook steps match docs/FIREBASE_AND_PUSH_SETUP.md.*
