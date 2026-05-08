@@ -132,16 +132,18 @@ class CustomJudgeService {
     }
   }
 
-  /// Unpublishes a custom judge from the marketplace.
+  /// Unpublishes a custom judge from the marketplace. Verifies couple ownership.
   static Future<void> unpublishJudge(
     SupabaseClient client,
     String judgeId,
+    String coupleId,
   ) async {
     try {
       await client
           .from('custom_judges')
           .update({'is_published': false})
-          .eq('id', judgeId);
+          .eq('id', judgeId)
+          .eq('couple_id', coupleId);
     } catch (e) {
       debugPrint('CustomJudgeService.unpublishJudge: $e');
     }
@@ -253,24 +255,28 @@ class CustomJudgeService {
     }
   }
 
-  /// Deletes a custom judge (only the creator's couple).
-  /// Deletes a custom judge. Published judges cannot be deleted (only admin can).
+  /// Deletes a custom judge. Verifies couple ownership and blocks published judges.
   static Future<bool> deleteJudge(
     SupabaseClient client,
     String judgeId,
+    String coupleId,
   ) async {
     try {
-      // Block delete for published judges
       final row = await client
           .from('custom_judges')
-          .select('is_published')
+          .select('is_published, couple_id')
           .eq('id', judgeId)
           .maybeSingle();
-      if (row != null && row['is_published'] == true) {
+      if (row == null) return false;
+      if (row['couple_id'] != coupleId) {
+        debugPrint('CustomJudgeService.deleteJudge: ownership mismatch');
+        return false;
+      }
+      if (row['is_published'] == true) {
         debugPrint('CustomJudgeService.deleteJudge: Cannot delete published judge');
         return false;
       }
-      await client.from('custom_judges').delete().eq('id', judgeId);
+      await client.from('custom_judges').delete().eq('id', judgeId).eq('couple_id', coupleId);
       debugPrint('CustomJudgeService.deleteJudge: success for $judgeId');
       return true;
     } catch (e, st) {
@@ -279,11 +285,12 @@ class CustomJudgeService {
     }
   }
 
-  /// Publishes a judge, but checks for duplicate personality names first.
+  /// Publishes a judge. Verifies couple ownership and checks for duplicate names.
   static Future<bool> publishJudgeUnique(
     SupabaseClient client,
     String judgeId,
     String personalityName,
+    String coupleId,
   ) async {
     try {
       // Check for existing published judge with same name
@@ -300,7 +307,8 @@ class CustomJudgeService {
       await client
           .from('custom_judges')
           .update({'is_published': true})
-          .eq('id', judgeId);
+          .eq('id', judgeId)
+          .eq('couple_id', coupleId);
       return true;
     } catch (e) {
       debugPrint('CustomJudgeService.publishJudgeUnique: $e');

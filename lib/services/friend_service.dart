@@ -41,16 +41,26 @@ class FriendService {
     });
   }
 
-  /// Accepts a pending friend request.
+  /// Accepts a pending friend request. Verifies caller is a party to it.
   Future<void> acceptFriendRequest(String friendshipId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
     await _client
         .from('user_friends')
-        .update({'status': 'accepted'}).eq('id', friendshipId);
+        .update({'status': 'accepted'})
+        .eq('id', friendshipId)
+        .or('user_a_id.eq.$userId,user_b_id.eq.$userId');
   }
 
-  /// Removes a friendship.
+  /// Removes a friendship. Verifies caller is a party to it.
   Future<void> removeFriend(String friendshipId) async {
-    await _client.from('user_friends').delete().eq('id', friendshipId);
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client
+        .from('user_friends')
+        .delete()
+        .eq('id', friendshipId)
+        .or('user_a_id.eq.$userId,user_b_id.eq.$userId');
   }
 
   /// Fetches accepted friends for the current user.

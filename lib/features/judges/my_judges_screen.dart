@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/custom_judge.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
@@ -188,10 +189,14 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
   Future<void> _togglePublish() async {
     final client = ref.read(supabaseClientProvider);
     if (widget.judge.isPublished) {
-      await CustomJudgeService.unpublishJudge(client, widget.judge.id);
+      final coupleForUnpublish = ref.read(coupleProvider).value;
+      if (coupleForUnpublish == null) return;
+      await CustomJudgeService.unpublishJudge(client, widget.judge.id, coupleForUnpublish.id);
     } else {
+      final couple = ref.read(coupleProvider).value;
+      if (couple == null) return;
       final success = await CustomJudgeService.publishJudgeUnique(
-          client, widget.judge.id, widget.judge.personalityName);
+          client, widget.judge.id, widget.judge.personalityName, couple.id);
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -284,7 +289,9 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
     );
     if (confirm != true) return;
     final client = ref.read(supabaseClientProvider);
-    final deleted = await CustomJudgeService.deleteJudge(client, widget.judge.id);
+    final couple = ref.read(coupleProvider).value;
+    if (couple == null) return;
+    final deleted = await CustomJudgeService.deleteJudge(client, widget.judge.id, couple.id);
     debugPrint('MyJudges: deleteJudge result=$deleted for ${widget.judge.id}');
     if (deleted) {
       ref.invalidate(myCustomJudgesProvider);

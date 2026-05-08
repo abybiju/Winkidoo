@@ -6,6 +6,7 @@ import 'package:winkidoo/models/character_preset.dart';
 import 'package:winkidoo/models/chat_room.dart';
 import 'package:winkidoo/models/user_friend.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/services/character_chat_service.dart';
 import 'package:winkidoo/services/friend_service.dart';
@@ -82,9 +83,19 @@ final availableCharactersProvider =
     final user = ref.watch(currentUserProvider);
     if (user == null) return builtIns;
 
-    final judges = await client
+    final couple = ref.watch(coupleProvider).value;
+    final coupleId = couple?.id;
+
+    // Fetch couple's own judges + published marketplace judges
+    var query = client
         .from('custom_judges')
-        .select('id, personality_name, avatar_emoji, generated_persona_prompt')
+        .select('id, personality_name, avatar_emoji, generated_persona_prompt');
+    if (coupleId != null) {
+      query = query.or('couple_id.eq.$coupleId,is_published.eq.true');
+    } else {
+      query = query.eq('is_published', true);
+    }
+    final judges = await query
         .order('created_at', ascending: false)
         .limit(20);
 

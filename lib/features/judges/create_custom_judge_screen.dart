@@ -107,7 +107,9 @@ class _CreateCustomJudgeScreenState
     if (confirm != true) return;
 
     final client = ref.read(supabaseClientProvider);
-    await CustomJudgeService.deleteJudge(client, _createdJudge!.id);
+    final couple = ref.read(coupleProvider).value;
+    if (couple == null) return;
+    await CustomJudgeService.deleteJudge(client, _createdJudge!.id, couple.id);
     ref.invalidate(myCustomJudgesProvider);
     if (mounted) context.pop();
   }
@@ -167,8 +169,10 @@ class _CreateCustomJudgeScreenState
                         onPressed: () async {
                           Navigator.pop(ctx);
                           final client = ref.read(supabaseClientProvider);
+                          final couple = ref.read(coupleProvider).value;
+                          if (couple == null) return;
                           final success = await CustomJudgeService.publishJudgeUnique(
-                              client, _createdJudge!.id, _createdJudge!.personalityName);
+                              client, _createdJudge!.id, _createdJudge!.personalityName, couple.id);
                           ref.invalidate(myCustomJudgesProvider);
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
