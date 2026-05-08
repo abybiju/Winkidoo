@@ -15,6 +15,12 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - **SHA-256 encryption keys:** `EncryptionService` key derivation upgraded from naive concat+zero-pad to SHA-256. Backward-compatible decryption falls back to legacy key for existing data.
 - **Supabase dashboard verified:** Rate limits configured (30 signins/5min per IP, 2 emails/hr), refresh token replay detection ON (10s), email confirmation ON. CAPTCHA toggled but NOT saved (needs Flutter hCaptcha integration first). Sessions config locked behind Pro Plan.
 
+**Secure deployment configuration:**
+- **HTTPS enforced:** Android `network_security_config.xml` blocks cleartext; `usesCleartextTraffic=false`. iOS ATS enabled by default (no exceptions).
+- **R8 code obfuscation:** Release builds now minify + shrink resources with ProGuard rules for Flutter/Supabase/Firebase.
+- **Security event logging:** New `SecurityLogger` service + migration 041 (`security_logs` table). Logs auth success/failure, rate-limit hits, API errors. Emails masked in logs. Write-only from client (service role reads for monitoring).
+- **Secrets verified:** All via `--dart-define`, no hardcoded keys. Firebase configs in `.gitignore`. Signing keys not tracked.
+
 **IDOR prevention (ownership enforcement):**
 - **Migration 040:** Secure `join_couple_by_code` RPC — validates code exists, slot open, not own code, not already in a couple, race-condition safe with `WHERE user_b_id IS NULL`.
 - **Custom judge mutations:** `deleteJudge`, `publishJudgeUnique`, `unpublishJudge` now require and verify `coupleId` before any write (defense-in-depth over RLS).

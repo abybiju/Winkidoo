@@ -43,6 +43,7 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 38. **038_forensics.sql** — `forensics_reports` table for Emotional Forensics post-battle analysis
 39. **039_revenuecat_webhook_log.sql** — `revenuecat_events` audit table for RevenueCat webhook events (subscription lifecycle tracking)
 40. **040_join_couple_by_code_rpc.sql** — Secure `join_couple_by_code` RPC: validates code exists, slot open, not own code, not already in couple, race-condition guard (`WHERE user_b_id IS NULL`)
+41. **041_security_logs.sql** — `security_logs` table for auth/API monitoring; RLS insert-only from client, indexed by event_type + user_id
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 
