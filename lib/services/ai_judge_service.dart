@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
+import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/models/battle_message.dart';
 import 'package:winkidoo/models/judge_response.dart';
 
@@ -167,7 +168,7 @@ $personaPrompt
 
 The seeker is trying to unlock a hidden romantic surprise. They submitted this to convince you:
 
-"$submissionText"
+"${InputValidator.sanitizeForPrompt(submissionText)}"
 ${surpriseContextHint != null ? '\nContext hint (do not reveal): $surpriseContextHint' : ''}
 
 Score their submission from 0 to 100. If their score is >= $required, they unlock the surprise.
@@ -267,7 +268,7 @@ Respond with JSON only, no markdown:
           : m.senderType == 'creator'
               ? 'Creator'
               : 'Judge';
-      buffer.writeln('$role: ${m.content}');
+      buffer.writeln('$role: ${InputValidator.sanitizeForPrompt(m.content)}');
     }
 
     const substantiveRule =
@@ -693,7 +694,7 @@ Return JSON only:
     final webBlock = webSearchContext.isNotEmpty
         ? '''
 
-=== WEB RESEARCH ABOUT "$personalityName" ===
+=== WEB RESEARCH ABOUT "${InputValidator.sanitizeForPrompt(personalityName, maxLength: InputValidator.maxJudgeNameLength)}" ===
 $webSearchContext
 === END RESEARCH ===
 
@@ -714,7 +715,7 @@ You are an elite AI persona architect. Your specialty: deconstructing famous per
 === YOUR PROCESS (follow this thinking framework) ===
 
 STEP 1 — PERSONALITY DECONSTRUCTION
-Before writing anything, mentally analyze "$personalityName" across these 8 dimensions:
+Before writing anything, mentally analyze "${InputValidator.sanitizeForPrompt(personalityName, maxLength: InputValidator.maxJudgeNameLength)}" across these 8 dimensions:
 • VOICE: How do they talk? Formal/casual/slang? Fast/slow? Short punchy sentences or long dramatic ones?
 • VOCABULARY: What words do they overuse? What slang is uniquely theirs? Do they code-switch?
 • CATCHPHRASES: What 3-5 phrases are they MOST known for? (from shows, interviews, social media, memes)
@@ -1141,7 +1142,7 @@ RULES:
 - If the original is very short (1-3 words), still transform but keep it brief
 
 ORIGINAL MESSAGE:
-$originalText
+${InputValidator.sanitizeForPrompt(originalText)}
 
 TRANSFORMED MESSAGE:''';
 
@@ -1166,7 +1167,7 @@ You are a warm, empathetic relationship communication analyst. You specialize in
 Analyze this battle transcript from a couples persuasion game. The SEEKER is trying to convince an AI judge to unlock a surprise from their partner.
 
 TRANSCRIPT:
-$transcript
+${InputValidator.sanitizeForPrompt(transcript, maxLength: 10000)}
 
 ANALYSIS RULES:
 - Always be POSITIVE and growth-oriented

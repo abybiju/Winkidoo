@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/models/user_friend.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
+import 'package:winkidoo/services/input_validator.dart';
 
 /// Friend management — search, request, accept, remove.
 class FriendService {
@@ -14,6 +15,7 @@ class FriendService {
     int limit = 20,
   }) async {
     if (query.trim().length < 2) return [];
+    query = InputValidator.sanitizeSearchQuery(query);
 
     final userId = _client.auth.currentUser?.id ?? '';
     final rl = ApiRateLimiter.checkAndRecord('friend_search', userId);

@@ -13,6 +13,7 @@ import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
+import 'package:winkidoo/services/input_validator.dart';
 import 'package:uuid/uuid.dart';
 
 class CoupleLinkScreen extends ConsumerStatefulWidget {
@@ -89,16 +90,14 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
   }
 
   Future<void> _joinCouple() async {
-    final code = _codeController.text.trim().toUpperCase();
-    if (code.isEmpty) {
+    final codeError = InputValidator.validateInviteCode(_codeController.text);
+    if (codeError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter your partner\'s code'),
-          backgroundColor: AppTheme.error,
-        ),
+        SnackBar(content: Text(codeError), backgroundColor: AppTheme.error),
       );
       return;
     }
+    final code = _codeController.text.trim().toUpperCase();
     final user = ref.read(currentUserProvider);
     if (user == null) return;
 

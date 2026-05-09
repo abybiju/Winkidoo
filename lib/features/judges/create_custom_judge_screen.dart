@@ -17,6 +17,7 @@ import 'package:winkidoo/providers/custom_judge_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
+import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
 import 'package:winkidoo/services/rate_limit_service.dart';
 
@@ -236,8 +237,13 @@ class _CreateCustomJudgeScreenState
   }
 
   Future<void> _generate() async {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) return;
+    final nameErr = InputValidator.validateJudgeName(_nameController.text);
+    if (nameErr != null) {
+      setState(() { _error = nameErr; });
+      return;
+    }
+    final name = InputValidator.sanitizeText(
+        _nameController.text, maxLength: InputValidator.maxJudgeNameLength);
 
     final couple = ref.read(coupleProvider).value;
     if (couple == null) {

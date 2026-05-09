@@ -29,6 +29,7 @@ import 'package:winkidoo/features/battle/pre_battle_tease.dart';
 import 'package:winkidoo/services/battle_realtime_service.dart';
 import 'package:winkidoo/services/battle_sound_service.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
+import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/judge_memory_service.dart';
 import 'package:winkidoo/services/security_logger.dart';
 import 'package:winkidoo/services/phantom_judge_service.dart';
@@ -156,7 +157,9 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
   }
 
   Future<void> _sendMessage(String senderType, String content) async {
-    if (content.trim().isEmpty) return;
+    final validationError = InputValidator.validateMessage(content);
+    if (validationError != null) return;
+    content = InputValidator.sanitizeText(content);
     final userId = ref.read(currentUserProvider)?.id;
     if (userId == null) return;
 

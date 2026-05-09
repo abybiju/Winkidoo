@@ -9,6 +9,7 @@ import 'package:winkidoo/core/constants/avatar_presets.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
+import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/profile_avatar_service.dart';
 
 class ProfileCompletionSheet extends ConsumerStatefulWidget {
@@ -62,7 +63,8 @@ class _ProfileCompletionSheetState
     try {
       final age = int.parse(_ageController.text.trim());
       final merged = Map<String, dynamic>.from(user.userMetadata ?? const {});
-      merged['name'] = _nameController.text.trim();
+      merged['name'] = InputValidator.sanitizeText(
+          _nameController.text, maxLength: InputValidator.maxNameLength);
       merged['age'] = age;
       merged['gender'] = _gender;
 
@@ -135,26 +137,14 @@ class _ProfileCompletionSheetState
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Name'),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Enter your name';
-                }
-                return null;
-              },
+              validator: InputValidator.validateName,
             ),
             const SizedBox(height: 10),
             TextFormField(
               controller: _ageController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Age'),
-              validator: (value) {
-                final age = int.tryParse((value ?? '').trim());
-                if (age == null) return 'Enter a valid age';
-                if (age < 13 || age > 120) {
-                  return 'Age must be between 13 and 120';
-                }
-                return null;
-              },
+              validator: InputValidator.validateAge,
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
@@ -181,6 +171,15 @@ class _ProfileCompletionSheetState
                             if (file == null) return;
                             final bytes = await file.readAsBytes();
                             if (!mounted) return;
+                            final uploadErr = InputValidator.validateImageUpload(
+                                bytes, file.name);
+                            if (uploadErr != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(uploadErr),
+                                    backgroundColor: AppTheme.error),
+                              );
+                              return;
+                            }
                             setState(() {
                               _pickedAvatarBytes = bytes;
                               _selectedPreset = null;

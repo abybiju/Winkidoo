@@ -19,6 +19,7 @@ import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
+import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/encryption_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
 import 'package:winkidoo/services/battle_pass_service.dart';
@@ -199,16 +200,15 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     }
 
     if (_surpriseType == 'future_letter') {
-      final content = _contentController.text.trim();
-      if (content.isEmpty) {
+      final contentErr = InputValidator.validateSurpriseContent(_contentController.text);
+      if (contentErr != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Write your letter first!'),
-            backgroundColor: AppTheme.error,
-          ),
+          SnackBar(content: Text(contentErr), backgroundColor: AppTheme.error),
         );
         return;
       }
+      final content = InputValidator.sanitizeText(
+          _contentController.text, maxLength: InputValidator.maxSurpriseTextLength);
       if (_unlockAfter == null) {
         // Force time capsule for future letters
         ScaffoldMessenger.of(context).showSnackBar(
@@ -221,16 +221,15 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       }
       await _submitFutureLetter(content);
     } else if (_surpriseType == 'text') {
-      final content = _contentController.text.trim();
-      if (content.isEmpty) {
+      final textErr = InputValidator.validateSurpriseContent(_contentController.text);
+      if (textErr != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Write something to hide!'),
-            backgroundColor: AppTheme.error,
-          ),
+          SnackBar(content: Text(textErr), backgroundColor: AppTheme.error),
         );
         return;
       }
+      final content = InputValidator.sanitizeText(
+          _contentController.text, maxLength: InputValidator.maxSurpriseTextLength);
       await _submitText(content);
     } else if (_surpriseType == 'photo') {
       if (_photoFile == null) {
