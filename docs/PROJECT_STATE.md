@@ -6,6 +6,18 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 8, 2026 – Input validation & sanitization
+
+**Centralized InputValidator service (`lib/services/input_validator.dart`):**
+- **Text sanitization:** Strips control characters, enforces max length per input type (names 50, messages 2000, surprises 5000, judge names 60, search queries 100, invite codes 12).
+- **Prompt injection protection:** `sanitizeForPrompt()` strips backtick code blocks, HTML tags, and JSON-key patterns before embedding user text in Gemini AI prompts.
+- **File upload validation:** 5MB image / 10MB audio size limits, extension whitelists (JPG/PNG/WebP for images, M4A/AAC/MP3/WAV for audio), magic byte header verification for images.
+- **Strict type validation:** Invite codes (alphanumeric only), ages (13–120 int), names (no `<>{}\/` chars), gender (enum whitelist).
+
+**Integration across all user entry points:**
+- AI Judge Service: all 6 prompt-building methods sanitize user text before Gemini calls (battle chat, submissions, custom persona, character chat, forensics, future letter).
+- Battle chat, submission, couple link, profile completion, surprise creation, custom judge creation, friend search — all wired to InputValidator.
+
 ### May 8, 2026 – Abuse protection & rate limiting
 
 **Client-side rate limiting (ApiRateLimiter):**
