@@ -6,6 +6,22 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 24, 2026 – Real-time in-app notification center
+
+**Database:** Migration 043 — `notifications` table (user_id, type, title, body, data JSONB, is_read, created_at). RLS select+update own rows. Added to Realtime publication.
+
+**Client-side:**
+- `AppNotification` model + `NotificationType` enum (surprise_new, battle_update, dare, dare_result, mini_game, mini_game_result, campaign, custom_judge_ready, season_launch).
+- `NotificationRealtimeService` — subscribes to notifications table filtered by user_id for live INSERT/UPDATE events.
+- `notificationsListProvider` (FutureProvider), `unreadNotificationCountProvider` (derived count), `notificationsNotifierProvider` (markAsRead, markAllAsRead).
+- `RealtimeNotificationsSubscription` widget wraps `_ShellScaffold` in router — active on all 4 tabs.
+- `NotificationScreen` — full notification list with per-type icons/colors, relative timestamps, unread dot indicator, mark-all-read, pull-to-refresh.
+- `NotificationRouter` — shared navigation logic extracted from `app.dart` `_navigateFromPush`, used by both push tap-to-open and notification screen tap.
+- Top bar bell icon now shows real unread count across Home, Vault, and Play screens. Tap opens `/shell/notifications`.
+- Foreground push handler (`FirebaseMessaging.onMessage`) shows SnackBar + invalidates notification provider for instant badge update.
+
+**Edge Function:** `insertNotificationRows()` helper writes to `notifications` table alongside FCM push sends for all event types (surprises, dares, mini-games, campaigns, custom judges, season launches).
+
 ### May 8, 2026 – Input validation & sanitization
 
 **Centralized InputValidator service (`lib/services/input_validator.dart`):**
@@ -195,6 +211,7 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 037: phantom_events table + had_phantom on surprises (Phantom Judge Takeover).
 - 038: forensics_reports table (Emotional Forensics).
 - 039: revenuecat_events audit table (RevenueCat webhook lifecycle tracking).
+- 043: notifications (in-app notification center with Realtime).
 
 ### April 2, 2026 — RevenueCat IAP / Wink+ Monetization
 - **RevenueCat SDK** (`purchases_flutter ^8.1.0`): Full IAP integration for Wink+ subscriptions.

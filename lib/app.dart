@@ -9,6 +9,8 @@ import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
 import 'package:winkidoo/providers/theme_provider.dart';
 import 'package:winkidoo/router/app_router.dart';
+import 'package:winkidoo/features/notifications/notification_router.dart';
+import 'package:winkidoo/providers/notification_provider.dart';
 import 'package:winkidoo/services/push_service.dart';
 import 'package:winkidoo/services/revenuecat_service.dart';
 
@@ -67,39 +69,26 @@ class _WinkidooAppState extends ConsumerState<WinkidooApp> {
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) _navigateFromPush(message.data);
     });
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      ref.invalidate(notificationsListProvider);
+      final title = message.notification?.title;
+      final body = message.notification?.body;
+      if (title == null && body == null) return;
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text(body ?? title ?? ''),
+          backgroundColor: AppTheme.primaryOrange,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    });
   }
 
   void _navigateFromPush(Map<String, dynamic> data) {
     final router = ref.read(goRouterProvider);
-    final type = data['type'] as String?;
-    switch (type) {
-      case 'season_launch':
-        router.go('/shell/create');
-        return;
-      case 'dare':
-      case 'dare_result':
-        router.go('/shell/home');
-        return;
-      case 'mini_game':
-      case 'mini_game_result':
-        router.go('/shell/home');
-        return;
-      case 'campaign':
-        final campaignId = data['campaign_id'] as String?;
-        if (campaignId != null) {
-          router.go('/shell/campaign/$campaignId');
-        } else {
-          router.go('/shell/campaigns');
-        }
-        return;
-      case 'custom_judge_ready':
-        router.go('/shell/my-judges');
-        return;
-    }
-    // Fallback: battle notification (surprise_id based)
-    final surpriseId = data['surprise_id'] as String?;
-    if (surpriseId == null || surpriseId.isEmpty) return;
-    router.go('/shell/battle/$surpriseId');
+    NotificationRouter.navigate(router, data);
   }
 
   @override

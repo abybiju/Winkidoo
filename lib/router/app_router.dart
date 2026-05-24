@@ -48,6 +48,8 @@ import 'package:winkidoo/features/character_chat/chat_rooms_screen.dart';
 import 'package:winkidoo/features/character_chat/character_chat_screen.dart';
 import 'package:winkidoo/features/character_chat/add_friends_screen.dart';
 import 'package:winkidoo/features/character_chat/create_room_screen.dart';
+import 'package:winkidoo/features/notifications/notification_screen.dart';
+import 'package:winkidoo/features/notifications/realtime_notifications_subscription.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
@@ -241,10 +243,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           } else if (loc.startsWith('/shell/profile')) {
             index = 3;
           }
-          return _ShellScaffold(
-            matchedLocation: loc,
-            currentIndex: index,
-            navigationShell: navigationShell,
+          return RealtimeNotificationsSubscription(
+            child: _ShellScaffold(
+              matchedLocation: loc,
+              currentIndex: index,
+              navigationShell: navigationShell,
+            ),
           );
         },
         branches: [
@@ -458,6 +462,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final roomId = state.pathParameters['roomId']!;
           return CharacterChatScreen(roomId: roomId);
         },
+      ),
+      GoRoute(
+        path: '/shell/notifications',
+        builder: (_, __) => const NotificationScreen(),
       ),
       GoRoute(
         path: '/shell/treasure-archive',

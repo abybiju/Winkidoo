@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,6 +22,7 @@ import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/quest_provider.dart';
 import 'package:winkidoo/providers/season_recap_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
+import 'package:winkidoo/providers/notification_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/xp_provider.dart';
 import 'package:winkidoo/services/achievement_storage_service.dart';
@@ -180,9 +179,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       });
     }
 
-    final waitingForMe = surprises
-        .where((s) => s.creatorId != user?.id && !s.isUnlocked)
-        .toList();
     final resolved = surprises
         .where((s) => s.battleStatus == 'resolved')
         .toList()
@@ -218,10 +214,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     WinkidooTopBar(
                       matchLogoToWordmark: true,
-                      notificationCount: math.min(waitingForMe.length, 9),
+                      notificationCount: ref.watch(unreadNotificationCountProvider),
                       streakCount: streakWeeks,
                       levelCount: levelCount,
-                      onNotificationTap: () => context.go('/shell/vault'),
+                      onNotificationTap: () => context.push('/shell/notifications'),
                       onStreakTap: () => context.go('/shell/profile'),
                     ),
                     SizedBox(height: gap),

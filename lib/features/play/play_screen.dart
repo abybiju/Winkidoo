@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,12 +16,11 @@ import 'package:winkidoo/features/minigame/mini_game_play_sheet.dart';
 import 'package:winkidoo/features/dare/dare_response_sheet.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/models/judge.dart';
-import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/daily_dare_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/mini_game_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
-import 'package:winkidoo/providers/surprise_provider.dart';
+import 'package:winkidoo/providers/notification_provider.dart';
 import 'package:winkidoo/providers/xp_provider.dart';
 
 class PlayScreen extends ConsumerStatefulWidget {
@@ -40,15 +37,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-    final surprises = ref.watch(surprisesListProvider).value ?? [];
     final judgesAsync = ref.watch(activeJudgesProvider);
     final streakAsync = ref.watch(streakProvider);
     final xpAsync = ref.watch(coupleXpProvider);
-
-    final waitingForMe = surprises
-        .where((s) => s.creatorId != user?.id && !s.isUnlocked)
-        .toList();
 
     final streakWeeks = streakAsync.value?.currentStreak ?? 0;
     final levelCount = xpAsync.value?.currentLevel ?? 0;
@@ -93,10 +84,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                   children: [
                     WinkidooTopBar(
                       matchLogoToWordmark: true,
-                      notificationCount: math.min(waitingForMe.length, 9),
+                      notificationCount: ref.watch(unreadNotificationCountProvider),
                       streakCount: streakWeeks,
                       levelCount: levelCount,
-                      onNotificationTap: () => context.go('/shell/vault'),
+                      onNotificationTap: () => context.push('/shell/notifications'),
                       onStreakTap: () => context.go('/shell/profile'),
                     ),
                     SizedBox(height: gap + 4),

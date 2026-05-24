@@ -165,6 +165,22 @@ async function getTokens(userIds: string[]): Promise<{ token: string; platform: 
     }));
 }
 
+async function insertNotificationRows(
+  notifications: { userId: string; title: string; body: string; data: Record<string, string> }[],
+  type: string
+): Promise<void> {
+  if (notifications.length === 0) return;
+  const rows = notifications.map((n) => ({
+    user_id: n.userId,
+    type,
+    title: n.title,
+    body: n.body,
+    data: n.data,
+  }));
+  const { error } = await supabaseAdmin().from("notifications").insert(rows);
+  if (error) console.error("Failed to insert notification rows:", error);
+}
+
 async function sendNotifications(
   notifications: { userId: string; title: string; body: string; data: Record<string, string> }[]
 ): Promise<number> {
@@ -267,6 +283,19 @@ Deno.serve(async (req) => {
           console.error("FCM season_launch failed", e);
         }
       }
+      // Insert in-app notification rows for all users with push tokens
+      const { data: distinctUsers } = await supabaseAdmin()
+        .from("user_push_tokens")
+        .select("user_id");
+      const uniqueUserIds = [...new Set((distinctUsers ?? []).map((r: { user_id: string }) => r.user_id))];
+      const seasonNotifRows = uniqueUserIds.map((uid) => ({
+        userId: uid,
+        title,
+        body,
+        data,
+      }));
+      await insertNotificationRows(seasonNotifRows, "season_launch");
+
       await supabaseAdmin().from("judges").update({ season_push_sent: true }).eq("id", record.id);
       return respond({ ok: true, season_launch: true });
     }
@@ -332,6 +361,10 @@ Deno.serve(async (req) => {
         }
       }
 
+      for (const n of notifications) {
+        const nType = n.data.type ?? "dare";
+        await insertNotificationRows([n], nType);
+      }
       const sent = await sendNotifications(notifications);
       return respond({ ok: true, table: "daily_dares", sent });
     }
@@ -400,6 +433,10 @@ Deno.serve(async (req) => {
         }
       }
 
+      for (const n of notifications) {
+        const nType = n.data.type ?? "mini_game";
+        await insertNotificationRows([n], nType);
+      }
       const sent = await sendNotifications(notifications);
       return respond({ ok: true, table: "daily_mini_games", sent });
     }
@@ -428,6 +465,7 @@ Deno.serve(async (req) => {
         data: { type: "campaign", campaign_id: record.campaign_id },
       }));
 
+      await insertNotificationRows(notifications, "campaign");
       const sent = await sendNotifications(notifications);
       return respond({ ok: true, table: "couple_campaign_progress", sent });
     }
@@ -455,6 +493,7 @@ Deno.serve(async (req) => {
         data: { type: "custom_judge_ready", judge_id: record.id },
       }));
 
+      await insertNotificationRows(notifications, "custom_judge_ready");
       const sent = await sendNotifications(notifications);
       return respond({ ok: true, table: "custom_judges", sent });
     }
@@ -559,6 +598,8 @@ Deno.serve(async (req) => {
       }
     }
 
+    const surpriseNotifType = payload.type === "INSERT" ? "surprise_new" : "battle_update";
+    await insertNotificationRows(notifications, surpriseNotifType);
     const sent = await sendNotifications(notifications);
     return respond({ ok: true, table: "surprises", sent });
   } catch (e) {

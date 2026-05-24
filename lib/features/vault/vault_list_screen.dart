@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +23,7 @@ import 'package:winkidoo/services/widget_service.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/providers/notification_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
 
@@ -214,7 +213,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                         child: WinkidooTopBar(
                           showLogo: true,
                           matchLogoToWordmark: true,
-                          notificationCount: math.min(waiting.length, 9),
+                          notificationCount: ref.watch(unreadNotificationCountProvider),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

@@ -45,6 +45,7 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 40. **040_join_couple_by_code_rpc.sql** — Secure `join_couple_by_code` RPC: validates code exists, slot open, not own code, not already in couple, race-condition guard (`WHERE user_b_id IS NULL`)
 41. **041_security_logs.sql** — `security_logs` table for auth/API monitoring; RLS insert-only from client, indexed by event_type + user_id
 42. **042_rate_limits.sql** — `rate_limit_entries` table + `check_rate_limit(user_id, action, max_attempts, window_seconds)` RPC for server-side sliding-window rate limiting; `cleanup_rate_limit_entries()` for periodic purge; RLS scoped to own entries
+43. **043_notifications.sql** — `notifications` table for in-app notification center; indexed by `(user_id, is_read, created_at DESC)`; RLS select+update own rows; added to Realtime publication
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 
