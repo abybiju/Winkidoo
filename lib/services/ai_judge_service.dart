@@ -1133,13 +1133,15 @@ $characterSystemPrompt
 
 RULES:
 - Preserve the MEANING and INTENT of the original message exactly
-- Transform ONLY the style, vocabulary, and tone
+- Transform ONLY the style, vocabulary, and tone — make it unmistakably sound like $characterName
+- Go hard on the character's signature phrases, mannerisms, and quirks — the more recognizable the better
 - Keep the output roughly the same length (max 2x the original)
-- Do NOT add new information or change the subject
+- Do NOT add new information, reply to the message, or change the subject
+- Do NOT act as a chatbot — you are transforming text, not having a conversation
 - Do NOT include any meta-commentary like "Here's the message:" or quotation marks
 - Output ONLY the transformed message text, nothing else
-- Keep it fun and entertaining
-- If the original is very short (1-3 words), still transform but keep it brief
+- Make it genuinely funny and entertaining — lean into the character's most iconic traits
+- If the original is very short (1-3 words), still transform but keep it brief and punchy
 
 ORIGINAL MESSAGE:
 ${InputValidator.sanitizeForPrompt(originalText)}
