@@ -14,6 +14,9 @@ import 'package:winkidoo/features/home/widgets/pack_banner_card.dart';
 import 'package:winkidoo/features/minigame/mini_game_card.dart';
 import 'package:winkidoo/features/minigame/mini_game_play_sheet.dart';
 import 'package:winkidoo/features/dare/dare_response_sheet.dart';
+import 'package:winkidoo/features/play/widgets/battle_pass_bar.dart';
+import 'package:winkidoo/features/play/widgets/play_card_stack.dart';
+import 'package:winkidoo/features/play/widgets/play_header.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/daily_dare_provider.dart';
@@ -60,13 +63,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final isCompact = width < 380;
     final horizontal = isCompact ? 12.0 : 16.0;
-    final gap = isCompact ? 10.0 : 14.0;
     final contentWidth = (width - (horizontal * 2)).clamp(320.0, 760.0);
 
-    final dareHeight = _clamped(contentWidth, 0.33, 168, 214);
-    final gameHeight = _clamped(contentWidth, 0.33, 168, 214);
-    final judgeHeight = _clamped(contentWidth, 0.33, 168, 214);
-
+    final cardHeight = _clamped(contentWidth, 0.33, 168, 214);
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
@@ -74,171 +73,96 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         showStars: true,
         glowColor: AppTheme.primaryOrange,
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 126),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    WinkidooTopBar(
-                      matchLogoToWordmark: true,
-                      notificationCount: ref.watch(unreadNotificationCountProvider),
-                      streakCount: streakWeeks,
-                      levelCount: levelCount,
-                      onNotificationTap: () => context.push('/shell/notifications'),
-                      onStreakTap: () => context.go('/shell/profile'),
-                    ),
-                    SizedBox(height: gap + 4),
-
-                    // Section header
-                    Padding(
-                      padding: const EdgeInsets.only(left: 2, bottom: 10),
-                      child: Text(
-                        'Daily Activities',
-                        style: GoogleFonts.poppins(
-                          fontSize: isCompact ? 18 : 20,
-                          fontWeight: FontWeight.w700,
-                          color: brightness == Brightness.dark
-                              ? AppTheme.homeTextPrimary
-                              : AppTheme.lightTextPrimary,
-                        ),
-                      ),
-                    ),
-
-                    StaggerEntrance(
-                      index: 0,
-                      child: DailyDareCard(
-                        compact: isCompact,
-                        height: dareHeight,
-                        onTakeDare: () {
-                          final dare = ref.read(dailyDareProvider).value?.dare;
-                          if (dare == null) return;
-                          showModalBottomSheet<bool>(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => DareResponseSheet(dare: dare),
-                          );
-                        },
-                        onViewResult: () =>
-                            context.push('/shell/dare/result'),
-                      ),
-                    ),
-                    SizedBox(height: gap),
-                    StaggerEntrance(
-                      index: 1,
-                      child: MiniGameCard(
-                        compact: isCompact,
-                        height: gameHeight,
-                        onPlay: () {
-                          final game = ref.read(miniGameProvider).value?.game;
-                          if (game == null) return;
-                          showModalBottomSheet<bool>(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => MiniGamePlaySheet(game: game),
-                          );
-                        },
-                        onViewResult: () =>
-                            context.push('/shell/minigame/result'),
-                      ),
-                    ),
-
-                    SizedBox(height: gap + 8),
-
-                    // Section header
-                    Padding(
-                      padding: const EdgeInsets.only(left: 2, bottom: 10),
-                      child: Text(
-                        'Adventures',
-                        style: GoogleFonts.poppins(
-                          fontSize: isCompact ? 18 : 20,
-                          fontWeight: FontWeight.w700,
-                          color: brightness == Brightness.dark
-                              ? AppTheme.homeTextPrimary
-                              : AppTheme.lightTextPrimary,
-                        ),
-                      ),
-                    ),
-
-                    StaggerEntrance(
-                      index: 2,
-                      child: PackBannerCard(
-                        compact: isCompact,
-                        onExplorePacks: () => context.push('/shell/packs'),
-                      ),
-                    ),
-                    SizedBox(height: gap),
-                    StaggerEntrance(
-                      index: 3,
-                      child: CampaignBannerCard(
-                        compact: isCompact,
-                        onTap: (campaignId) =>
-                            context.push('/shell/campaign/$campaignId'),
-                        onBrowseCampaigns: () =>
-                            context.push('/shell/campaigns'),
-                      ),
-                    ),
-
-                    SizedBox(height: gap + 8),
-
-                    // Section header
-                    Padding(
-                      padding: const EdgeInsets.only(left: 2, bottom: 10),
-                      child: Text(
-                        'Judges',
-                        style: GoogleFonts.poppins(
-                          fontSize: isCompact ? 18 : 20,
-                          fontWeight: FontWeight.w700,
-                          color: brightness == Brightness.dark
-                              ? AppTheme.homeTextPrimary
-                              : AppTheme.lightTextPrimary,
-                        ),
-                      ),
-                    ),
-
-                    StaggerEntrance(
-                      index: 4,
-                      child: JudgeSpotlightCard(
-                        judge: judge,
-                        judges: spotlightJudges,
-                        onExplore: () => context.push('/shell/create'),
-                        compact: isCompact,
-                        height: judgeHeight,
-                      ),
-                    ),
-
-                    SizedBox(height: gap + 8),
-
-                    // Section header
-                    Padding(
-                      padding: const EdgeInsets.only(left: 2, bottom: 10),
-                      child: Text(
-                        'Social',
-                        style: GoogleFonts.poppins(
-                          fontSize: isCompact ? 18 : 20,
-                          fontWeight: FontWeight.w700,
-                          color: brightness == Brightness.dark
-                              ? AppTheme.homeTextPrimary
-                              : AppTheme.lightTextPrimary,
-                        ),
-                      ),
-                    ),
-
-                    StaggerEntrance(
-                      index: 5,
-                      child: _CharacterChatCard(
-                        brightness: brightness,
-                        isCompact: isCompact,
-                        onTap: () => context.push('/shell/chat'),
-                      ),
-                    ),
-                  ],
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(horizontal, 12, horizontal, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                WinkidooTopBar(
+                  matchLogoToWordmark: true,
+                  notificationCount:
+                      ref.watch(unreadNotificationCountProvider),
+                  streakCount: streakWeeks,
+                  levelCount: levelCount,
+                  onNotificationTap: () =>
+                      context.push('/shell/notifications'),
+                  onStreakTap: () => context.go('/shell/profile'),
                 ),
-              ),
+                const SizedBox(height: 14),
+                PlayHeader(compact: isCompact),
+                const SizedBox(height: 12),
+                const BattlePassBar(),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: StaggerEntrance(
+                    index: 0,
+                    child: PlayCardStack(
+                      cardWidgets: [
+                        DailyDareCard(
+                          compact: isCompact,
+                          height: cardHeight,
+                          onTakeDare: () {
+                            final dare =
+                                ref.read(dailyDareProvider).value?.dare;
+                            if (dare == null) return;
+                            showModalBottomSheet<bool>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) =>
+                                  DareResponseSheet(dare: dare),
+                            );
+                          },
+                          onViewResult: () =>
+                              context.push('/shell/dare/result'),
+                        ),
+                        MiniGameCard(
+                          compact: isCompact,
+                          height: cardHeight,
+                          onPlay: () {
+                            final game =
+                                ref.read(miniGameProvider).value?.game;
+                            if (game == null) return;
+                            showModalBottomSheet<bool>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) =>
+                                  MiniGamePlaySheet(game: game),
+                            );
+                          },
+                          onViewResult: () =>
+                              context.push('/shell/minigame/result'),
+                        ),
+                        PackBannerCard(
+                          compact: isCompact,
+                          onExplorePacks: () =>
+                              context.push('/shell/packs'),
+                        ),
+                        CampaignBannerCard(
+                          compact: isCompact,
+                          onTap: (campaignId) =>
+                              context.push('/shell/campaign/$campaignId'),
+                          onBrowseCampaigns: () =>
+                              context.push('/shell/campaigns'),
+                        ),
+                        JudgeSpotlightCard(
+                          judge: judge,
+                          judges: spotlightJudges,
+                          onExplore: () => context.push('/shell/create'),
+                          compact: isCompact,
+                          height: cardHeight,
+                        ),
+                        _CharacterChatCard(
+                          brightness: brightness,
+                          isCompact: isCompact,
+                          onTap: () => context.push('/shell/chat'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

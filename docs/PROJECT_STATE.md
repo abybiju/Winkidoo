@@ -6,6 +6,17 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 25, 2026 – Play tab stacked card deck redesign
+
+**Layout overhaul:** Replaced scrollable column with 6 section headers with a stacked card deck UI.
+- **PlayHeader** widget: "pick a card." with gradient-colored "card." text, "THE PLAY FLOOR" overline.
+- **BattlePassBar** widget: season progress bar with points/tier display, gradient fill, tap → `/shell/battle-pass`.
+- **PlayCardStack** widget: 6 cards in an overlapping deck. Active card fully expanded, others collapsed as `PeekStrip` (icon + label + accent color). `AnimatedSwitcher` with fade+size transition on card switch.
+- **PeekStrip** widget: glass container with per-card accent tint, colored icon circle, label, chevron.
+- **PlayCardMeta** model + `activePlayCardProvider` (StateProvider<int>) for active card state.
+- Each card retains its original widget (DailyDareCard, MiniGameCard, PackBannerCard, CampaignBannerCard, JudgeSpotlightCard, CharacterChatCard) — no content changes.
+- All tap handlers, bottom sheets, and navigation preserved.
+
 ### May 24, 2026 – Real-time in-app notification center
 
 **Database:** Migration 043 — `notifications` table (user_id, type, title, body, data JSONB, is_read, created_at). RLS select+update own rows. Added to Realtime publication.
