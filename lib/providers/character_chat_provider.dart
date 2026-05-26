@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -109,6 +111,7 @@ final availableCharactersProvider =
         emoji: j['avatar_emoji'] as String? ?? '\u{1F3AD}',
         systemPrompt: j['generated_persona_prompt'] as String? ?? '',
         isBuiltIn: false,
+        color: const Color(0xFFB388FF),
       );
     }).toList();
 

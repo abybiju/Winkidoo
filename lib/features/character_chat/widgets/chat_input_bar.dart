@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
-import 'package:winkidoo/features/character_chat/widgets/character_selector.dart';
 import 'package:winkidoo/features/character_chat/widgets/tone_selector.dart';
+import 'package:winkidoo/providers/character_chat_provider.dart';
+import 'package:winkidoo/services/character_chat_service.dart';
 
-/// Bottom input bar: character selector row + text field + send button.
-class ChatInputBar extends StatelessWidget {
+/// Bottom input bar: mood rail + persona-tinted text field + send button.
+class ChatInputBar extends ConsumerWidget {
   const ChatInputBar({
     super.key,
     required this.controller,
@@ -19,8 +21,19 @@ class ChatInputBar extends StatelessWidget {
   final bool isSending;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final brightness = Theme.of(context).brightness;
+
+    final characterId = ref.watch(selectedCharacterProvider);
+    final characters = ref.watch(availableCharactersProvider).value ?? [];
+    final character = characters.isEmpty
+        ? CharacterChatService.builtInPresets.first
+        : characters.firstWhere(
+            (c) => c.id == characterId,
+            orElse: () => characters.first,
+          );
+
+    final accent = character.color ?? AppTheme.primaryOrange;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -44,44 +57,50 @@ class ChatInputBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CharacterSelector(),
-          const SizedBox(height: 6),
-          const ToneSelector(),
+          // Mood rail only — character selection is in the header pill
+          ToneSelector(personaColor: accent),
           const SizedBox(height: 8),
+          // Persona-tinted composer
           Row(
             children: [
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(28),
                     color: brightness == Brightness.dark
-                        ? AppTheme.glassFillHover
+                        ? const Color(0xFF0F0828).withValues(alpha: 0.70)
                         : Colors.white.withValues(alpha: 0.80),
                     border: Border.all(
-                      color: brightness == Brightness.dark
-                          ? AppTheme.glassBorder
-                          : AppTheme.lightGlassBorder,
+                      color: accent.withValues(alpha: 0.20),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.14),
+                        blurRadius: 16,
+                      ),
+                    ],
                   ),
                   child: TextField(
                     controller: controller,
                     style: GoogleFonts.inter(
-                      fontSize: 15,
+                      fontSize: 14,
                       color: brightness == Brightness.dark
                           ? AppTheme.homeTextPrimary
                           : AppTheme.lightTextPrimary,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Type a message...',
+                      hintText: character.id == 'normal'
+                          ? 'Type a message...'
+                          : 'say it as ${character.name}...',
                       hintStyle: GoogleFonts.inter(
-                        fontSize: 15,
+                        fontSize: 14,
                         color: brightness == Brightness.dark
                             ? AppTheme.homeTextSecondary
                             : AppTheme.lightTextSecondary,
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
+                        horizontal: 18,
                         vertical: 10,
                       ),
                     ),
@@ -97,14 +116,30 @@ class ChatInputBar extends StatelessWidget {
               GestureDetector(
                 onTap: isSending ? null : onSend,
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 40,
+                  height: 40,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
+                    gradient: isSending
+                        ? null
+                        : LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [accent, accent.withValues(alpha: 0.67)],
+                          ),
                     color: isSending
-                        ? AppTheme.primaryOrange.withValues(alpha: 0.4)
-                        : AppTheme.primaryOrange,
+                        ? accent.withValues(alpha: 0.4)
+                        : null,
+                    boxShadow: isSending
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: accent.withValues(alpha: 0.40),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                   ),
                   child: isSending
                       ? const SizedBox(
@@ -118,7 +153,7 @@ class ChatInputBar extends StatelessWidget {
                       : const Icon(
                           PhosphorIconsFill.paperPlaneTilt,
                           color: Colors.white,
-                          size: 20,
+                          size: 18,
                         ),
                 ),
               ),

@@ -20,11 +20,13 @@ class CharacterChatService {
       name: 'Normal',
       emoji: '',
       systemPrompt: '',
+      color: Color(0xFFF7F2FF),
     ),
     CharacterPreset(
       id: 'trump',
       name: 'Trump',
       emoji: '\u{1F1FA}\u{1F1F8}',
+      color: Color(0xFFFFD53D),
       systemPrompt:
           'Speak like Donald Trump, 47th President of the United States (2025–present). '
           'Use superlatives obsessively — "tremendous", "the best", "nobody does it '
@@ -41,6 +43,7 @@ class CharacterChatService {
       id: 'shakespeare',
       name: 'Shakespeare',
       emoji: '\u{1F3AD}',
+      color: Color(0xFFB388FF),
       systemPrompt:
           'Speak like William Shakespeare — the passionate, dramatic Bard of Avon. '
           'Use Elizabethan English: "thy", "thou", "doth", "forsooth", "hark", '
@@ -56,6 +59,7 @@ class CharacterChatService {
       id: 'pirate',
       name: 'Pirate',
       emoji: '\u{1F3F4}\u{200D}\u{2620}\u{FE0F}',
+      color: Color(0xFF4DFFB8),
       systemPrompt:
           'Speak like a legendary swashbuckling pirate captain on the high seas. '
           'Use "Arrr", "ye", "matey", "scallywag", "shiver me timbers", "by Davy '
@@ -71,6 +75,7 @@ class CharacterChatService {
       id: 'valley_girl',
       name: 'Valley Girl',
       emoji: '\u{1F485}',
+      color: Color(0xFFFF3D8B),
       systemPrompt:
           'Speak like a Gen-Z Valley Girl who lives on TikTok and Instagram. Use '
           '"like", "totally", "omg", "I literally cannot even", "sooo", "for real", '
@@ -86,6 +91,7 @@ class CharacterChatService {
       id: 'corporate',
       name: 'Corporate',
       emoji: '\u{1F4BC}',
+      color: Color(0xFF4DCBFF),
       systemPrompt:
           'Speak in hilariously exaggerated corporate buzzword jargon. Use "per my '
           'last message", "circling back", "synergy", "let\'s take this offline", '
@@ -101,6 +107,7 @@ class CharacterChatService {
       id: 'yoda',
       name: 'Yoda',
       emoji: '\u{1F7E2}',
+      color: Color(0xFF7AE0C2),
       systemPrompt:
           'Speak like Yoda, the legendary Jedi Grand Master from Star Wars. Invert '
           'sentence structure consistently — object or verb before subject: "Strong '
@@ -115,6 +122,7 @@ class CharacterChatService {
       id: 'gordon_ramsay',
       name: 'Gordon Ramsay',
       emoji: '\u{1F468}\u{200D}\u{1F373}',
+      color: Color(0xFFFF8AB0),
       systemPrompt:
           'Speak like Gordon Ramsay — the fiery Michelin-starred chef from Hell\'s '
           'Kitchen, MasterChef, and Kitchen Nightmares. Be intensely passionate and '
