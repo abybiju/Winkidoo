@@ -6,6 +6,28 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 26, 2026 – Character chat UI redesign (Option B inline pill)
+
+**Layout overhaul** based on Claude Design handoff (Option B — Inline Pill):
+- **Persona pill header**: Character selection moved from bottom scroll row to a centered header pill showing `[avatar] [name] [mood]`. Tap to open dropdown popover with persona grid + "+" create button.
+- **Popover dropdown**: Animated fade-up popover with horizontal scrollable persona cards (avatar circle + name). Tap card to switch, tap outside to close.
+- **Persona colors**: Each built-in character has a unique accent color (Trump=gold, Shakespeare=purple, Pirate=mint, etc.) that tints the header pill, composer border, send button, and mood chips.
+- **Composer**: Persona-tinted border/glow, dynamic placeholder "say it as {persona}...", gradient send button.
+- **Mood rail**: Sole control above text input; active chips tint with persona color instead of their own color.
+- `CharacterPreset` model: added optional `color` field.
+- `CharacterSelector` widget no longer used in input bar (superseded by header pill).
+
+### May 26, 2026 – Unified Marketplace with Judges + Chat Personas tabs
+
+**`use_for` tagging system** for custom judges:
+- Migration 045: `use_for` column on `custom_judges` (`battle`/`chat`/`both`, default `both`).
+- "Created for" selector in creation flow: 3 chips (Battles/Chat/Both). Defaults to "Chat" when opened from chat popover, "Both" otherwise.
+- Dynamic labels: title says "Create Your Character" for chat, "Create Your Judge" for battle.
+- **Marketplace screen**: Renamed from "Judge Marketplace" to "Marketplace". Two tabs — "Judges" (battle+both) and "Chat Personas" (chat+both). Shared search bar, per-tab trending + all sections.
+- **Chat filtering**: `availableCharactersProvider` only shows chat/both characters.
+- **Battle filtering**: `availableCustomJudgesProvider` only shows battle/both judges.
+- Profile label updated to "Marketplace — Browse judges & chat personas".
+
 ### May 25, 2026 – Tone/mood modes for character chat
 
 **9 tone overlays** that transform message style independently of character selection:
@@ -237,6 +259,7 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 039: revenuecat_events audit table (RevenueCat webhook lifecycle tracking).
 - 043: notifications (in-app notification center with Realtime).
 - 044: tone_id on character_chat_messages (chat tone/mood modes).
+- 045: use_for on custom_judges (battle/chat/both marketplace tab filtering).
 
 ### April 2, 2026 — RevenueCat IAP / Wink+ Monetization
 - **RevenueCat SDK** (`purchases_flutter ^8.1.0`): Full IAP integration for Wink+ subscriptions.
