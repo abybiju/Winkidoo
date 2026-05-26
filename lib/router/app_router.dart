@@ -401,7 +401,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/shell/create-judge',
-        builder: (_, __) => const CreateCustomJudgeScreen(),
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CreateCustomJudgeScreen(
+            defaultUseFor: extra?['defaultUseFor'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: '/shell/judge-marketplace',

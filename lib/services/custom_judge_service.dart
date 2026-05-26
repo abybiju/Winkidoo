@@ -15,6 +15,7 @@ class CustomJudgeService {
     required String coupleId,
     required String personalityName,
     required String mood,
+    String useFor = 'both',
     String? avatarStoragePath,
     String tavilyApiKey = '',
     void Function(String status)? onStatusUpdate,
@@ -29,6 +30,7 @@ class CustomJudgeService {
             'personality_name': personalityName,
             'personality_query': personalityName,
             'mood': mood,
+            'use_for': useFor,
             'generated_persona_prompt': 'Generating...',
             'avatar_storage_path': avatarStoragePath,
             'avatar_emoji': '🎭',
@@ -153,6 +155,7 @@ class CustomJudgeService {
   static Future<List<CustomJudge>> getMarketplaceJudges(
     SupabaseClient client, {
     String? searchQuery,
+    String? useFor,
     int limit = 20,
   }) async {
     try {
@@ -165,12 +168,15 @@ class CustomJudgeService {
       if (searchQuery != null && searchQuery.isNotEmpty) {
         query = query.ilike('personality_name', '%$searchQuery%');
       }
+      if (useFor != null) {
+        query = query.inFilter('use_for', [useFor, 'both']);
+      }
 
       final rows = await query
           .order('use_count', ascending: false)
           .limit(limit);
       final result = (rows as List).map((r) => CustomJudge.fromJson(r)).toList();
-      debugPrint('CustomJudgeService.getMarketplaceJudges: found ${result.length} judges (search=$searchQuery)');
+      debugPrint('CustomJudgeService.getMarketplaceJudges: found ${result.length} judges (search=$searchQuery, useFor=$useFor)');
       return result;
     } catch (e, st) {
       debugPrint('CustomJudgeService.getMarketplaceJudges ERROR: $e\n$st');
@@ -178,18 +184,25 @@ class CustomJudgeService {
     }
   }
 
-  /// Gets top trending judges.
+  /// Gets top trending judges, optionally filtered by use_for.
   static Future<List<CustomJudge>> getTrendingJudges(
     SupabaseClient client, {
+    String? useFor,
     int limit = 10,
   }) async {
     try {
-      final rows = await client
+      var query = client
           .from('custom_judges')
           .select()
           .eq('is_published', true)
           .eq('is_flagged', false)
-          .gt('use_count', 0)
+          .gt('use_count', 0);
+
+      if (useFor != null) {
+        query = query.inFilter('use_for', [useFor, 'both']);
+      }
+
+      final rows = await query
           .order('use_count', ascending: false)
           .limit(limit);
       return (rows as List).map((r) => CustomJudge.fromJson(r)).toList();

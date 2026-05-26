@@ -22,24 +22,35 @@ final adoptedJudgesProvider = FutureProvider<List<CustomJudge>>((ref) async {
 
 /// All custom judges available to the couple (own + adopted).
 /// Custom judges active for battle (own with is_active_for_battle + adopted).
+/// Filters to judges tagged for battle use.
 final availableCustomJudgesProvider =
     FutureProvider<List<CustomJudge>>((ref) async {
   final mine = await ref.watch(myCustomJudgesProvider.future);
   final adopted = await ref.watch(adoptedJudgesProvider.future);
-  // Only include own judges that are toggled for battle
-  final activeMine = mine.where((j) => j.isActiveForBattle).toList();
-  return [...activeMine, ...adopted];
+  final activeMine =
+      mine.where((j) => j.isActiveForBattle && j.isForBattle).toList();
+  final battleAdopted = adopted.where((j) => j.isForBattle).toList();
+  return [...activeMine, ...battleAdopted];
 });
 
-/// Marketplace judges (with optional search query).
+/// Marketplace filter params.
+typedef MarketplaceFilter = ({String? search, String? useFor});
+
+/// Marketplace judges (with optional search query and use_for filter).
 final marketplaceJudgesProvider =
-    FutureProvider.family<List<CustomJudge>, String?>((ref, query) async {
+    FutureProvider.family<List<CustomJudge>, MarketplaceFilter>(
+        (ref, filter) async {
   final client = ref.read(supabaseClientProvider);
-  return CustomJudgeService.getMarketplaceJudges(client, searchQuery: query);
+  return CustomJudgeService.getMarketplaceJudges(
+    client,
+    searchQuery: filter.search,
+    useFor: filter.useFor,
+  );
 });
 
-/// Top trending custom judges.
-final trendingJudgesProvider = FutureProvider<List<CustomJudge>>((ref) async {
+/// Top trending custom judges (optionally filtered by use_for).
+final trendingJudgesProvider =
+    FutureProvider.family<List<CustomJudge>, String?>((ref, useFor) async {
   final client = ref.read(supabaseClientProvider);
-  return CustomJudgeService.getTrendingJudges(client);
+  return CustomJudgeService.getTrendingJudges(client, useFor: useFor);
 });

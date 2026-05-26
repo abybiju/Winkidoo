@@ -21,21 +21,30 @@ class CustomJudgeMarketplaceScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomJudgeMarketplaceScreenState
-    extends ConsumerState<CustomJudgeMarketplaceScreen> {
+    extends ConsumerState<CustomJudgeMarketplaceScreen>
+    with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   String? _searchQuery;
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final trendingAsync = ref.watch(trendingJudgesProvider);
-    final marketplaceAsync =
-        ref.watch(marketplaceJudgesProvider(_searchQuery));
     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
@@ -44,6 +53,7 @@ class _CustomJudgeMarketplaceScreenState
         child: SafeArea(
           child: Column(
             children: [
+              // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(
@@ -54,12 +64,54 @@ class _CustomJudgeMarketplaceScreenState
                       onPressed: () => context.pop(),
                     ),
                     const SizedBox(width: 8),
-                    Text('Judge Marketplace',
+                    Text('Marketplace',
                         style: GoogleFonts.inter(
                           fontSize: 22, fontWeight: FontWeight.w700,
                           color: AppTheme.homeTextPrimary,
                         )),
                   ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Tab bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: brightness == Brightness.dark
+                        ? AppTheme.glassFill
+                        : AppTheme.lightGlassFill,
+                    border: Border.all(
+                      color: brightness == Brightness.dark
+                          ? AppTheme.glassBorder
+                          : AppTheme.lightGlassBorder,
+                    ),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(
+                          colors: [AppTheme.ctaOrangeA, AppTheme.ctaOrangeB]),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    labelColor: const Color(0xFF4A2800),
+                    unselectedLabelColor: brightness == Brightness.dark
+                        ? AppTheme.homeTextSecondary
+                        : AppTheme.lightTextSecondary,
+                    labelStyle: GoogleFonts.poppins(
+                        fontSize: 13, fontWeight: FontWeight.w700),
+                    unselectedLabelStyle: GoogleFonts.poppins(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                    tabs: const [
+                      Tab(text: 'Judges'),
+                      Tab(text: 'Chat Personas'),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -99,92 +151,28 @@ class _CustomJudgeMarketplaceScreenState
                           color: AppTheme.primaryOrange.withValues(alpha: 0.5)),
                     ),
                   ),
-                  onSubmitted: (q) =>
-                      setState(() => _searchQuery = q.trim().isEmpty ? null : q.trim()),
+                  onSubmitted: (q) => setState(
+                      () => _searchQuery = q.trim().isEmpty ? null : q.trim()),
                 ),
               ),
               const SizedBox(height: 16),
 
+              // Tab content
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Trending section
-                      if (_searchQuery == null) ...[
-                        trendingAsync.when(
-                          loading: () => const SizedBox.shrink(),
-                          error: (_, __) => const SizedBox.shrink(),
-                          data: (trending) {
-                            if (trending.isEmpty) return const SizedBox.shrink();
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('TRENDING',
-                                    style:
-                                        AppTheme.overline(brightness).copyWith(
-                                      color: AppTheme.homeTextSecondary,
-                                      letterSpacing: 1.2,
-                                    )),
-                                const SizedBox(height: 10),
-                                ...trending.map((j) => _JudgeMarketCard(
-                                      judge: j,
-                                      onUse: () => _useJudge(j),
-                                    )),
-                                const SizedBox(height: 20),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-
-                      // All / search results
-                      Text(
-                        _searchQuery != null
-                            ? 'RESULTS'
-                            : 'ALL JUDGES',
-                        style: AppTheme.overline(brightness).copyWith(
-                          color: AppTheme.homeTextSecondary,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      marketplaceAsync.when(
-                        loading: () => const Center(
-                          child: CircularProgressIndicator(
-                              color: AppTheme.primaryOrange),
-                        ),
-                        error: (_, __) => Text('Could not load judges.',
-                            style: GoogleFonts.inter(
-                                color: AppTheme.textMuted)),
-                        data: (judges) {
-                          if (judges.isEmpty) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 40),
-                              child: Center(
-                                child: Text(
-                                  _searchQuery != null
-                                      ? 'No judges found for "$_searchQuery".'
-                                      : 'No judges published yet. Be the first!',
-                                  style: GoogleFonts.inter(
-                                      color: AppTheme.textMuted),
-                                ),
-                              ),
-                            );
-                          }
-                          return Column(
-                            children: judges
-                                .map((j) => _JudgeMarketCard(
-                                      judge: j,
-                                      onUse: () => _useJudge(j),
-                                    ))
-                                .toList(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _MarketplaceTab(
+                      useFor: 'battle',
+                      searchQuery: _searchQuery,
+                      onUse: _useJudge,
+                    ),
+                    _MarketplaceTab(
+                      useFor: 'chat',
+                      searchQuery: _searchQuery,
+                      onUse: _useJudge,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -206,16 +194,111 @@ class _CustomJudgeMarketplaceScreenState
       coupleId: couple.id,
     );
     ref.invalidate(adoptedJudgesProvider);
-    ref.invalidate(trendingJudgesProvider);
+    ref.invalidate(trendingJudgesProvider('battle'));
+    ref.invalidate(trendingJudgesProvider('chat'));
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${judge.personalityName} added to your judges!'),
+          content: Text('${judge.personalityName} added!'),
           backgroundColor: AppTheme.success,
         ),
       );
     }
+  }
+}
+
+/// A single tab's content — trending + all/search, filtered by useFor.
+class _MarketplaceTab extends ConsumerWidget {
+  const _MarketplaceTab({
+    required this.useFor,
+    required this.searchQuery,
+    required this.onUse,
+  });
+
+  final String useFor;
+  final String? searchQuery;
+  final ValueChanged<CustomJudge> onUse;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final brightness = Theme.of(context).brightness;
+    final trendingAsync = ref.watch(trendingJudgesProvider(useFor));
+    final filter = (search: searchQuery, useFor: useFor);
+    final marketplaceAsync = ref.watch(marketplaceJudgesProvider(filter));
+    final emptyLabel =
+        useFor == 'chat' ? 'Chat Personas' : 'Judges';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Trending
+          if (searchQuery == null)
+            trendingAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (trending) {
+                if (trending.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('TRENDING',
+                        style: AppTheme.overline(brightness).copyWith(
+                          color: AppTheme.homeTextSecondary,
+                          letterSpacing: 1.2,
+                        )),
+                    const SizedBox(height: 10),
+                    ...trending.map((j) => _JudgeMarketCard(
+                          judge: j, onUse: () => onUse(j))),
+                    const SizedBox(height: 20),
+                  ],
+                );
+              },
+            ),
+
+          // All / search results
+          Text(
+            searchQuery != null ? 'RESULTS' : 'ALL $emptyLabel'.toUpperCase(),
+            style: AppTheme.overline(brightness).copyWith(
+              color: AppTheme.homeTextSecondary,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+          marketplaceAsync.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(
+                  color: AppTheme.primaryOrange),
+            ),
+            error: (_, __) => Text('Could not load.',
+                style: GoogleFonts.inter(color: AppTheme.textMuted)),
+            data: (judges) {
+              if (judges.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Center(
+                    child: Text(
+                      searchQuery != null
+                          ? 'No results for "$searchQuery".'
+                          : 'No $emptyLabel published yet. Be the first!',
+                      style: GoogleFonts.inter(color: AppTheme.textMuted),
+                    ),
+                  ),
+                );
+              }
+              return Column(
+                children: judges
+                    .map((j) => _JudgeMarketCard(
+                          judge: j, onUse: () => onUse(j)))
+                    .toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -306,9 +389,9 @@ class _JudgeMarketCard extends StatelessWidget {
   }
 }
 
-/// Reusable avatar widget that resolves signed URLs from the correct storage bucket.
 class _JudgeAvatar extends StatelessWidget {
-  const _JudgeAvatar({required this.judge, this.size = 44, this.emojiSize = 28});
+  const _JudgeAvatar(
+      {required this.judge, this.size = 44, this.emojiSize = 28});
 
   final CustomJudge judge;
   final double size;
@@ -320,9 +403,11 @@ class _JudgeAvatar extends StatelessWidget {
     final hasAvatar = rawPath != null && rawPath.isNotEmpty;
     if (!hasAvatar) {
       return SizedBox(
-        width: size, height: size,
-        child: Center(child: Text(judge.avatarEmoji,
-            style: TextStyle(fontSize: emojiSize))),
+        width: size,
+        height: size,
+        child: Center(
+            child: Text(judge.avatarEmoji,
+                style: TextStyle(fontSize: emojiSize))),
       );
     }
     final String bucket;
@@ -335,23 +420,25 @@ class _JudgeAvatar extends StatelessWidget {
       path = rawPath;
     }
     return SizedBox(
-      width: size, height: size,
+      width: size,
+      height: size,
       child: FutureBuilder<String>(
         future: Supabase.instance.client.storage
             .from(bucket)
             .createSignedUrl(path, 3600),
         builder: (ctx, snap) {
           if (!snap.hasData || (snap.data?.isEmpty ?? true)) {
-            return Center(child: Text(judge.avatarEmoji,
-                style: TextStyle(fontSize: emojiSize)));
+            return Center(
+                child: Text(judge.avatarEmoji,
+                    style: TextStyle(fontSize: emojiSize)));
           }
           return ClipOval(
             child: Image.network(snap.data!,
                 width: size, height: size, fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Center(
-                  child: Text(judge.avatarEmoji,
-                      style: TextStyle(fontSize: emojiSize)),
-                )),
+                      child: Text(judge.avatarEmoji,
+                          style: TextStyle(fontSize: emojiSize)),
+                    )),
           );
         },
       ),

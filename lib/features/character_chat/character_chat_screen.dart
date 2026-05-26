@@ -448,7 +448,8 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                     },
                     onCreateTap: () {
                       setState(() => _isPopoverOpen = false);
-                      context.push('/shell/create-judge');
+                      context.push('/shell/create-judge',
+                          extra: {'defaultUseFor': 'chat'});
                     },
                   ),
                 ),

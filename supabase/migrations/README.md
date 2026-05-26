@@ -47,6 +47,7 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 42. **042_rate_limits.sql** — `rate_limit_entries` table + `check_rate_limit(user_id, action, max_attempts, window_seconds)` RPC for server-side sliding-window rate limiting; `cleanup_rate_limit_entries()` for periodic purge; RLS scoped to own entries
 43. **043_notifications.sql** — `notifications` table for in-app notification center; indexed by `(user_id, is_read, created_at DESC)`; RLS select+update own rows; added to Realtime publication
 44. **044_chat_tone_mode.sql** — Add `tone_id` column to `character_chat_messages` for mood/tone transformation overlay
+45. **045_judge_use_for.sql** — Add `use_for` column (`battle`/`chat`/`both`) to `custom_judges` for marketplace tab filtering
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 

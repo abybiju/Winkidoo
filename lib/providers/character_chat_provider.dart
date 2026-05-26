@@ -91,10 +91,11 @@ final availableCharactersProvider =
     final couple = ref.watch(coupleProvider).value;
     final coupleId = couple?.id;
 
-    // Fetch couple's own judges + published marketplace judges
+    // Fetch couple's own judges + published marketplace judges (chat-compatible only)
     var query = client
         .from('custom_judges')
-        .select('id, personality_name, avatar_emoji, generated_persona_prompt');
+        .select('id, personality_name, avatar_emoji, generated_persona_prompt, use_for')
+        .inFilter('use_for', ['chat', 'both']);
     if (coupleId != null) {
       query = query.or('couple_id.eq.$coupleId,is_published.eq.true');
     } else {

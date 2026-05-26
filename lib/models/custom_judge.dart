@@ -16,6 +16,7 @@ class CustomJudge {
     required this.useCount,
     required this.isFlagged,
     required this.isActiveForBattle,
+    this.useFor = 'both',
     required this.createdAt,
   });
 
@@ -35,7 +36,11 @@ class CustomJudge {
   final int useCount;
   final bool isFlagged;
   final bool isActiveForBattle;
+  final String useFor;
   final DateTime createdAt;
+
+  bool get isForChat => useFor == 'chat' || useFor == 'both';
+  bool get isForBattle => useFor == 'battle' || useFor == 'both';
 
   factory CustomJudge.fromJson(Map<String, dynamic> json) {
     List<String> quotes = [];
@@ -61,6 +66,7 @@ class CustomJudge {
       useCount: json['use_count'] as int? ?? 0,
       isFlagged: json['is_flagged'] as bool? ?? false,
       isActiveForBattle: json['is_active_for_battle'] as bool? ?? false,
+      useFor: (json['use_for'] as String?) ?? 'both',
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -83,6 +89,7 @@ class CustomJudge {
       'use_count': useCount,
       'is_flagged': isFlagged,
       'is_active_for_battle': isActiveForBattle,
+      'use_for': useFor,
       'created_at': createdAt.toIso8601String(),
     };
   }

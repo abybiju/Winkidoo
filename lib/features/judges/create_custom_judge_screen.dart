@@ -27,7 +27,9 @@ const _tavilyApiKey =
     String.fromEnvironment('TAVILY_API_KEY', defaultValue: '');
 
 class CreateCustomJudgeScreen extends ConsumerStatefulWidget {
-  const CreateCustomJudgeScreen({super.key});
+  const CreateCustomJudgeScreen({super.key, this.defaultUseFor});
+
+  final String? defaultUseFor;
 
   @override
   ConsumerState<CreateCustomJudgeScreen> createState() =>
@@ -38,6 +40,7 @@ class _CreateCustomJudgeScreenState
     extends ConsumerState<CreateCustomJudgeScreen> {
   final _nameController = TextEditingController();
   final Set<String> _selectedMoods = {'funny'};
+  late String _useFor;
   Uint8List? _avatarBytes;
   int _step = 0; // 0=name, 1=mood, 2=generating, 3=preview, 4=saved
   String _generatingStatus = ''; // searching, generating, ready
@@ -48,6 +51,7 @@ class _CreateCustomJudgeScreenState
   @override
   void initState() {
     super.initState();
+    _useFor = widget.defaultUseFor ?? 'both';
     _checkRateLimit();
   }
 
@@ -279,6 +283,7 @@ class _CreateCustomJudgeScreenState
       coupleId: couple.id,
       personalityName: name,
       mood: _selectedMoods.join('+'),
+      useFor: _useFor,
       tavilyApiKey: _tavilyApiKey,
       onStatusUpdate: (status) {
         if (mounted) setState(() => _generatingStatus = status);
@@ -472,7 +477,57 @@ class _CreateCustomJudgeScreenState
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
+
+                  // Created for selector
+                  StaggerEntrance(
+                    index: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Created for',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: brightness == Brightness.dark
+                                  ? AppTheme.homeTextPrimary
+                                  : AppTheme.lightTextPrimary,
+                            )),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _UseForChip(
+                              label: 'Battles',
+                              icon: Icons.shield_outlined,
+                              value: 'battle',
+                              selected: _useFor,
+                              onTap: () =>
+                                  setState(() => _useFor = 'battle'),
+                            ),
+                            const SizedBox(width: 8),
+                            _UseForChip(
+                              label: 'Chat',
+                              icon: Icons.chat_bubble_outline_rounded,
+                              value: 'chat',
+                              selected: _useFor,
+                              onTap: () =>
+                                  setState(() => _useFor = 'chat'),
+                            ),
+                            const SizedBox(width: 8),
+                            _UseForChip(
+                              label: 'Both',
+                              icon: Icons.star_outline_rounded,
+                              value: 'both',
+                              selected: _useFor,
+                              onTap: () =>
+                                  setState(() => _useFor = 'both'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
 
                   // Generate CTA
                   StaggerEntrance(
@@ -890,6 +945,64 @@ class _StatPill extends StatelessWidget {
                 color: AppTheme.homeTextPrimary,
               )),
         ],
+      ),
+    );
+  }
+}
+
+class _UseForChip extends StatelessWidget {
+  const _UseForChip({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final String value;
+  final String selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = value == selected;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: isActive
+                ? AppTheme.primaryOrange.withValues(alpha: 0.15)
+                : AppTheme.glassFill,
+            border: Border.all(
+              color: isActive ? AppTheme.primaryOrange : AppTheme.glassBorder,
+              width: isActive ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  size: 20,
+                  color: isActive
+                      ? AppTheme.primaryOrange
+                      : AppTheme.textMuted),
+              const SizedBox(height: 4),
+              Text(label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isActive
+                        ? AppTheme.primaryOrange
+                        : AppTheme.textMuted,
+                  )),
+            ],
+          ),
+        ),
       ),
     );
   }
