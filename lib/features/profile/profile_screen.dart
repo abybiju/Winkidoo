@@ -94,8 +94,8 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _ProfileActionCard(
                     icon: Icons.explore_rounded,
-                    label: 'Judge Marketplace',
-                    subtitle: 'Browse community-created judges',
+                    label: 'Marketplace',
+                    subtitle: 'Browse judges & chat personas',
                     onTap: () => context.push('/shell/judge-marketplace'),
                   ),
                   const SizedBox(height: 12),
