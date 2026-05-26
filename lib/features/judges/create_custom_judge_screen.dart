@@ -332,7 +332,11 @@ class _CreateCustomJudgeScreenState
                 Center(
                   child: Column(
                     children: [
-                      Text('Create Your Judge',
+                      Text(_useFor == 'chat'
+                              ? 'Create Your Character'
+                              : _useFor == 'battle'
+                                  ? 'Create Your Judge'
+                                  : 'Create Your Character',
                           style: GoogleFonts.inter(
                             fontSize: 26, fontWeight: FontWeight.w800,
                             color: AppTheme.homeTextPrimary, letterSpacing: -0.5,
@@ -370,7 +374,9 @@ class _CreateCustomJudgeScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('WHO SHOULD JUDGE YOU?',
+                        Text(_useFor == 'battle'
+                                ? 'WHO SHOULD JUDGE YOU?'
+                                : 'WHO SHOULD CHAT AS?',
                             style: AppTheme.overline(brightness).copyWith(
                               color: AppTheme.homeTextSecondary,
                               letterSpacing: 1.2,
@@ -564,7 +570,9 @@ class _CreateCustomJudgeScreenState
                               : null,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(26)),
-                          child: Text('Generate Judge',
+                          child: Text(_useFor == 'battle'
+                                  ? 'Generate Judge'
+                                  : 'Generate Character',
                               style: GoogleFonts.poppins(
                                 fontSize: 16, fontWeight: FontWeight.w700,
                                 color: _nameController.text.trim().isNotEmpty
