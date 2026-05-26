@@ -1,7 +1,10 @@
+import 'dart:ui';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/models/character_chat_message.dart';
 import 'package:winkidoo/models/character_preset.dart';
 import 'package:winkidoo/models/chat_room.dart';
+import 'package:winkidoo/models/tone_preset.dart';
 
 /// DB operations for character chat rooms and messages.
 class CharacterChatService {
@@ -126,6 +129,126 @@ class CharacterChatService {
     ),
   ];
 
+  // ── Built-in tone presets ──
+
+  static const builtInTones = <TonePreset>[
+    TonePreset(
+      id: 'none',
+      name: 'None',
+      emoji: '',
+      description: '',
+      promptInstructions: '',
+      color: Color(0x00000000),
+    ),
+    TonePreset(
+      id: 'romantic',
+      name: 'Romantic',
+      emoji: '\u{1F495}',
+      description: 'Tender, sweet, affectionate',
+      promptInstructions:
+          'Make the message sound deeply romantic and affectionate. Use tender '
+          'language, sweet metaphors about love, warmth, and closeness. Add '
+          'terms of endearment naturally. Make it heartfelt without being cheesy.',
+      color: Color(0xFFFF6B9D),
+    ),
+    TonePreset(
+      id: 'flirty',
+      name: 'Flirty',
+      emoji: '\u{1F618}',
+      description: 'Playful, teasing, suggestive',
+      promptInstructions:
+          'Make the message playfully flirtatious. Add subtle teasing, double '
+          'meanings, confident charm, and playful energy. Keep it fun and '
+          'light — suggestive but tasteful. Wink-worthy.',
+      color: Color(0xFFE040FB),
+    ),
+    TonePreset(
+      id: 'funny',
+      name: 'Funny',
+      emoji: '\u{1F602}',
+      description: 'Comedic, witty, humorous',
+      promptInstructions:
+          'Make the message genuinely funny. Add wit, clever wordplay, comedic '
+          'timing, unexpected punchlines, or absurd twists. Go for laughs — '
+          'the kind that makes someone snort-laugh reading it.',
+      color: Color(0xFFFFD166),
+    ),
+    TonePreset(
+      id: 'angry',
+      name: 'Angry',
+      emoji: '\u{1F624}',
+      description: 'Intense, fiery, dramatic',
+      promptInstructions:
+          'Make the message sound intensely angry and fired up. Use ALL CAPS '
+          'for key words, dramatic emphasis, fiery language, and raw intensity. '
+          'Channel righteous fury — not hostile, but passionately outraged.',
+      color: Color(0xFFFF4444),
+    ),
+    TonePreset(
+      id: 'happy',
+      name: 'Happy',
+      emoji: '\u{1F60A}',
+      description: 'Cheerful, enthusiastic, positive',
+      promptInstructions:
+          'Make the message radiate joy and enthusiasm. Use exclamation marks, '
+          'upbeat language, infectious positivity, and genuine warmth. '
+          'Everything is wonderful and exciting!',
+      color: Color(0xFF4CAF50),
+    ),
+    TonePreset(
+      id: 'savage',
+      name: 'Savage',
+      emoji: '\u{1F525}',
+      description: 'Brutally honest, roasting',
+      promptInstructions:
+          'Make the message brutally honest with roasting energy. Add mic-drop '
+          'moments, savage one-liners, sharp wit, and unapologetic directness. '
+          'Roast with style — clever, not mean-spirited.',
+      color: Color(0xFFFF6B6B),
+    ),
+    TonePreset(
+      id: 'dramatic',
+      name: 'Dramatic',
+      emoji: '\u{1F3AD}',
+      description: 'Theatrical, over-the-top',
+      promptInstructions:
+          'Make the message theatrical and over-the-top dramatic. Add gasps, '
+          'dramatic pauses, cinematic descriptions, and emotional intensity. '
+          'Everything is a scene from an epic movie or telenovela.',
+      color: Color(0xFF9C27B0),
+    ),
+    TonePreset(
+      id: 'poetic',
+      name: 'Poetic',
+      emoji: '\u{1F339}',
+      description: 'Lyrical, metaphorical, beautiful',
+      promptInstructions:
+          'Make the message lyrical and poetic. Use beautiful metaphors, '
+          'rhythmic prose, vivid imagery, and flowing language. Turn everyday '
+          'words into something that sounds like it belongs in a poem or song.',
+      color: Color(0xFF7C5CFC),
+    ),
+    TonePreset(
+      id: 'sarcastic',
+      name: 'Sarcastic',
+      emoji: '\u{1F60F}',
+      description: 'Dry wit, ironic',
+      promptInstructions:
+          'Make the message dripping with sarcasm and dry wit. Add ironic '
+          'observations, "oh sure, totally" energy, eye-roll-worthy comments, '
+          'and deadpan delivery. The kind of sarcasm that makes people laugh.',
+      color: Color(0xFF78909C),
+    ),
+  ];
+
+  /// Finds a tone preset by ID, returns the "none" preset if not found.
+  static TonePreset toneById(String id) {
+    return builtInTones.firstWhere(
+      (t) => t.id == id,
+      orElse: () => builtInTones.first,
+    );
+  }
+
   // ── Room operations ──
 
   /// Creates a new chat room and adds members. Returns the room ID.
@@ -235,18 +358,24 @@ class CharacterChatService {
     required String originalContent,
     required String characterId,
     required String characterName,
+    String? toneId,
     bool isTransforming = false,
   }) async {
+    final row = <String, dynamic>{
+      'room_id': roomId,
+      'sender_id': senderId,
+      'original_content': originalContent,
+      'character_id': characterId,
+      'character_name': characterName,
+      'is_transforming': isTransforming,
+    };
+    if (toneId != null && toneId != 'none') {
+      row['tone_id'] = toneId;
+    }
+
     final result = await _client
         .from('character_chat_messages')
-        .insert({
-          'room_id': roomId,
-          'sender_id': senderId,
-          'original_content': originalContent,
-          'character_id': characterId,
-          'character_name': characterName,
-          'is_transforming': isTransforming,
-        })
+        .insert(row)
         .select('id')
         .single();
 

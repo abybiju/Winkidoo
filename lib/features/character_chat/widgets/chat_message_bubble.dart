@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/models/character_chat_message.dart';
+import 'package:winkidoo/services/character_chat_service.dart';
 
 /// A single chat message bubble with character badge and tap-to-reveal.
 class ChatMessageBubble extends StatefulWidget {
@@ -33,6 +34,28 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         _showOriginal ? msg.originalContent : msg.displayContent;
     final isTransforming = msg.isTransforming;
 
+    // Build badge label: "as Trump 💕 Romantic", "💕 Romantic", or "as Trump"
+    final tone = msg.hasTone ? CharacterChatService.toneById(msg.toneId!) : null;
+    final showBadge = !msg.isNormal || msg.hasTone;
+    String badgeText = '';
+    if (!msg.isNormal && msg.hasTone) {
+      badgeText = 'as ${msg.characterName} ${tone!.emoji} ${tone.name}';
+    } else if (!msg.isNormal) {
+      badgeText = 'as ${msg.characterName}';
+    } else if (msg.hasTone) {
+      badgeText = '${tone!.emoji} ${tone.name}';
+    }
+
+    // Transforming label
+    String transformingLabel = 'Transforming';
+    if (!msg.isNormal && msg.hasTone) {
+      transformingLabel = 'Transforming as ${msg.characterName} (${tone!.name})...';
+    } else if (!msg.isNormal) {
+      transformingLabel = 'Transforming as ${msg.characterName}...';
+    } else if (msg.hasTone) {
+      transformingLabel = 'Transforming to ${tone!.name}...';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Align(
@@ -45,16 +68,17 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             crossAxisAlignment:
                 isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              // Character badge
-              if (!msg.isNormal)
+              // Character / tone badge
+              if (showBadge)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 3),
                   child: Text(
-                    'as ${msg.characterName}',
+                    badgeText,
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryOrange.withValues(alpha: 0.7),
+                      color: (tone != null ? tone.color : AppTheme.primaryOrange)
+                          .withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -89,7 +113,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                   ),
                   child: isTransforming
                       ? _TransformingIndicator(
-                          characterName: msg.characterName,
+                          label: transformingLabel,
                           brightness: brightness,
                         )
                       : Column(
@@ -135,11 +159,11 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
 
 class _TransformingIndicator extends StatefulWidget {
   const _TransformingIndicator({
-    required this.characterName,
+    required this.label,
     required this.brightness,
   });
 
-  final String characterName;
+  final String label;
   final Brightness brightness;
 
   @override
@@ -186,7 +210,7 @@ class _TransformingIndicatorState extends State<_TransformingIndicator>
               ),
               const SizedBox(width: 8),
               Text(
-                'Transforming as ${widget.characterName}...',
+                widget.label,
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontStyle: FontStyle.italic,

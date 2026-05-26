@@ -1119,38 +1119,58 @@ Return JSON only: {"commentary": "<your 2-3 sentence in-character grading>", "sc
 
   /// Transforms [originalText] into the speaking style of [characterName]
   /// using [characterSystemPrompt] as voice instructions.
+  /// Optionally applies a [toneInstructions] overlay (e.g. romantic, savage).
   /// Returns the transformed plain text.
   Future<String> transformAsCharacter({
     required String originalText,
     required String characterSystemPrompt,
     required String characterName,
+    String? toneInstructions,
+    String? toneName,
   }) async {
-    final prompt = '''
-You are a text transformation engine. Your ONLY job is to rewrite the user's message in the voice and speaking style of $characterName.
+    final hasCharacter = characterName != 'Normal' && characterSystemPrompt.isNotEmpty;
+    final hasTone = toneInstructions != null && toneInstructions.isNotEmpty;
 
-CHARACTER VOICE INSTRUCTIONS:
-$characterSystemPrompt
+    final buffer = StringBuffer();
+    buffer.writeln('You are a text transformation engine. Your ONLY job is to rewrite the user\'s message.');
+    buffer.writeln();
 
-RULES:
+    if (hasCharacter) {
+      buffer.writeln('CHARACTER VOICE: Transform into the voice of $characterName.');
+      buffer.writeln('CHARACTER INSTRUCTIONS:');
+      buffer.writeln(characterSystemPrompt);
+      buffer.writeln();
+    }
+
+    if (hasTone) {
+      buffer.writeln('TONE/MOOD OVERLAY: Apply a $toneName tone to the message.');
+      buffer.writeln('TONE INSTRUCTIONS:');
+      buffer.writeln(toneInstructions);
+      if (hasCharacter) {
+        buffer.writeln('The tone modifies HOW the character speaks, not WHO they are. '
+            'The character\'s identity stays, but the emotional register shifts to $toneName.');
+      }
+      buffer.writeln();
+    }
+
+    buffer.writeln('''RULES:
 - Preserve the MEANING and INTENT of the original message exactly
-- Transform ONLY the style, vocabulary, and tone — make it unmistakably sound like $characterName
-- Go hard on the character's signature phrases, mannerisms, and quirks — the more recognizable the better
+- Transform ONLY the style, vocabulary, and tone
 - Keep the output roughly the same length (max 2x the original)
 - Do NOT add new information, reply to the message, or change the subject
 - Do NOT act as a chatbot — you are transforming text, not having a conversation
 - Do NOT include any meta-commentary like "Here's the message:" or quotation marks
 - Output ONLY the transformed message text, nothing else
-- Make it genuinely funny and entertaining — lean into the character's most iconic traits
+- Make it genuinely entertaining — lean into the character's most iconic traits and the tone's energy
 - If the original is very short (1-3 words), still transform but keep it brief and punchy
 
 ORIGINAL MESSAGE:
 ${InputValidator.sanitizeForPrompt(originalText)}
 
-TRANSFORMED MESSAGE:''';
+TRANSFORMED MESSAGE:''');
 
-    final response = await _textModel.generateContent([Content.text(prompt)]);
+    final response = await _textModel.generateContent([Content.text(buffer.toString())]);
     final text = response.text?.trim() ?? originalText;
-    // Strip any accidental wrapping quotes
     if (text.startsWith('"') && text.endsWith('"')) {
       return text.substring(1, text.length - 1);
     }

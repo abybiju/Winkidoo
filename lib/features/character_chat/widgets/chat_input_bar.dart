@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/features/character_chat/widgets/character_selector.dart';
+import 'package:winkidoo/features/character_chat/widgets/tone_selector.dart';
 
 /// Bottom input bar: character selector row + text field + send button.
 class ChatInputBar extends StatelessWidget {
@@ -44,6 +45,8 @@ class ChatInputBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const CharacterSelector(),
+          const SizedBox(height: 6),
+          const ToneSelector(),
           const SizedBox(height: 8),
           Row(
             children: [

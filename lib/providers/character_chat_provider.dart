@@ -72,6 +72,9 @@ final chatMessagesProvider =
 /// Currently selected character ID for the chat input.
 final selectedCharacterProvider = StateProvider<String>((ref) => 'normal');
 
+/// Currently selected tone ID for the chat input.
+final selectedToneProvider = StateProvider<String>((ref) => 'none');
+
 /// All available characters: built-in presets + couple's custom judges.
 final availableCharactersProvider =
     FutureProvider<List<CharacterPreset>>((ref) async {

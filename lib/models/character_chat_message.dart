@@ -8,6 +8,7 @@ class CharacterChatMessage {
     this.transformedContent,
     required this.characterId,
     required this.characterName,
+    this.toneId,
     this.isTransforming = false,
     required this.createdAt,
   });
@@ -19,6 +20,7 @@ class CharacterChatMessage {
   final String? transformedContent;
   final String characterId;
   final String characterName;
+  final String? toneId;
   final bool isTransforming;
   final DateTime createdAt;
 
@@ -26,6 +28,8 @@ class CharacterChatMessage {
   String get displayContent => transformedContent ?? originalContent;
 
   bool get isNormal => characterId == 'normal';
+
+  bool get hasTone => toneId != null && toneId != 'none';
 
   factory CharacterChatMessage.fromJson(Map<String, dynamic> json) {
     return CharacterChatMessage(
@@ -36,6 +40,7 @@ class CharacterChatMessage {
       transformedContent: json['transformed_content'] as String?,
       characterId: json['character_id'] as String? ?? 'normal',
       characterName: json['character_name'] as String? ?? 'Normal',
+      toneId: json['tone_id'] as String?,
       isTransforming: json['is_transforming'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
@@ -50,6 +55,7 @@ class CharacterChatMessage {
       'transformed_content': transformedContent,
       'character_id': characterId,
       'character_name': characterName,
+      'tone_id': toneId,
       'is_transforming': isTransforming,
       'created_at': createdAt.toIso8601String(),
     };

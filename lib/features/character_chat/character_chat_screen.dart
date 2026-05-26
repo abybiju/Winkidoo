@@ -94,7 +94,12 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
       orElse: () => CharacterChatService.builtInPresets.first,
     );
 
+    final toneId = ref.read(selectedToneProvider);
+    final tone = CharacterChatService.toneById(toneId);
+    final hasTone = !tone.isNone;
+
     final isNormal = character.id == 'normal';
+    final needsTransform = !isNormal || hasTone;
     final service = ref.read(characterChatServiceProvider);
 
     try {
@@ -105,21 +110,24 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
         originalContent: text,
         characterId: character.id,
         characterName: character.name,
-        isTransforming: !isNormal,
+        toneId: hasTone ? tone.id : null,
+        isTransforming: needsTransform,
       );
 
       // Refresh messages to show the new one
       ref.invalidate(chatMessagesProvider(widget.roomId));
       _scrollToBottom();
 
-      // Step 2: Transform if not normal
-      if (!isNormal) {
+      // Step 2: Transform if character or tone is active
+      if (needsTransform) {
         try {
           final aiService = ref.read(aiJudgeServiceProvider);
           final transformed = await aiService.transformAsCharacter(
             originalText: text,
-            characterSystemPrompt: character.systemPrompt,
-            characterName: character.name,
+            characterSystemPrompt: isNormal ? '' : character.systemPrompt,
+            characterName: isNormal ? 'Normal' : character.name,
+            toneInstructions: hasTone ? tone.promptInstructions : null,
+            toneName: hasTone ? tone.name : null,
           );
           await service.updateTransformedContent(messageId, transformed);
         } catch (e) {
