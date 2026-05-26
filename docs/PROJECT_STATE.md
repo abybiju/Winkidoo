@@ -6,6 +6,19 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 25, 2026 – Tone/mood modes for character chat
+
+**9 tone overlays** that transform message style independently of character selection:
+- Romantic 💕, Flirty 😘, Funny 😂, Angry 😤, Happy 😊, Savage 🔥, Dramatic 🎭, Poetic 🌹, Sarcastic 😏
+- Tones combine with characters (e.g. Trump + Romantic) or work standalone (Normal + Flirty)
+- `TonePreset` model + built-in tones constant in `CharacterChatService`
+- `ToneSelector` widget: horizontal scrollable chips with per-tone accent colors, tap-to-toggle deselect
+- Updated `transformAsCharacter()` prompt: conditional character voice + tone overlay sections
+- `ChatMessageBubble`: shows tone badge ("as Trump 💕 Romantic"), tone-aware transforming indicator
+- "+" Create button in `CharacterSelector` links to existing custom judge creation (`/shell/create-judge`)
+- `selectedToneProvider` (StateProvider) in character_chat_provider
+- Migration 044: `tone_id` column on `character_chat_messages`
+
 ### May 25, 2026 – Play tab stacked card deck redesign
 
 **Layout overhaul:** Replaced scrollable column with 6 section headers with a stacked card deck UI.
@@ -223,6 +236,7 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 - 038: forensics_reports table (Emotional Forensics).
 - 039: revenuecat_events audit table (RevenueCat webhook lifecycle tracking).
 - 043: notifications (in-app notification center with Realtime).
+- 044: tone_id on character_chat_messages (chat tone/mood modes).
 
 ### April 2, 2026 — RevenueCat IAP / Wink+ Monetization
 - **RevenueCat SDK** (`purchases_flutter ^8.1.0`): Full IAP integration for Wink+ subscriptions.
