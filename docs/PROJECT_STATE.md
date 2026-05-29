@@ -6,6 +6,21 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 29, 2026 – In-app account deletion (Play Store requirement)
+
+**Edge Function `delete-account`** (`supabase/functions/delete-account/`):
+- Authenticates the caller from their JWT (never trusts a client-supplied id).
+- Deletes the Supabase auth user via service-role key; `ON DELETE CASCADE` wipes all user-keyed rows (profile, push tokens, winks, notifications, chat, friends, dares, etc.).
+- **Preserves partner's shared vault**: if the leaving user is the couple creator and a partner exists, transfers couple ownership to the partner (`user_a_id = partner`, `user_b_id = null`) and reassigns the leaving user's `surprises`/`quests` to the partner before deletion. Partner (user_b) deletion just detaches. Solo deletion cascades the couple.
+- Handles `quests.creator_id` (no cascade) by reassigning/deleting before auth user delete, so deletion can't be blocked.
+- Best-effort storage cleanup of `profile-avatars/<uid>` and `judge-avatars/<uid>`; surprise media (keyed by coupleId) is intentionally preserved with the couple.
+- Deploy: `supabase functions deploy delete-account --use-api`.
+
+**Client:**
+- `AccountDeletionService` (`lib/services/`): invokes the Edge Function, surfaces errors via `AccountDeletionException`, signs out locally on success.
+- Profile → Settings → **Delete account** (red tile): opens a confirmation dialog requiring the user to type DELETE, shows a blocking spinner, routes to `/` on success.
+- Deletion pages live at https://winkidoo.com/delete-account and /delete-data (gh-pages).
+
 ### May 26, 2026 – Character chat UI redesign (Option B inline pill)
 
 **Layout overhaul** based on Claude Design handoff (Option B — Inline Pill):

@@ -17,11 +17,13 @@ import 'package:winkidoo/features/profile/couple_wrapped_card.dart';
 import 'package:winkidoo/models/achievement.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/achievements_provider.dart';
+import 'package:winkidoo/services/account_deletion_service.dart';
 import 'package:winkidoo/services/achievement_storage_service.dart';
 import 'package:winkidoo/services/revenuecat_service.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/couple_stats_provider.dart';
+import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
@@ -1532,9 +1534,149 @@ class _SettingsCard extends ConsumerWidget {
                 }
               },
             ),
+            const Divider(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.delete_forever_rounded,
+                  color: AppTheme.error, size: 22),
+              title: Text(
+                'Delete account',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.error,
+                ),
+              ),
+              subtitle: Text(
+                'Permanently delete your account and data',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              onTap: () => _confirmDeleteAccount(context, ref),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _confirmDeleteAccount(
+      BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final router = GoRouter.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Blocking progress indicator while deletion runs.
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await AccountDeletionService(ref.read(supabaseClientProvider))
+          .deleteAccount();
+      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+      router.go('/');
+    } catch (e) {
+      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+      messenger.showSnackBar(
+        SnackBar(content: Text(e is AccountDeletionException
+            ? e.message
+            : 'Account deletion failed. Please try again.')),
+      );
+    }
+  }
+}
+
+/// Confirmation dialog requiring the user to type DELETE to proceed.
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _controller = TextEditingController();
+  bool _canDelete = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final ok = _controller.text.trim().toUpperCase() == 'DELETE';
+      if (ok != _canDelete) setState(() => _canDelete = ok);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.homeSurfaceCard,
+      title: Text(
+        'Delete account?',
+        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'This permanently deletes your account, profile, custom judges, '
+            'chats, and game progress. Surprises you shared with your partner '
+            'stay in their vault. This cannot be undone.',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppTheme.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Type DELETE to confirm',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              hintText: 'DELETE',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _canDelete ? () => Navigator.of(context).pop(true) : null,
+          style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+          child: const Text('Delete forever'),
+        ),
+      ],
     );
   }
 }
