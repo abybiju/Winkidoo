@@ -36,6 +36,8 @@ build/
 .env
 .env.local
 *.env
+# Build-time secrets passed via --dart-define-from-file (real keys; never commit)
+dart_defines.json
 
 # Supabase
 supabase/.temp/
