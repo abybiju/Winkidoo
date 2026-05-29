@@ -66,4 +66,10 @@ If you see `relation "public.surprises" does not exist`, run **001** first, then
   - Authorization header: `Bearer <REVENUECAT_WEBHOOK_SECRET>`
 - The function updates `couples.wink_plus_until` on purchase/renewal/expiration events.
 
+### delete-account (in-app account deletion — Play Store requirement)
+
+- Deploy: `supabase functions deploy delete-account --use-api`
+- No secrets needed beyond the auto-injected `SUPABASE_SERVICE_ROLE_KEY`. No new migration.
+- Called from the client (`AccountDeletionService` → Profile → Settings → Delete account) with the user's JWT. Deletes the auth user (cascade clears user-keyed rows) and preserves a partner's shared vault by transferring couple ownership + reassigning the leaving user's surprises/quests first (`quests.creator_id` has no cascade).
+
 *Doc sync: May 2026 — migrations 001–040 documented. Push (009–010) and Edge Function/webhook steps match docs/FIREBASE_AND_PUSH_SETUP.md.*

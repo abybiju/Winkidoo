@@ -27,7 +27,7 @@ class AccountDeletionService {
         method: HttpMethod.post,
       );
 
-      final status = res.status ?? 500;
+      final status = res.status;
       if (status < 200 || status >= 300) {
         final data = res.data;
         final msg = (data is Map && data['error'] is String)
