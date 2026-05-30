@@ -1,6 +1,8 @@
 # Winkidoo — Claude Code Context
 
-Winkidoo is an AI-powered couples' surprise vault game built with Flutter. One partner (creator) hides a surprise (text, photo, or voice); the other (seeker) must persuade a Gemini-powered AI judge to unlock it through a live chat battle. Both partners participate in real time via Supabase Realtime. The app targets iOS, Android, Web, and macOS.
+Winkidoo is an AI-powered social surprise-vault game built with Flutter — designed for **friends and couples** (the in-app voice is friends-forward but inclusive; romance is an option, not the framing). One person (creator) hides a surprise (text, photo, or voice); a friend (seeker) must persuade a Gemini-powered AI judge to unlock it through a live chat battle. It also includes AI character chat with custom personas, build-your-own AI judges, daily dares, and mini-games. Both players participate in real time via Supabase Realtime. The app targets iOS, Android, Web, and macOS.
+
+Note on terminology: user-facing copy says "friend"/"duo"; the **code/schema still uses `couple`** (the `couples` table, `coupleProvider`, `couple.id`, `/couple-link`, etc.) — those are structural and must not be renamed.
 
 ---
 

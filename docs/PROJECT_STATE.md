@@ -6,6 +6,19 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 30, 2026 – Friends repositioning, server-side AI keys, cloud builds + Firebase distribution, judge/chat fix
+
+**Friends-inclusive copy reposition.** ~60 user-facing strings across 28 files reworded from "couples/partner" to friends-forward (still inclusive — romance kept as an option, e.g. the "Romantic" judge mood). Onboarding redesigned to 3 broadened slides (surprises + AI personas/games + linking). Renames: Love Quest→Duo Quest, Couple Wrapped→Duo Wrapped, #CoupleWrapped→#DuoWrapped, "Partner code"→"Friend code". AI-judge prompts softened ("a romantic couples game"→"a playful game between friends"; generated dare/game text "your partner"→"your friend"). **Code identifiers (`couples` table, `coupleProvider`, etc.) intentionally unchanged.**
+
+**AI provider keys moved server-side (security).** `GEMINI_API_KEY` and `TAVILY_API_KEY` no longer ship in the APK — both proxied via Edge Functions:
+- `gemini-proxy` — client routes the `google_generative_ai` SDK through it (`lib/services/gemini_proxy_client.dart`, custom `httpClient`). JWT-gated + `check_rate_limit`.
+- `tavily-proxy` — `lib/services/tavily_search_service.dart` calls it via `functions.invoke`.
+- Keys are Supabase secrets (`supabase secrets set GEMINI_API_KEY=… / TAVILY_API_KEY=…`; helpers `set_gemini_secret.sh` / `set_tavily_secret.sh`). Verified neither key is in the built APK.
+
+**Judge & character-chat "stuck/truncated" fix.** `gemini-2.5-flash` is a thinking model and spends hundreds of output tokens on internal reasoning (measured ~979/1024 on one call), starving `maxOutputTokens` → empty JSON (judge fell back to "One sec…") or truncated text (chat personas cut off mid-sentence). Fixed in `gemini-proxy`: it injects `generationConfig.thinkingConfig.thinkingBudget = 0` into every request. Server-side → fixes all Gemini calls (judge, chat, dares, games, personas) without an app release.
+
+**Cloud APK builds + Firebase App Distribution.** `.github/workflows/build-smoke-test-apk.yml` builds signed APKs on GitHub Actions (no local memory use) and auto-distributes to the Firebase `testers` group. Release to testers by pushing a tag: `git tag v0.2.1 && git push origin v0.2.1`. Build number auto-bumps to the run number. Firebase app `1:356170729561:android:5cecd367b13b50faac4948`.
+
 ### May 29, 2026 – In-app account deletion (Play Store requirement)
 
 **Edge Function `delete-account`** (`supabase/functions/delete-account/`):

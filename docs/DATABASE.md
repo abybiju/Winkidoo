@@ -325,7 +325,8 @@ Location: `supabase/functions/gemini-proxy/`
 **Behavior:**
 - Requires a valid Supabase user JWT (`Authorization: Bearer …`) — rejects unauthenticated calls with 401, so it is not an open relay.
 - Per-user rate limit via `check_rate_limit` RPC (action `gemini`, 60/min) → 429 on breach.
-- Forwards the request body verbatim to the matching `…/v1beta/models/<model>:generateContent` endpoint with the server-side key, returning Google's response unchanged.
+- Forwards to the matching `…/v1beta/models/<model>:generateContent` endpoint with the server-side key, returning Google's response unchanged.
+- **Injects `generationConfig.thinkingConfig.thinkingBudget = 0`** into every request. `gemini-2.5-flash` is a thinking model that otherwise spends most of `maxOutputTokens` on internal reasoning, starving the actual reply — which made the judge return empty JSON (fallback "One sec…") and chat personas truncate mid-sentence. Disabling thinking fixes this for all Gemini calls server-side (no app release; the old `google_generative_ai` SDK can't set `thinkingConfig`). Do NOT remove this without raising `maxOutputTokens` substantially.
 
 **Required Supabase secret:**
 ```bash

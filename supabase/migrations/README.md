@@ -78,6 +78,7 @@ If you see `relation "public.surprises" does not exist`, run **001** first, then
 - Deploy: `supabase functions deploy gemini-proxy --use-api`
 - Reuses the `check_rate_limit` RPC (migration 042) for a per-user backstop (action `gemini`, 60/min). No new migration.
 - The client (`lib/services/gemini_proxy_client.dart`) routes the `google_generative_ai` SDK's traffic here with the user's JWT; the function authenticates the caller, attaches `GEMINI_API_KEY`, and forwards to `generativelanguage.googleapis.com`. The key never ships in the client. Rotate the key any time by updating the secret — no app release needed.
+- Also injects `generationConfig.thinkingConfig.thinkingBudget = 0` to disable gemini-2.5-flash "thinking" (which otherwise starves `maxOutputTokens` and broke the judge/chat). See `docs/DATABASE.md` → Edge Functions → gemini-proxy.
 
 ### tavily-proxy (server-side Tavily key — keeps it out of the APK)
 
