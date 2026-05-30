@@ -25,6 +25,12 @@
 name: Build smoke-test APK (Android release)
 
 on:
+  # Ship to testers by pushing a version tag, e.g.:
+  #   git tag v0.2.1 && git push origin v0.2.1
+  push:
+    tags:
+      - "v*"
+  # Manual fallback — run from the Actions tab any time.
   workflow_dispatch:
     inputs:
       release_notes:
@@ -123,6 +129,20 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      # Release notes: the manual-run input if present, otherwise the tag name
+      # (tag-triggered runs have no input). Passed via env to avoid injection.
+      - name: Determine release notes
+        id: notes
+        env:
+          INPUT_NOTES: ${{ inputs.release_notes }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -n "$INPUT_NOTES" ]; then
+            echo "text=$INPUT_NOTES" >> "$GITHUB_OUTPUT"
+          else
+            echo "text=Winkidoo $REF_NAME" >> "$GITHUB_OUTPUT"
+          fi
+
       # Auto-publishes the APK to Firebase App Distribution so testers get an
       # email + install link (and update notifications) without you sending the
       # file. Skipped until the FIREBASE_APP_DISTRIBUTION_SA secret is set.
@@ -134,4 +154,4 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SA }}
           groups: testers
           file: build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: ${{ inputs.release_notes }}
+          releaseNotes: ${{ steps.notes.outputs.text }}
