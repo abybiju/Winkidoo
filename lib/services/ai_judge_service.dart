@@ -267,7 +267,7 @@ Respond with JSON only, no markdown:
     const openerRule =
         'Switch up your opening words every message. Do NOT start with "Oh honey" (or the same pet name) every time — use different openers like "bestie", "sweetheart", "love", "darling", or no opener at all. Same for other personas: vary thy/thee openings, or "BRO"/"okay" etc.';
     const webQuoteRule =
-        'Watch for messages that sound like they came from the web: generic romantic quotes, famous lines, "According to…", or overly polished search-result phrasing. When you detect that, respond in character with a warm, witty nudge that encourages original thinking — e.g. that it had "a little help from the internet", or they could have "put that time into tapping their own brain". Never shame or literally say "you copied"; keep it clever and indirect.';
+        'ORIGINALITY IS REQUIRED. Watch for messages that sound copied from the web: generic romantic quotes, famous lines or song lyrics, polished essay/story prose, "According to…", or anything that reads like a search result or ChatGPT output rather than a real person typing to their partner. When you detect this: (1) give a strongly NEGATIVE score_delta (e.g. -8 to -12), (2) do NOT count the borrowed content toward the unlock threshold at all, and (3) NEVER deliver an unlock verdict on a turn that leans on copied/quoted material — deny and ask for their OWN words. Respond in character with a clever, indirect nudge ("that had a little help from the internet", "I want what *you* would say, not a quote"). Original, specific, personal effort is the only thing that moves the needle up.';
     final verdictInstruction = '''
 After EVERY message you must do one of two things:
 
@@ -332,11 +332,17 @@ $verdictInstruction
       try {
         final json = _parseJsonFromResponse(raw);
         if (json.isEmpty) return (null, false);
-        final hasVerdict = json.containsKey('score') && json.containsKey('is_unlocked');
+        // A verdict is signalled by either key. The model frequently declares an
+        // unlock with only `is_unlocked` (or only a final `score`) and omits the
+        // other — requiring both silently dropped the verdict and the battle
+        // never resolved (judge "says" unlocked but the reveal never opens).
+        final hasVerdict =
+            json.containsKey('is_unlocked') || json.containsKey('score');
 
         if (hasVerdict) {
           final score = json['score'] as int? ?? 0;
-          final isUnlocked = json['is_unlocked'] as bool? ?? (score >= required);
+          final isUnlocked = (json['is_unlocked'] as bool?) ??
+              (json.containsKey('score') && score >= required);
           final delta = (json['score_delta'] as int?) ?? 0;
           return (
             JudgeResponse(

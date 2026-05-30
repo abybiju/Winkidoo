@@ -31,6 +31,7 @@ import 'package:winkidoo/services/battle_sound_service.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/judge_memory_service.dart';
+import 'package:winkidoo/services/custom_judge_service.dart';
 import 'package:winkidoo/services/security_logger.dart';
 import 'package:winkidoo/services/phantom_judge_service.dart';
 import 'package:winkidoo/features/battle/widgets/phantom_overlay.dart';
@@ -243,6 +244,20 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         );
       }
 
+      // Custom judge: load its generated persona so the judge speaks in the
+      // creator's chosen character instead of falling back to Sassy Cupid.
+      String? personaPromptOverride;
+      String? howToImpressOverride;
+      if (surprise.judgePersona == 'custom' &&
+          surprise.customJudgeId != null) {
+        final customJudge =
+            await CustomJudgeService.getJudgeById(client, surprise.customJudgeId!);
+        if (customJudge != null) {
+          personaPromptOverride = customJudge.generatedPersonaPrompt;
+          howToImpressOverride = customJudge.generatedHowToImpress;
+        }
+      }
+
       final judgeResponse = await ai.judgeChat(
         persona: surprise.judgePersona,
         difficultyLevel: surprise.difficultyLevel,
@@ -250,6 +265,8 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         surpriseContextHint: surpriseContextHint,
         howToImpressHint: howToImpressHint,
         judgeMemories: judgeMemories.isNotEmpty ? judgeMemories : null,
+        personaPromptOverride: personaPromptOverride,
+        howToImpressOverride: howToImpressOverride,
       );
 
       final isVerdictNow = judgeResponse.isVerdict;
@@ -808,6 +825,12 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                                   Expanded(
                                     child: TextField(
                                       controller: _textController,
+                                      // Anti-paste: no copy/paste/select-all menu —
+                                      // the seeker must think and type their own
+                                      // argument, not paste lines from the internet.
+                                      // (Cursor positioning still works for editing.)
+                                      contextMenuBuilder: (_, __) =>
+                                          const SizedBox.shrink(),
                                       decoration: InputDecoration(
                                         hintText: 'Type your argument...',
                                         filled: true,

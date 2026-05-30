@@ -31,6 +31,7 @@ class Surprise {
     this.rouletteResult,
     this.futureLetterJudgePersona,
     this.hadPhantom = false,
+    this.customJudgeId,
   });
 
   final String id;
@@ -73,6 +74,10 @@ class Surprise {
 
   /// Whether a phantom judge appeared during this battle
   final bool hadPhantom;
+
+  /// When judgePersona == 'custom', the id of the custom judge to load its
+  /// generated persona/how-to-impress for the battle. Null for built-in judges.
+  final String? customJudgeId;
 
   bool get isFutureLetter => surpriseType == 'future_letter';
   bool get isRoulette => rouletteResult != null;
@@ -133,6 +138,7 @@ class Surprise {
       futureLetterJudgePersona:
           json['future_letter_judge_persona'] as String?,
       hadPhantom: json['had_phantom'] as bool? ?? false,
+      customJudgeId: json['custom_judge_id'] as String?,
     );
   }
 
@@ -169,6 +175,7 @@ class Surprise {
       'roulette_result': rouletteResult,
       'future_letter_judge_persona': futureLetterJudgePersona,
       'had_phantom': hadPhantom,
+      'custom_judge_id': customJudgeId,
     };
   }
 }

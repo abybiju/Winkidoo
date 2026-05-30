@@ -91,6 +91,26 @@ class CustomJudgeService {
   }
 
   /// Gets the couple's own custom judges.
+  /// Fetches a single custom judge by id — used by battles to load the
+  /// generated persona/how-to-impress when judge_persona == 'custom'.
+  static Future<CustomJudge?> getJudgeById(
+    SupabaseClient client,
+    String judgeId,
+  ) async {
+    try {
+      final row = await client
+          .from('custom_judges')
+          .select()
+          .eq('id', judgeId)
+          .maybeSingle();
+      if (row == null) return null;
+      return CustomJudge.fromJson(row);
+    } catch (e, st) {
+      debugPrint('CustomJudgeService.getJudgeById ERROR: $e\n$st');
+      return null;
+    }
+  }
+
   static Future<List<CustomJudge>> getMyJudges(
     SupabaseClient client,
     String coupleId,
