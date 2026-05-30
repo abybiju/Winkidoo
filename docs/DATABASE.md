@@ -53,6 +53,7 @@ Migrations in `supabase/migrations/` must be run **manually** in numeric order v
 | 040 | `040_join_couple_by_code_rpc.sql` | Secure `join_couple_by_code` RPC — ownership validation, duplicate-join prevention, race-condition guard |
 | 041 | `041_security_logs.sql` | `security_logs` table — auth/API event monitoring; write-only from client; indexed by event_type + user_id |
 | 042 | `042_rate_limits.sql` | `rate_limit_entries` table + `check_rate_limit` RPC — server-side sliding-window rate limiting per user/action |
+| 046 | `046_surprises_bucket_rls.sql` | `surprises` storage bucket + RLS policies (insert/select/update/delete) scoped to couple members — fixes 403 on photo/voice surprise upload |
 
 **Note:** Migrations `010a` and `010b` are independent of each other but both depend on `001`. Run all files in filename order. Both `010_` files must be applied.
 
@@ -283,7 +284,7 @@ All tables have Row Level Security enabled. Policies use `auth.uid()`.
 
 | Bucket | Public? | Path pattern | Who writes |
 |---|---|---|---|
-| `surprises` | No (signed URLs required) | `<user_id>/<filename>` | Any authenticated couple member |
+| `surprises` | No (signed URLs required) | `<couple_id>/<filename>` | Couple members (folder = a couple the user belongs to); policies in `046_surprises_bucket_rls.sql` |
 | `profile-avatars` | Yes | `<user_id>/<filename>` | Own user only (folder = `auth.uid()`) |
 
 **Surprises bucket usage:**
