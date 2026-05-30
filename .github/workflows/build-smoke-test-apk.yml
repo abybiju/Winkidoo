@@ -17,6 +17,11 @@
 #   ANDROID_STORE_PASSWORD     -- storePassword from android/key.properties
 #   ANDROID_KEY_PASSWORD       -- keyPassword from android/key.properties
 #   GOOGLE_SERVICES_JSON_BASE64 -- base64 of android/app/google-services.json
+#
+# Optional secret (enables auto-distribution to testers):
+#   FIREBASE_APP_DISTRIBUTION_SA -- JSON of a service account with the
+#     "Firebase App Distribution Admin" role. If absent, the build still runs
+#     and uploads the APK artifact; it just skips the Firebase upload.
 name: Build smoke-test APK (Android release)
 
 on:
@@ -32,6 +37,12 @@ jobs:
     name: Build signed release APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    # Exposed as env so the Firebase step can be gated on its presence (secrets
+    # can't be referenced directly in a step `if:`). Until this secret is added,
+    # the build still runs and uploads the artifact — it just skips distribution.
+    env:
+      FIREBASE_SA: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SA }}
 
     steps:
       - name: Checkout repository
@@ -96,7 +107,13 @@ jobs:
         run: flutter pub get
 
       - name: Build signed release APK
-        run: flutter build apk --release --dart-define-from-file=dart_defines.json
+        # --build-number sets the Android versionCode to the (always-increasing)
+        # run number, so each Firebase App Distribution release installs as an
+        # update over the previous one on testers' devices.
+        run: |
+          flutter build apk --release \
+            --dart-define-from-file=dart_defines.json \
+            --build-number=${{ github.run_number }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
@@ -105,3 +122,16 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      # Auto-publishes the APK to Firebase App Distribution so testers get an
+      # email + install link (and update notifications) without you sending the
+      # file. Skipped until the FIREBASE_APP_DISTRIBUTION_SA secret is set.
+      - name: Distribute to Firebase App Distribution
+        if: ${{ env.FIREBASE_SA != '' }}
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: "1:356170729561:android:5cecd367b13b50faac4948"
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SA }}
+          groups: testers
+          file: build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: ${{ inputs.release_notes }}
