@@ -10,8 +10,7 @@ class CustomJudgeService {
   /// Flow: insert row as 'generating' → search web → generate persona → update to 'ready'.
   /// [onStatusUpdate] is called at each stage for UI progress.
   static Future<CustomJudge?> createJudge(
-    SupabaseClient client,
-    String geminiApiKey, {
+    SupabaseClient client, {
     required String coupleId,
     required String personalityName,
     required String mood,
@@ -57,7 +56,7 @@ class CustomJudgeService {
 
       // Step 3: Generate persona via AI with web context
       onStatusUpdate?.call('generating');
-      final judge = AiJudgeService(apiKey: geminiApiKey);
+      final judge = AiJudgeService();
       final result = await judge.generateCustomPersona(
         personalityName: personalityName,
         mood: mood,

@@ -11,8 +11,7 @@ class MiniGameService {
   /// Fetches today's game or generates one. One game per couple per day.
   static Future<MiniGame?> getOrCreateTodaysGame(
     SupabaseClient client,
-    String coupleId,
-    String apiKey, {
+    String coupleId, {
     String? packId,
     String? packPromptHint,
     String? packPersonaPromptOverride,
@@ -47,7 +46,7 @@ class MiniGameService {
           await JudgeMemoryService.getMemories(client, coupleId, persona);
 
       // Generate game via AI
-      final judge = AiJudgeService(apiKey: apiKey);
+      final judge = AiJudgeService();
       final result = await judge.generateMiniGame(
         persona: persona,
         gameType: gameType,
@@ -135,7 +134,6 @@ class MiniGameService {
   /// Grades a completed game via AI.
   static Future<MiniGame?> gradeGame(
     SupabaseClient client,
-    String apiKey,
     MiniGame game,
     String coupleId, {
     String? packPersonaPromptOverride,
@@ -150,7 +148,7 @@ class MiniGameService {
               coupleId: coupleId)
           : '';
 
-      final judge = AiJudgeService(apiKey: apiKey);
+      final judge = AiJudgeService();
       final grade = await judge.gradeMiniGame(
         persona: game.judgePersona,
         gameType: game.gameType,

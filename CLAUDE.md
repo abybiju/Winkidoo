@@ -10,11 +10,12 @@ Winkidoo is an AI-powered couples' surprise vault game built with Flutter. One p
 # Install dependencies
 flutter pub get
 
-# Run (all three --dart-define flags required)
+# Run (both --dart-define flags required)
 flutter run \
   --dart-define=SUPABASE_URL=<your_url> \
-  --dart-define=SUPABASE_ANON_KEY=<your_anon_key> \
-  --dart-define=GEMINI_API_KEY=<your_gemini_key>
+  --dart-define=SUPABASE_ANON_KEY=<your_anon_key>
+# NOTE: GEMINI_API_KEY is no longer a client flag. Gemini is proxied server-side
+# via the gemini-proxy Edge Function (set it with: supabase secrets set GEMINI_API_KEY=...).
 
 # Target a specific device
 flutter run -d chrome        # Web
@@ -29,7 +30,7 @@ flutter analyze
 
 **Important:**
 - `SUPABASE_URL` or `SUPABASE_ANON_KEY` empty → `ConfigErrorApp` renders with instructions (see `lib/main.dart:20`). The app will NOT launch normally.
-- `GEMINI_API_KEY` missing → app launches fine, but battles throw during judge calls. Set it even for non-battle testing to avoid runtime errors.
+- `GEMINI_API_KEY` is **server-side only** now — it lives as a Supabase secret used by the `gemini-proxy` Edge Function (`supabase/functions/gemini-proxy/`). The client sends Gemini requests through that function (`lib/services/gemini_proxy_client.dart`), so the key never ships in the app. For battles to work locally you must have deployed the function and set the secret; the client itself needs no Gemini key.
 - Firebase is optional — `Firebase.initializeApp()` is wrapped in try/catch (`lib/main.dart:10`). Push notifications are a no-op if `google-services.json` / `GoogleService-Info.plist` are absent.
 
 ---
@@ -209,16 +210,18 @@ flutter analyze    # zero warnings policy
 |---|---|---|
 | `SUPABASE_URL` | `lib/main.dart` via `String.fromEnvironment` | **Yes** — app shows `ConfigErrorApp` if empty |
 | `SUPABASE_ANON_KEY` | `lib/main.dart` via `String.fromEnvironment` | **Yes** — app shows `ConfigErrorApp` if empty |
-| `GEMINI_API_KEY` | `AppConstants` → `AiJudgeService` | **Yes for battles** — throws on any judge call |
+| `GEMINI_API_KEY` | **Supabase secret** for the `gemini-proxy` Edge Function (NOT a client flag) | **Yes for battles** — set via `supabase secrets set` |
+| `TAVILY_API_KEY` | `--dart-define` → custom-judge web search | Optional (custom judges only) |
+| `REVENUECAT_API_KEY` | `--dart-define` → RevenueCat | Optional (in-app purchases) |
 | `FIREBASE_SERVICE_ACCOUNT` | Supabase secret (Edge Function only) | Push notifications only |
 
-All keys are passed via `--dart-define`. No `.env` file. No defaults in the codebase.
+Client keys are passed via `--dart-define` (no `.env` file, no defaults). `GEMINI_API_KEY` is the exception: it is a **server-side Supabase secret** consumed by `gemini-proxy`, so it never ships in the client — see `lib/services/gemini_proxy_client.dart`.
 
 ---
 
 ## What NOT to Do
 
-1. **Do not commit secrets.** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY` are `--dart-define` only. No defaults exist by design (`lib/main.dart:17-18`).
+1. **Do not commit secrets, and do not put `GEMINI_API_KEY` back in the client.** `SUPABASE_URL`/`SUPABASE_ANON_KEY` are `--dart-define` only (no defaults — `lib/main.dart:17-18`). `GEMINI_API_KEY` must stay a **server-side Supabase secret** behind `gemini-proxy`; never reintroduce a `String.fromEnvironment('GEMINI_API_KEY')` read in `lib/` — that would ship the key in every APK.
 
 2. **Do not hardcode color literals.** All colors come from `AppTheme` tokens (`lib/core/theme/app_theme.dart`). The theme has both dark and light variants. Use brightness-aware helpers: `AppTheme.cardGradientA(brightness)`, `AppTheme.topBarBg(brightness)`, `AppTheme.premiumElevation(brightness)`, etc.
 

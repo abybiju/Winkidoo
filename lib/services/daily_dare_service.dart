@@ -12,8 +12,7 @@ class DailyDareService {
   /// and inserts it. Returns the dare row.
   static Future<DailyDare?> getOrCreateTodaysDare(
     SupabaseClient client,
-    String coupleId,
-    String apiKey, {
+    String coupleId, {
     int totalBattles = 0,
     int streakDays = 0,
     String? packId,
@@ -58,7 +57,7 @@ class DailyDareService {
           await JudgeMemoryService.getMemories(client, coupleId, persona);
 
       // Generate dare via AI
-      final judge = AiJudgeService(apiKey: apiKey);
+      final judge = AiJudgeService();
       final result = await judge.generateDare(
         persona: persona,
         recentDareTexts: recentTexts,
@@ -158,7 +157,6 @@ class DailyDareService {
   /// judge, and the grade is stored. Returns the updated dare.
   static Future<DailyDare?> gradeDare(
     SupabaseClient client,
-    String apiKey,
     DailyDare dare,
     String coupleId,
   ) async {
@@ -177,7 +175,7 @@ class DailyDareService {
             )
           : '';
 
-      final judge = AiJudgeService(apiKey: apiKey);
+      final judge = AiJudgeService();
       final grade = await judge.gradeDare(
         persona: dare.judgePersona,
         dareText: dare.dareText,

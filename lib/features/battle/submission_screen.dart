@@ -12,7 +12,6 @@ import 'package:winkidoo/providers/battle_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
-import 'package:winkidoo/services/ai_judge_service.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:uuid/uuid.dart';
 

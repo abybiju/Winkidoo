@@ -21,8 +21,6 @@ import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
 import 'package:winkidoo/services/rate_limit_service.dart';
 
-const _geminiApiKey =
-    String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
 const _tavilyApiKey =
     String.fromEnvironment('TAVILY_API_KEY', defaultValue: '');
 
@@ -279,7 +277,6 @@ class _CreateCustomJudgeScreenState
 
     final judge = await CustomJudgeService.createJudge(
       client,
-      _geminiApiKey,
       coupleId: couple.id,
       personalityName: name,
       mood: _selectedMoods.join('+'),

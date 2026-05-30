@@ -12,8 +12,6 @@ import 'package:winkidoo/services/daily_dare_service.dart';
 import 'package:winkidoo/services/dare_realtime_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
 
-const _geminiApiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-
 /// The phase of today's dare from the current user's perspective.
 enum DarePhase {
   loading,
@@ -55,7 +53,6 @@ class DailyDareNotifier extends AsyncNotifier<DailyDareState> {
       }
 
       final client = ref.read(supabaseClientProvider);
-      const apiKey = _geminiApiKey;
 
       // Set up realtime subscription for partner's dare updates
       _realtimeService?.dispose();
@@ -66,7 +63,6 @@ class DailyDareNotifier extends AsyncNotifier<DailyDareState> {
       final dare = await DailyDareService.getOrCreateTodaysDare(
         client,
         couple.id,
-        apiKey,
       );
 
       if (dare == null) return DailyDareState.error;
@@ -118,10 +114,8 @@ class DailyDareNotifier extends AsyncNotifier<DailyDareState> {
         DailyDareState(phase: DarePhase.grading, dare: updated),
       );
 
-      const apiKey = _geminiApiKey;
       final graded = await DailyDareService.gradeDare(
         client,
-        apiKey,
         updated,
         couple.id,
       );

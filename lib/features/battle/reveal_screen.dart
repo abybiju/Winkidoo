@@ -104,27 +104,24 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       }
     } catch (_) {}
 
-    // Save judge memory in background (get messages from DB then summarise)
-    const apiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-    if (apiKey.isNotEmpty) {
-      try {
-        final messages = await ref.read(
-          battleMessagesProvider(widget.surpriseId).future,
+    // Save judge memory in background (get messages from DB then summarise).
+    // Gemini runs server-side via the gemini-proxy Edge Function.
+    try {
+      final messages = await ref.read(
+        battleMessagesProvider(widget.surpriseId).future,
+      );
+      final surprise = await ref.read(
+        surpriseByIdProvider(widget.surpriseId).future,
+      );
+      if (surprise != null) {
+        await JudgeMemoryService.saveMemory(
+          client,
+          couple.id,
+          surprise.judgePersona,
+          messages,
         );
-        final surprise = await ref.read(
-          surpriseByIdProvider(widget.surpriseId).future,
-        );
-        if (surprise != null) {
-          await JudgeMemoryService.saveMemory(
-            client,
-            apiKey,
-            couple.id,
-            surprise.judgePersona,
-            messages,
-          );
-        }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
   }
 
   Future<void> _buyHint() async {

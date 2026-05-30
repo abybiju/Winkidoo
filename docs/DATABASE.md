@@ -317,6 +317,23 @@ supabase secrets set FIREBASE_SERVICE_ACCOUNT='<full_json_of_service_account>'
 
 See `docs/FIREBASE_AND_PUSH_SETUP.md` for full setup and deploy steps.
 
+### `gemini-proxy`
+Location: `supabase/functions/gemini-proxy/`
+
+**Purpose:** Keeps `GEMINI_API_KEY` server-side so it never ships in the client APK. The Flutter client (`lib/services/gemini_proxy_client.dart`) redirects the `google_generative_ai` SDK's HTTP traffic here instead of calling `generativelanguage.googleapis.com` directly.
+
+**Behavior:**
+- Requires a valid Supabase user JWT (`Authorization: Bearer …`) — rejects unauthenticated calls with 401, so it is not an open relay.
+- Per-user rate limit via `check_rate_limit` RPC (action `gemini`, 60/min) → 429 on breach.
+- Forwards the request body verbatim to the matching `…/v1beta/models/<model>:generateContent` endpoint with the server-side key, returning Google's response unchanged.
+
+**Required Supabase secret:**
+```bash
+supabase secrets set GEMINI_API_KEY='<your_gemini_key>'
+supabase functions deploy gemini-proxy --use-api
+```
+Rotate the Gemini key any time by updating the secret — no client release required.
+
 ---
 
 ## Key RPCs

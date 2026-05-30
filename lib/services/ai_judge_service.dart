@@ -4,22 +4,10 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
+import 'package:winkidoo/services/gemini_proxy_client.dart';
 import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/models/battle_message.dart';
 import 'package:winkidoo/models/judge_response.dart';
-
-/// Error thrown when [GEMINI_API_KEY] was not provided at run time.
-class GeminiApiKeyMissingException implements Exception {
-  GeminiApiKeyMissingException()
-      : message =
-            'Gemini API key not set. Run with --dart-define=GEMINI_API_KEY=your_key '
-            '(get a key at https://aistudio.google.com/apikey)';
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
 
 /// AI Judge using Google Gemini Flash.
 /// Returns structured JSON: score, isUnlocked, commentary, hint?, moodEmoji.
@@ -53,11 +41,17 @@ class AiJudgeService {
   static String _randomFallback() =>
       _fallbackCommentaries[Random().nextInt(_fallbackCommentaries.length)];
 
-  AiJudgeService({required String apiKey})
-      : _apiKey = apiKey,
-        _model = GenerativeModel(
+  /// The Gemini API key now lives server-side in the `gemini-proxy` Edge
+  /// Function. [_proxyClient] redirects the SDK's HTTP traffic there, so the
+  /// key below is an inert placeholder the SDK still requires but never uses.
+  static const String _proxiedKey = 'proxied-via-edge-function';
+  static final GeminiProxyClient _proxyClient = GeminiProxyClient();
+
+  AiJudgeService()
+      : _model = GenerativeModel(
           model: 'gemini-2.5-flash',
-          apiKey: apiKey,
+          apiKey: _proxiedKey,
+          httpClient: _proxyClient,
           generationConfig: GenerationConfig(
             responseMimeType: 'application/json',
             responseSchema: _judgeResponseSchema,
@@ -67,7 +61,8 @@ class AiJudgeService {
         ),
         _freeformModel = GenerativeModel(
           model: 'gemini-2.5-flash',
-          apiKey: apiKey,
+          apiKey: _proxiedKey,
+          httpClient: _proxyClient,
           generationConfig: GenerationConfig(
             responseMimeType: 'application/json',
             temperature: 0.8,
@@ -76,14 +71,14 @@ class AiJudgeService {
         ),
         _textModel = GenerativeModel(
           model: 'gemini-2.5-flash',
-          apiKey: apiKey,
+          apiKey: _proxiedKey,
+          httpClient: _proxyClient,
           generationConfig: GenerationConfig(
             temperature: 0.85,
             maxOutputTokens: 1024,
           ),
         );
 
-  final String _apiKey;
   final GenerativeModel _model;
   /// Model without schema constraint — for custom persona, dare, and mini-game generation.
   final GenerativeModel _freeformModel;
@@ -155,9 +150,6 @@ Commentary tone: When praising or reacting, lean into wit and warmth — a littl
     String? surpriseContextHint,
     String? personaPromptOverride,
   }) async {
-    if (_apiKey.trim().isEmpty) {
-      throw GeminiApiKeyMissingException();
-    }
     final required = requiredScoreFor(persona, difficultyLevel);
     final personaPrompt = personaPromptOverride ?? _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
 
@@ -243,9 +235,6 @@ Respond with JSON only, no markdown:
     String? howToImpressOverride,
     String? campaignMoodOverride,
   }) async {
-    if (_apiKey.trim().isEmpty) {
-      throw GeminiApiKeyMissingException();
-    }
     final required = requiredScoreFor(persona, difficultyLevel);
     final personaPrompt = personaPromptOverride ?? _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
     final howToImpressPersona = howToImpressOverride ?? _howToImpressByPersona[persona] ?? _howToImpressByPersona[AppConstants.personaSassyCupid]!;
@@ -485,9 +474,6 @@ Your previous reply had no commentary. You must respond with your actual in-char
     int voiceCount = 0,
     String? partnerName,
   }) async {
-    if (_apiKey.trim().isEmpty) {
-      throw GeminiApiKeyMissingException();
-    }
 
     final statsContext = StringBuffer();
     if (totalSurprises > 0) {
@@ -562,9 +548,6 @@ Respond with JSON only, no markdown.
     String? personaPromptOverride,
     String? packThemeContext,
   }) async {
-    if (_apiKey.trim().isEmpty) {
-      throw GeminiApiKeyMissingException();
-    }
     final personaPrompt =
         personaPromptOverride ?? _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
     final moodContext = _buildMoodContext();
@@ -626,9 +609,6 @@ Return JSON only: {"dare_text": "<the dare in your voice, 1-3 sentences>", "cate
     required String responseA,
     required String responseB,
   }) async {
-    if (_apiKey.trim().isEmpty) {
-      throw GeminiApiKeyMissingException();
-    }
     final personaPrompt =
         _personaPrompts[persona] ?? _personaPrompts[AppConstants.personaSassyCupid]!;
 
@@ -689,7 +669,6 @@ Return JSON only:
     required String mood,
     String webSearchContext = '',
   }) async {
-    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
 
     final webBlock = webSearchContext.isNotEmpty
         ? '''
@@ -853,7 +832,6 @@ Return JSON only, no markdown. Follow the exact field names from the example abo
     String? previousOutro,
     String? personaPromptOverride,
   }) async {
-    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
 
     final personaPrompt = personaPromptOverride ??
         _personaPrompts[persona] ??
@@ -899,7 +877,6 @@ Return ONLY the dialogue text, no JSON, no quotes around it.
     String? moodOverride,
     String? personaPromptOverride,
   }) async {
-    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
 
     final personaPrompt = personaPromptOverride ??
         _personaPrompts[persona] ??
@@ -942,7 +919,6 @@ Return ONLY the dialogue text, no JSON.
     String? packPromptHint,
     String? personaPromptOverride,
   }) async {
-    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
 
     final personaPrompt = personaPromptOverride ??
         _personaPrompts[persona] ??
@@ -1010,7 +986,6 @@ Respond with JSON only, no markdown.
     required String responseB,
     String? personaPromptOverride,
   }) async {
-    if (_apiKey.trim().isEmpty) throw GeminiApiKeyMissingException();
 
     final personaPrompt = personaPromptOverride ??
         _personaPrompts[persona] ??

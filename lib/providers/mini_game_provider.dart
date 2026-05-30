@@ -11,8 +11,6 @@ import 'package:winkidoo/services/mini_game_realtime_service.dart';
 import 'package:winkidoo/services/mini_game_service.dart';
 import 'package:winkidoo/services/xp_service.dart';
 
-const _geminiApiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-
 enum MiniGamePhase {
   loading,
   generating,
@@ -50,7 +48,6 @@ class MiniGameNotifier extends AsyncNotifier<MiniGameState> {
       }
 
       final client = ref.read(supabaseClientProvider);
-      const apiKey = _geminiApiKey;
 
       // Realtime subscription for partner updates on mini_games
       _realtimeService?.dispose();
@@ -62,7 +59,6 @@ class MiniGameNotifier extends AsyncNotifier<MiniGameState> {
       final game = await MiniGameService.getOrCreateTodaysGame(
         client,
         couple.id,
-        apiKey,
       );
 
       if (game == null) return MiniGameState.error;
@@ -102,10 +98,8 @@ class MiniGameNotifier extends AsyncNotifier<MiniGameState> {
     if (updated.status == 'complete') {
       state = AsyncData(MiniGameState(phase: MiniGamePhase.grading, game: updated));
 
-      const apiKey = _geminiApiKey;
       final graded = await MiniGameService.gradeGame(
         client,
-        apiKey,
         updated,
         couple.id,
       );

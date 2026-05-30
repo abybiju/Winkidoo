@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/models/battle_message.dart';
+import 'package:winkidoo/services/gemini_proxy_client.dart';
 
 /// Persists 1-sentence battle summaries per couple+judge pair so the AI
 /// can reference past encounters. Max 10 memories per pair (oldest pruned).
@@ -38,12 +39,11 @@ class JudgeMemoryService {
   /// Prunes oldest if over the cap. Non-critical — errors are swallowed.
   static Future<void> saveMemory(
     SupabaseClient client,
-    String apiKey,
     String coupleId,
     String judgePersona,
     List<BattleMessage> messages,
   ) async {
-    if (messages.isEmpty || apiKey.trim().isEmpty) return;
+    if (messages.isEmpty) return;
     try {
       final transcript = messages
           .map((m) {
@@ -58,7 +58,8 @@ class JudgeMemoryService {
 
       final model = GenerativeModel(
         model: 'gemini-2.5-flash',
-        apiKey: apiKey,
+        apiKey: 'proxied-via-edge-function',
+        httpClient: GeminiProxyClient(),
         generationConfig: GenerationConfig(
           temperature: 0.4,
           maxOutputTokens: 100,

@@ -13,9 +13,6 @@ import 'package:winkidoo/services/ai_judge_service.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
 
-const _geminiApiKey =
-    String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-
 /// Quick audition chat: send one message, see the custom judge respond.
 /// On close, prompts with publish/private/share options.
 class CustomJudgeAuditionSheet extends ConsumerStatefulWidget {
@@ -60,7 +57,7 @@ class _CustomJudgeAuditionSheetState
     HapticFeedback.lightImpact();
 
     try {
-      final judge = AiJudgeService(apiKey: _geminiApiKey);
+      final judge = AiJudgeService();
       final response = await judge.judgeChat(
         persona: 'custom',
         difficultyLevel: widget.judge.difficultyLevel,
