@@ -71,6 +71,7 @@ class _CreateCustomJudgeScreenState
         context: context,
         sourcePath: file.path,
         originalBytes: bytes,
+        lockSquare: true,
       );
       if (!mounted) return;
       setState(() => _avatarBytes = cropped);

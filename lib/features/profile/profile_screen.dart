@@ -453,6 +453,7 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
                                 context: context,
                                 sourcePath: file.path,
                                 originalBytes: bytes,
+                                lockSquare: true,
                               );
                               if (!mounted) return;
                               setState(() {

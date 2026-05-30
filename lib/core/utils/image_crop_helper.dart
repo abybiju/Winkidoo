@@ -19,23 +19,29 @@ class ImageCropHelper {
         defaultTargetPlatform == TargetPlatform.iOS;
   }
 
-  /// Presents a free-form crop UI for the image at [sourcePath].
+  /// Presents a crop UI for the image at [sourcePath].
+  ///
+  /// When [lockSquare] is true the crop is locked to a 1:1 square (used for
+  /// avatars); otherwise the crop is free-form (used for surprise / dare photos).
   ///
   /// Returns the cropped bytes. If the platform doesn't support cropping, or the
   /// user cancels the crop, returns [originalBytes] so the upload flow continues
-  /// with the un-cropped image.
+  /// with the un-cropped image. (On web a fixed ratio is best-effort — the
+  /// cropper plugin doesn't expose a hard ratio lock there.)
   static Future<Uint8List> cropOrOriginal({
     required BuildContext context,
     required String sourcePath,
     required Uint8List originalBytes,
     int compressQuality = 90,
+    bool lockSquare = false,
   }) async {
     if (!_supported) return originalBytes;
 
     final cropped = await ImageCropper().cropImage(
       sourcePath: sourcePath,
       compressQuality: compressQuality,
-      // No aspectRatio + unlocked controls => free-form crop.
+      aspectRatio:
+          lockSquare ? const CropAspectRatio(ratioX: 1, ratioY: 1) : null,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop',
@@ -43,13 +49,18 @@ class ImageCropHelper {
           toolbarWidgetColor: Colors.white,
           backgroundColor: Colors.black,
           activeControlsWidgetColor: AppTheme.primary,
-          lockAspectRatio: false,
-          hideBottomControls: false,
+          lockAspectRatio: lockSquare,
+          initAspectRatio: lockSquare
+              ? CropAspectRatioPreset.square
+              : CropAspectRatioPreset.original,
+          // Hide the ratio chips when locked so users can't unlock it.
+          hideBottomControls: lockSquare,
         ),
         IOSUiSettings(
           title: 'Crop',
-          aspectRatioLockEnabled: false,
-          resetAspectRatioEnabled: true,
+          aspectRatioLockEnabled: lockSquare,
+          resetAspectRatioEnabled: !lockSquare,
+          aspectRatioPickerButtonHidden: lockSquare,
         ),
         WebUiSettings(context: context),
       ],

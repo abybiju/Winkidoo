@@ -233,6 +233,7 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
               context: context,
               sourcePath: file.path,
               originalBytes: bytes,
+              lockSquare: true,
             )
           : bytes;
       final client = Supabase.instance.client;

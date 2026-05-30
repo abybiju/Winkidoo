@@ -177,6 +177,7 @@ class _ProfileCompletionSheetState
                               context: context,
                               sourcePath: file.path,
                               originalBytes: bytes,
+                              lockSquare: true,
                             );
                             if (!context.mounted) return;
                             final uploadErr = InputValidator.validateImageUpload(
