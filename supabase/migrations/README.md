@@ -49,6 +49,7 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 44. **044_chat_tone_mode.sql** — Add `tone_id` column to `character_chat_messages` for mood/tone transformation overlay
 45. **045_judge_use_for.sql** — Add `use_for` column (`battle`/`chat`/`both`) to `custom_judges` for marketplace tab filtering
 46. **046_surprises_bucket_rls.sql** — Create `surprises` storage bucket + RLS policies (insert/select/update/delete) scoped to couple members. Fixes 403 `new row violates row-level security policy` on photo/voice surprise upload — the bucket previously had RLS enabled with no policies.
+47. **047_surprises_judge_persona_dynamic.sql** — Drop the hard-coded `surprises_judge_persona_check`. The static 5-persona enum (from 001) rejected judge-pack personas (024/027) and `'custom'` judges, throwing 23514 `violates check constraint "surprises_judge_persona_check"` when hiding a surprise with any non-original judge. Personas are now a dynamic set; validation lives in the app + judges tables.
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 

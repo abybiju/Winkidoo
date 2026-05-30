@@ -54,6 +54,7 @@ Migrations in `supabase/migrations/` must be run **manually** in numeric order v
 | 041 | `041_security_logs.sql` | `security_logs` table — auth/API event monitoring; write-only from client; indexed by event_type + user_id |
 | 042 | `042_rate_limits.sql` | `rate_limit_entries` table + `check_rate_limit` RPC — server-side sliding-window rate limiting per user/action |
 | 046 | `046_surprises_bucket_rls.sql` | `surprises` storage bucket + RLS policies (insert/select/update/delete) scoped to couple members — fixes 403 on photo/voice surprise upload |
+| 047 | `047_surprises_judge_persona_dynamic.sql` | Drop `surprises_judge_persona_check` — the static 5-persona enum rejected judge-pack/custom personas (23514). Personas are now a dynamic set validated in-app |
 
 **Note:** Migrations `010a` and `010b` are independent of each other but both depend on `001`. Run all files in filename order. Both `010_` files must be applied.
 
@@ -90,7 +91,7 @@ Core game entity. Each surprise is one game round.
 | `creator_id` | `uuid` | FK → `auth.users`, NOT NULL |
 | `content_encrypted` | `text` | NOT NULL |
 | `unlock_method` | `text` | CHECK `('persuade','collaborate')` |
-| `judge_persona` | `text` | CHECK `(5 persona IDs)` |
+| `judge_persona` | `text` | NOT NULL (no CHECK — dynamic personas: packs + `custom`; was 5-persona enum, dropped in 047) |
 | `difficulty_level` | `int` | CHECK `(1-5)`, DEFAULT `2` |
 | `auto_delete_at` | `timestamptz` | nullable |
 | `is_unlocked` | `bool` | DEFAULT `false` |
