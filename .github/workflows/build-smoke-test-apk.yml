@@ -9,9 +9,10 @@
 # ("Run workflow"), so it never burns CI minutes on ordinary pushes.
 #
 # Required repo secrets (Settings -> Secrets and variables -> Actions):
-#   SUPABASE_URL, SUPABASE_ANON_KEY, TAVILY_API_KEY,
+#   SUPABASE_URL, SUPABASE_ANON_KEY,
 #   REVENUECAT_API_KEY         -- the --dart-define values (from dart_defines.json)
-#   (GEMINI_API_KEY is NOT needed here — Gemini is proxied server-side.)
+#   (GEMINI_API_KEY and TAVILY_API_KEY are NOT needed here — both are proxied
+#    server-side via the gemini-proxy / tavily-proxy Edge Functions.)
 #   ANDROID_KEYSTORE_BASE64    -- base64 of android/upload-keystore.jks
 #   ANDROID_STORE_PASSWORD     -- storePassword from android/key.properties
 #   ANDROID_KEY_PASSWORD       -- keyPassword from android/key.properties
@@ -76,18 +77,17 @@ jobs:
 
       - name: Write dart_defines.json
         env:
-          # GEMINI_API_KEY is intentionally absent — Gemini is proxied server-side
-          # via the gemini-proxy Edge Function, so the key never ships in the APK.
+          # GEMINI_API_KEY and TAVILY_API_KEY are intentionally absent — both are
+          # proxied server-side (gemini-proxy / tavily-proxy Edge Functions), so
+          # neither key ships in the APK.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           REVENUECAT_API_KEY: ${{ secrets.REVENUECAT_API_KEY }}
         run: |
           cat > dart_defines.json <<EOF
           {
             "SUPABASE_URL": "$SUPABASE_URL",
             "SUPABASE_ANON_KEY": "$SUPABASE_ANON_KEY",
-            "TAVILY_API_KEY": "$TAVILY_API_KEY",
             "REVENUECAT_API_KEY": "$REVENUECAT_API_KEY"
           }
           EOF

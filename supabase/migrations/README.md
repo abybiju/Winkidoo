@@ -79,4 +79,11 @@ If you see `relation "public.surprises" does not exist`, run **001** first, then
 - Reuses the `check_rate_limit` RPC (migration 042) for a per-user backstop (action `gemini`, 60/min). No new migration.
 - The client (`lib/services/gemini_proxy_client.dart`) routes the `google_generative_ai` SDK's traffic here with the user's JWT; the function authenticates the caller, attaches `GEMINI_API_KEY`, and forwards to `generativelanguage.googleapis.com`. The key never ships in the client. Rotate the key any time by updating the secret — no app release needed.
 
+### tavily-proxy (server-side Tavily key — keeps it out of the APK)
+
+- Set the secret: `supabase secrets set TAVILY_API_KEY=<your_key>`
+- Deploy: `supabase functions deploy tavily-proxy --use-api`
+- Reuses `check_rate_limit` (action `tavily`, 20/min). No new migration.
+- The client (`lib/services/tavily_search_service.dart`) calls it via `functions.invoke` for custom-judge web search; the function injects `TAVILY_API_KEY` and forwards to `api.tavily.com`. Fails gracefully to AI-only persona generation.
+
 *Doc sync: May 2026 — migrations 001–040 documented. Push (009–010) and Edge Function/webhook steps match docs/FIREBASE_AND_PUSH_SETUP.md. gemini-proxy added 2026-05.*

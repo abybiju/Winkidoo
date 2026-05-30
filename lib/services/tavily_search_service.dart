@@ -1,51 +1,38 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Searches the web for personality info using Tavily's free API.
-/// Free tier: 1,000 searches/month.
+/// Searches the web for personality info via the `tavily-proxy` Edge Function.
+/// The Tavily API key lives server-side (a Supabase secret), so it never ships
+/// in the client. Free tier: 1,000 searches/month.
 class TavilySearchService {
-  static const _baseUrl = 'https://api.tavily.com/search';
-
   /// Searches the web for information about a personality.
   /// Returns a concatenated string of search results (titles + content)
   /// ready to be injected into an AI prompt.
   ///
   /// Returns empty string if search fails (graceful fallback to AI-only).
-  static Future<String> searchPersonality(
-    String apiKey,
-    String personalityName,
-  ) async {
+  static Future<String> searchPersonality(String personalityName) async {
     debugPrint('TavilySearchService: Starting search for "$personalityName"');
-    if (apiKey.trim().isEmpty) {
-      debugPrint('TavilySearchService: No API key provided, skipping web search');
-      return '';
-    }
-    debugPrint('TavilySearchService: API key present (${apiKey.substring(0, 4)}...), calling Tavily');
 
     try {
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'api_key': apiKey,
+      final response = await Supabase.instance.client.functions.invoke(
+        'tavily-proxy',
+        method: HttpMethod.post,
+        body: {
           'query':
               '$personalityName famous quotes speaking style personality mannerisms catchphrases',
           'max_results': 5,
           'include_answer': true,
           'search_depth': 'basic',
-        }),
+        },
       );
 
-      debugPrint('TavilySearchService: Response status ${response.statusCode}');
-      if (response.statusCode != 200) {
-        debugPrint(
-            'TavilySearchService: HTTP ${response.statusCode} — ${response.body}');
+      debugPrint('TavilySearchService: proxy status ${response.status}');
+      if (response.status != 200) {
+        debugPrint('TavilySearchService: proxy HTTP ${response.status}');
         return '';
       }
 
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final json = response.data as Map<String, dynamic>;
 
       final buffer = StringBuffer();
 

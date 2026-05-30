@@ -334,6 +334,19 @@ supabase functions deploy gemini-proxy --use-api
 ```
 Rotate the Gemini key any time by updating the secret — no client release required.
 
+### `tavily-proxy`
+Location: `supabase/functions/tavily-proxy/`
+
+**Purpose:** Keeps `TAVILY_API_KEY` server-side (custom-judge web-search research). The client (`lib/services/tavily_search_service.dart`) calls it via `functions.invoke('tavily-proxy', …)` instead of hitting `api.tavily.com` directly.
+
+**Behavior:** Same JWT gate + `check_rate_limit` backstop (action `tavily`, 20/min) as `gemini-proxy`. Injects `TAVILY_API_KEY` into the search body server-side and forwards to `https://api.tavily.com/search`, returning Tavily's JSON unchanged. Fails gracefully → the client falls back to AI-only persona generation.
+
+**Required Supabase secret:**
+```bash
+supabase secrets set TAVILY_API_KEY='<your_tavily_key>'
+supabase functions deploy tavily-proxy --use-api
+```
+
 ---
 
 ## Key RPCs

@@ -21,9 +21,6 @@ import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
 import 'package:winkidoo/services/rate_limit_service.dart';
 
-const _tavilyApiKey =
-    String.fromEnvironment('TAVILY_API_KEY', defaultValue: '');
-
 class CreateCustomJudgeScreen extends ConsumerStatefulWidget {
   const CreateCustomJudgeScreen({super.key, this.defaultUseFor});
 
@@ -281,7 +278,6 @@ class _CreateCustomJudgeScreenState
       personalityName: name,
       mood: _selectedMoods.join('+'),
       useFor: _useFor,
-      tavilyApiKey: _tavilyApiKey,
       onStatusUpdate: (status) {
         if (mounted) setState(() => _generatingStatus = status);
       },

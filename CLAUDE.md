@@ -211,11 +211,11 @@ flutter analyze    # zero warnings policy
 | `SUPABASE_URL` | `lib/main.dart` via `String.fromEnvironment` | **Yes** — app shows `ConfigErrorApp` if empty |
 | `SUPABASE_ANON_KEY` | `lib/main.dart` via `String.fromEnvironment` | **Yes** — app shows `ConfigErrorApp` if empty |
 | `GEMINI_API_KEY` | **Supabase secret** for the `gemini-proxy` Edge Function (NOT a client flag) | **Yes for battles** — set via `supabase secrets set` |
-| `TAVILY_API_KEY` | `--dart-define` → custom-judge web search | Optional (custom judges only) |
+| `TAVILY_API_KEY` | **Supabase secret** for the `tavily-proxy` Edge Function (NOT a client flag) | Optional (custom-judge web search) |
 | `REVENUECAT_API_KEY` | `--dart-define` → RevenueCat | Optional (in-app purchases) |
 | `FIREBASE_SERVICE_ACCOUNT` | Supabase secret (Edge Function only) | Push notifications only |
 
-Client keys are passed via `--dart-define` (no `.env` file, no defaults). `GEMINI_API_KEY` is the exception: it is a **server-side Supabase secret** consumed by `gemini-proxy`, so it never ships in the client — see `lib/services/gemini_proxy_client.dart`.
+Client keys are passed via `--dart-define` (no `.env` file, no defaults). **`GEMINI_API_KEY` and `TAVILY_API_KEY` are the exceptions**: both are **server-side Supabase secrets** consumed by the `gemini-proxy` / `tavily-proxy` Edge Functions, so they never ship in the client — see `lib/services/gemini_proxy_client.dart` and `lib/services/tavily_search_service.dart`.
 
 ---
 

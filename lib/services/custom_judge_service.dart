@@ -16,7 +16,6 @@ class CustomJudgeService {
     required String mood,
     String useFor = 'both',
     String? avatarStoragePath,
-    String tavilyApiKey = '',
     void Function(String status)? onStatusUpdate,
   }) async {
     try {
@@ -41,18 +40,11 @@ class CustomJudgeService {
           .single();
       final judgeId = insertRow['id'] as String;
 
-      // Step 2: Search the web for personality info via Tavily
-      String webContext = '';
-      debugPrint('CustomJudgeService: tavilyApiKey empty=${tavilyApiKey.isEmpty}');
-      if (tavilyApiKey.isNotEmpty) {
-        webContext = await TavilySearchService.searchPersonality(
-          tavilyApiKey,
-          personalityName,
-        );
-        debugPrint('CustomJudgeService: Tavily returned ${webContext.length} chars');
-      } else {
-        debugPrint('CustomJudgeService: No Tavily key, skipping web search');
-      }
+      // Step 2: Search the web for personality info via the tavily-proxy Edge
+      // Function (key is server-side). Returns '' on any failure.
+      final webContext =
+          await TavilySearchService.searchPersonality(personalityName);
+      debugPrint('CustomJudgeService: Tavily returned ${webContext.length} chars');
 
       // Step 3: Generate persona via AI with web context
       onStatusUpdate?.call('generating');

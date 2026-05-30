@@ -17,10 +17,12 @@ command -v gh >/dev/null || { echo "ERROR: gh CLI not installed"; exit 1; }
 [[ -f android/app/google-services.json ]] || { echo "ERROR: android/app/google-services.json missing"; exit 1; }
 
 # --- dart-define values (parsed from dart_defines.json) ---
-# Note: GEMINI_API_KEY is deliberately excluded — Gemini is proxied server-side
-# via the gemini-proxy Edge Function, so the key is a Supabase secret, not a
-# client/CI secret. Set it with: supabase secrets set GEMINI_API_KEY=<key>
-for KEY in SUPABASE_URL SUPABASE_ANON_KEY TAVILY_API_KEY REVENUECAT_API_KEY; do
+# Note: GEMINI_API_KEY and TAVILY_API_KEY are deliberately excluded — both are
+# proxied server-side (gemini-proxy / tavily-proxy Edge Functions), so they are
+# Supabase secrets, not client/CI secrets. Set them with:
+#   supabase secrets set GEMINI_API_KEY=<key>
+#   supabase secrets set TAVILY_API_KEY=<key>
+for KEY in SUPABASE_URL SUPABASE_ANON_KEY REVENUECAT_API_KEY; do
   VALUE=$(python3 -c "import json,sys; print(json.load(open('dart_defines.json')).get('$KEY',''))")
   if [[ -z "$VALUE" || "$VALUE" == YOUR_* ]]; then
     echo "  ! skipping $KEY (empty or still a placeholder in dart_defines.json)"
