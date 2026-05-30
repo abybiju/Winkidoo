@@ -261,9 +261,9 @@ Respond with JSON only, no markdown:
     }
 
     const substantiveRule =
-        'You MUST always set commentary to 1–3 full sentences in your persona voice. Never leave commentary empty, a single character, or a placeholder. Reference something specific from the last message(s).';
+        'Keep commentary to 1–2 SHORT sentences in your persona voice (aim under ~30 words). Never leave commentary empty, a single character, or a placeholder. Do NOT summarize, paraphrase, quote, or repeat back what the seeker wrote — react to it and push forward by saying what is still missing or what would impress you more. Be punchy, not wordy.';
     const repetitionRule =
-        'Vary your reactions. If you already gave similar feedback in the last 1–2 messages, add new angles or more concrete suggestions instead of repeating the same phrase.';
+        'Vary your reactions. If you already gave similar feedback in the last 1–2 messages, add new angles or more concrete suggestions instead of repeating the same phrase. When the seeker asks what you want or how to win, answer directly with 1–2 concrete things you expect — do not dodge.';
     const openerRule =
         'Switch up your opening words every message. Do NOT start with "Oh honey" (or the same pet name) every time — use different openers like "bestie", "sweetheart", "love", "darling", or no opener at all. Same for other personas: vary thy/thee openings, or "BRO"/"okay" etc.';
     const webQuoteRule =
@@ -439,6 +439,57 @@ Your previous reply had no commentary. You must respond with your actual in-char
         moodEmoji: '😶',
         scoreDelta: 0,
       );
+    }
+  }
+
+  /// Judge's OPENING line when a battle starts — greets in persona and states
+  /// plainly what it expects from the seeker to earn the unlock. Short, plain
+  /// text (no JSON). Inserted once, before the seeker says anything.
+  Future<String> generateBattleOpening({
+    required String persona,
+    required int difficultyLevel,
+    String? surpriseContextHint,
+    String? personaPromptOverride,
+    String? howToImpressOverride,
+  }) async {
+    final personaPrompt = personaPromptOverride ??
+        _personaPrompts[persona] ??
+        _personaPrompts[AppConstants.personaSassyCupid]!;
+    final howToImpress = howToImpressOverride ??
+        _howToImpressByPersona[persona] ??
+        _howToImpressByPersona[AppConstants.personaSassyCupid]!;
+    final difficultyNote = difficultyLevel >= 4
+        ? 'You are a HARD judge — set a high bar and make clear it will not be easy.'
+        : difficultyLevel <= 1
+            ? 'You are easygoing today, but you still want real, original effort.'
+            : 'You expect genuine, original effort.';
+
+    final prompt = '''
+$_winkidooJudgeSystemPrompt
+
+$personaPrompt
+
+You are OPENING a live persuasion battle. The seeker just arrived to convince you to unlock a hidden surprise${surpriseContextHint != null ? ' ($surpriseContextHint)' : ''}.
+$difficultyNote
+
+Greet them ONCE in your voice and make crystal clear what you expect from them to earn the unlock, based on: $howToImpress
+
+Rules:
+- 1–2 SHORT sentences, under ~30 words total. Do not ramble.
+- Say plainly what will impress you and what will not — their OWN words only, no copied/internet lines.
+- Stay fully in character. End by inviting them to make their case.
+- Output ONLY the spoken line. No JSON, no surrounding quotes.
+''';
+
+    try {
+      final response = await _textModel.generateContent([Content.text(prompt)]);
+      final text = response.text?.trim() ?? '';
+      return text.isNotEmpty
+          ? text
+          : 'Alright — convince me. Use your own words, make it real, and impress me.';
+    } catch (e) {
+      debugPrint('generateBattleOpening error: $e');
+      return 'Alright — convince me. Use your own words, make it real, and impress me.';
     }
   }
 

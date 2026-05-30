@@ -64,6 +64,7 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
   String? _lastSystemMessageText;
   DateTime? _lastSystemMessageAt;
   bool _showTease = true;
+  bool _openingInserted = false;
 
   // Phantom Judge state
   bool _phantomTriggered = false;
@@ -139,6 +140,58 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         );
       });
     });
+  }
+
+  /// Inserts a one-time opening message from the judge when the seeker enters
+  /// the battle, so the judge greets them and states what it expects up front.
+  Future<void> _ensureOpeningMessage(Surprise surprise) async {
+    if (_openingInserted) return;
+    _openingInserted = true;
+    try {
+      final client = ref.read(supabaseClientProvider);
+      // Skip if anyone has already spoken (avoids a duplicate opener).
+      final existing =
+          await ref.read(battleMessagesProvider(widget.surpriseId).future);
+      if (existing.isNotEmpty) return;
+
+      String? personaPromptOverride;
+      String? howToImpressOverride;
+      if (surprise.judgePersona == 'custom' &&
+          surprise.customJudgeId != null) {
+        final customJudge = await CustomJudgeService.getJudgeById(
+            client, surprise.customJudgeId!);
+        if (customJudge != null) {
+          personaPromptOverride = customJudge.generatedPersonaPrompt;
+          howToImpressOverride = customJudge.generatedHowToImpress;
+        }
+      }
+
+      final ai = ref.read(aiJudgeServiceProvider);
+      final opener = await ai.generateBattleOpening(
+        persona: surprise.judgePersona,
+        difficultyLevel: surprise.difficultyLevel,
+        surpriseContextHint: surprise.unlockMethod.isNotEmpty
+            ? 'Surprise type: ${surprise.unlockMethod}'
+            : null,
+        personaPromptOverride: personaPromptOverride,
+        howToImpressOverride: howToImpressOverride,
+      );
+
+      if (!mounted) return;
+      await client.from('battle_messages').insert({
+        'id': const Uuid().v4(),
+        'surprise_id': widget.surpriseId,
+        'sender_type': 'judge',
+        'sender_id': null,
+        'content': opener,
+        'is_verdict': false,
+      });
+      ref.invalidate(battleMessagesProvider(widget.surpriseId));
+    } catch (e) {
+      // Non-fatal: the seeker can still start the conversation themselves.
+      _openingInserted = false;
+      debugPrint('ensureOpeningMessage error: $e');
+    }
   }
 
   @override
@@ -594,7 +647,14 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
                   .eq('id', widget.surpriseId);
               ref.invalidate(surpriseByIdProvider(widget.surpriseId));
             },
-            onBegin: () => setState(() => _showTease = false),
+            onBegin: () {
+              setState(() => _showTease = false);
+              // Judge speaks first: only the seeker triggers the opener so the
+              // judge greets them and states expectations before they argue.
+              if (userId != surprise.creatorId) {
+                _ensureOpeningMessage(surprise);
+              }
+            },
           );
         }
         final isCreator = userId == surprise.creatorId;
