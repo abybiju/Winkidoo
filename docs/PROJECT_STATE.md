@@ -6,6 +6,22 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 30, 2026 (latest) – Battle judge fixes + WhatsApp-style character chat (tag v0.2.3)
+
+**Custom judge persona was ignored in battles.** `surprises.custom_judge_id` was saved on create but never read back (no field on the `Surprise` model), and `judgeChat` received `persona: 'custom'` with no override → it fell back to the default Sassy Cupid voice ("darling/love/honey"). Fixed: `Surprise` now parses `custom_judge_id`, `CustomJudgeService.getJudgeById` loads the judge, and `battle_chat_screen` passes `personaPromptOverride` + `howToImpressOverride` so the custom judge speaks in-character. The judge **opening message** loads the same override.
+
+**Unlock verdict never opened the reveal ("unlocked but never left the chat").** The judge JSON parser required BOTH `score` and `is_unlocked` keys, but the model often declares an unlock with only one. `hasVerdict` now triggers on either key, so the battle resolves (`battle_status → resolved`) and navigates to `/shell/reveal/:id`.
+
+**Judge now opens first + tighter, in-persona replies.** On entering a battle the seeker gets a one-time in-persona opener (`AiJudgeService.generateBattleOpening` + `_ensureOpeningMessage`, seeker-only, skipped if anyone already spoke) that greets them and states expectations. Replies are now 1–2 short sentences and must NOT summarize/quote/repeat the seeker's message. When asked "what do you want", the judge answers directly.
+
+**Anti-paste.** Battle input disables the copy/paste/select-all menu (`contextMenuBuilder` → empty), and the judge applies a real negative score penalty + refuses to unlock on web/quote/essay-sounding content (was a soft nudge).
+
+**Migration `047_surprises_judge_persona_dynamic.sql`.** Dropped the hard-coded `surprises_judge_persona_check` (5-persona enum from 001) that rejected judge-pack + `custom` personas with a 23514 check-constraint violation when hiding a surprise.
+
+**WhatsApp-style character chat.** Top bar shows the chat title centered (group name for groups, the other person's real name for 1:1); the persona/tone picker is a small "as &lt;persona&gt; · &lt;tone&gt;" line under the title, visible only to the local user. Message bubbles now show the **sender's real name** to receivers (resolved from `roomMembersProvider`), never the persona or tone — the `as <persona> <tone>` label appears only on the sender's own bubbles. Files: `character_chat_screen.dart`, `widgets/chat_message_bubble.dart`.
+
+Released as tag **`v0.2.3`** (pubspec `0.2.3+5`).
+
 ### May 30, 2026 (later) – Storage RLS fix, image cropping, notification bell + profile gear (tag v0.2.2)
 
 **Surprises storage bucket RLS fix.** Photo/voice surprise uploads failed with `StorageException(... new row violates row-level security policy, statusCode: 403)`. Root cause: the `surprises` Storage bucket had RLS enabled on `storage.objects` but **zero policies** (only `judge-avatars`/`profile-avatars` had policies — the surprises ones were never captured in a migration). Text surprises worked because they don't touch Storage. Fixed by **migration `046_surprises_bucket_rls.sql`**: creates the bucket + insert/select/update/delete policies scoped to couple members (folder = `<couple_id>`, checked against `couples.user_a_id`/`user_b_id`). Also corrected `docs/DATABASE.md` which wrongly documented the surprise path as `<user_id>/` (code uses `<couple_id>/`). To diagnose RLS like a "console", use Supabase Dashboard → Logs (API/Postgres) and `select … from pg_policies where tablename='objects'`.
