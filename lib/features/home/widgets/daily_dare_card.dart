@@ -233,7 +233,7 @@ class _DailyDareCardState extends ConsumerState<DailyDareCard> {
         );
       case DarePhase.waitingForPartner:
         return _DareOutlineButton(
-          label: 'Waiting for partner...',
+          label: 'Waiting for friend...',
           hovered: _hovered,
           compact: widget.compact,
         );

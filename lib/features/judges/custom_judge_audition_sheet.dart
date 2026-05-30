@@ -118,7 +118,7 @@ class _CustomJudgeAuditionSheetState
               text:
                   'I created a ${widget.judge.personalityName} judge on Winkidoo! '
                   '${widget.judge.moodDisplayName} mood 💝 Download the app to chat with '
-                  'custom AI judges and play surprise-vault battles with your partner.',
+                  'custom AI judges and play surprise-vault battles with friends.',
             ),
           );
           if (mounted) Navigator.pop(context);
@@ -390,7 +390,7 @@ class _PostAuditionSheet extends StatelessWidget {
                 icon: Icons.public_rounded,
                 iconColor: AppTheme.success,
                 title: 'Publish to Community',
-                subtitle: 'Let other couples discover and use this judge',
+                subtitle: 'Let others discover and use this judge',
                 onTap: onPublish,
               ),
               const SizedBox(height: 10),
@@ -410,7 +410,7 @@ class _PostAuditionSheet extends StatelessWidget {
                 icon: Icons.lock_rounded,
                 iconColor: AppTheme.textMuted,
                 title: 'Keep Private',
-                subtitle: 'Only you and your partner can use this judge',
+                subtitle: 'Only you and your friend can use this judge',
                 onTap: onKeepPrivate,
               ),
             ],

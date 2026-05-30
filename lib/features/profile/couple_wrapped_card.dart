@@ -12,7 +12,7 @@ import 'package:winkidoo/providers/couple_stats_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
 import 'package:winkidoo/providers/xp_provider.dart';
 
-/// A "Spotify Wrapped for couples" shareable relationship summary.
+/// A "Spotify Wrapped"-style shareable summary for a duo.
 /// Shows stats in a beautiful card that can be screenshotted or shared.
 class CoupleWrappedSheet extends ConsumerStatefulWidget {
   const CoupleWrappedSheet({super.key});
@@ -42,7 +42,7 @@ class _CoupleWrappedSheetState extends ConsumerState<CoupleWrappedSheet> {
             XFile.fromData(bytes,
                 mimeType: 'image/png', name: 'couple_wrapped.png')
           ],
-          text: 'Our Winkidoo Wrapped! #CoupleWrapped #Winkidoo',
+          text: 'Our Winkidoo Wrapped! #DuoWrapped #Winkidoo',
         ),
       );
     } catch (e) {
@@ -189,7 +189,7 @@ class _WrappedCard extends StatelessWidget {
         children: [
           // Header
           Text(
-            'COUPLE WRAPPED',
+            'DUO WRAPPED',
             style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w800,

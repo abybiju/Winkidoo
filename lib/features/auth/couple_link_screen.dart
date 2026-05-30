@@ -69,7 +69,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Your code: ${couple.inviteCode} — Share with your partner!'),
+            content: Text('Your code: ${couple.inviteCode} — Share with a friend!'),
             backgroundColor: AppTheme.primary,
           ),
         );
@@ -153,7 +153,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
         final msg = switch (err) {
           'not_found' => 'Code not found. Check the code and try again.',
           'already_used' || 'expired' => 'This code is already used.',
-          'own_code' => 'This is your invite code — share it with your partner.',
+          'own_code' => 'This is your invite code — share it with a friend.',
           _ => 'Something went wrong ($err).',
         };
         if (mounted) {
@@ -217,7 +217,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                   children: [
                     const SizedBox(height: 40),
                     Text(
-                      'Link with your partner',
+                      'Link up with a friend',
                       style: GoogleFonts.poppins(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -226,7 +226,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Create a couple or enter your partner\'s code.',
+                      'Create a link or enter a friend\'s code.',
                       style: GoogleFonts.inter(
                         color: AppTheme.textSecondary,
                       ),
@@ -236,7 +236,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                       TextField(
                         controller: _codeController,
                         decoration: const InputDecoration(
-                          labelText: 'Partner code',
+                          labelText: 'Friend code',
                           hintText: 'e.g. ABC12XYZ',
                         ),
                         textCapitalization: TextCapitalization.characters,
@@ -262,13 +262,13 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                       TextButton(
                         onPressed: () => setState(() => _showCreate = true),
                         child: const Text(
-                          'Create a new couple link',
+                          'Create a new link',
                           style: TextStyle(color: AppTheme.primary),
                         ),
                       ),
                     ] else ...[
                       Text(
-                        'You\'ll get a code to share. Your partner enters it to link.',
+                        'You\'ll get a code to share. Your friend enters it to link.',
                         style: GoogleFonts.inter(color: AppTheme.textSecondary),
                       ),
                       const SizedBox(height: 24),
@@ -285,7 +285,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Create couple link'),
+                              : const Text('Create a link'),
                         ),
                       ),
                       const SizedBox(height: 16),

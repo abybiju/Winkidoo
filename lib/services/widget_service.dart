@@ -14,7 +14,7 @@ class WidgetService {
   static Future<void> update({
     required int streak,
     required int pendingSurprises,
-    String prompt = '💝 Create a surprise for your partner today!',
+    String prompt = '💝 Create a surprise for a friend today!',
   }) async {
     try {
       await HomeWidget.saveWidgetData<int>('streak', streak);

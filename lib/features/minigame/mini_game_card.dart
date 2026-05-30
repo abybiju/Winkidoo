@@ -231,7 +231,7 @@ class _MiniGameCardState extends ConsumerState<MiniGameCard> {
                   color: AppTheme.success, size: 16),
               const SizedBox(width: 6),
               Text(
-                'Waiting for partner...',
+                'Waiting for friend...',
                 style: GoogleFonts.poppins(
                   fontSize: widget.compact ? 13 : 14,
                   fontWeight: FontWeight.w600,

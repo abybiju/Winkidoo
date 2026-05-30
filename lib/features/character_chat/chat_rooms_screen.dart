@@ -269,7 +269,7 @@ class _ChatRoomCard extends StatelessWidget {
   String _typeLabel(String type) {
     switch (type) {
       case 'couple':
-        return 'Partner Chat';
+        return 'Friend Chat';
       case 'group':
         return 'Group Chat';
       default:

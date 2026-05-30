@@ -67,7 +67,7 @@ class JudgeMemoryService {
       );
 
       final prompt =
-          'You are the judge "$judgePersona" in a romantic couples game. '
+          'You are the judge "$judgePersona" in a playful game between friends. '
           'Read this battle transcript and write exactly ONE sentence summarizing '
           'what happened from your perspective — what tactics the seeker used, '
           'how you reacted, and whether they won. Be in-character and vivid.\n\n'

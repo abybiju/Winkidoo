@@ -191,7 +191,7 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Your partner locked a surprise. Persuade the judge to unlock it!',
+                  'A friend locked a surprise. Persuade the judge to unlock it!',
                   style: GoogleFonts.inter(color: AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 24),
@@ -199,7 +199,7 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
                   controller: _textController,
                   maxLines: 5,
                   decoration: const InputDecoration(
-                    hintText: 'Write your argument, love note, or plea...',
+                    hintText: 'Write your argument, message, or plea...',
                   ),
                 ),
                 const SizedBox(height: 24),

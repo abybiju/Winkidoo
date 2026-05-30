@@ -32,7 +32,7 @@ class ReferralScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Invite a Couple',
+                      'Invite a Friend',
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
@@ -46,7 +46,7 @@ class ReferralScreen extends ConsumerWidget {
                 child: coupleAsync.when(
                   data: (couple) {
                     if (couple == null) {
-                      return const Center(child: Text('No couple found'));
+                      return const Center(child: Text('No link found'));
                     }
                     final inviteCode = couple.inviteCode;
                     final shareMessage =
@@ -63,7 +63,7 @@ class ReferralScreen extends ConsumerWidget {
                           const Text('💑', style: TextStyle(fontSize: 56)),
                           const SizedBox(height: 16),
                           Text(
-                            'Share the love!',
+                            'Share the fun!',
                             style: GoogleFonts.poppins(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
@@ -72,7 +72,7 @@ class ReferralScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'When the couple you invite completes\ntheir first battle, you both get',
+                            'When a friend you invite completes\ntheir first battle, you both get',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
                               fontSize: 14,
@@ -167,7 +167,7 @@ class ReferralScreen extends ConsumerWidget {
                                 ));
                               },
                               icon: const Icon(Icons.share_rounded),
-                              label: Text('Share with a couple',
+                              label: Text('Share with a friend',
                                   style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.w600)),
                               style: ElevatedButton.styleFrom(
@@ -199,7 +199,7 @@ class ReferralScreen extends ConsumerWidget {
                                             .onSurface)),
                                 const SizedBox(height: 8),
                                 ...[
-                                  '1. Share your invite code with another couple',
+                                  '1. Share your invite code with a friend',
                                   '2. They download Winkidoo and enter your code',
                                   '3. They complete their first battle',
                                   '4. You both automatically get +50 Winks!',

@@ -46,7 +46,7 @@ class CampaignListScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Narrative adventures with your partner. Complete chapters to unlock exclusive rewards.',
+                  'Narrative adventures with your friend. Complete chapters to unlock exclusive rewards.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: AppTheme.homeTextSecondary,

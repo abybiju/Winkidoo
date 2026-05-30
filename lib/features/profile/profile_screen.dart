@@ -76,7 +76,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _ProfileActionCard(
                     icon: Icons.auto_awesome_rounded,
-                    label: 'Couple Wrapped',
+                    label: 'Duo Wrapped',
                     subtitle: 'Your relationship, by the numbers',
                     onTap: () => showModalBottomSheet<void>(
                       context: context,
@@ -130,7 +130,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _ProfileActionCard(
                     icon: Icons.people_rounded,
-                    label: 'Invite a Couple',
+                    label: 'Invite a Friend',
                     subtitle: 'Earn +50 Winks for each referral',
                     onTap: () => context.push('/shell/referral'),
                   ),
@@ -1590,7 +1590,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         children: [
           Text(
             'This permanently deletes your account, profile, custom judges, '
-            'chats, and game progress. Surprises you shared with your partner '
+            'chats, and game progress. Surprises you shared with your friend '
             'stay in their vault. This cannot be undone.',
             style: GoogleFonts.inter(
               fontSize: 13,

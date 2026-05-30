@@ -354,7 +354,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Surprise locked! Your partner will see it.'),
+            content: Text('Surprise locked! Your friend will see it.'),
             backgroundColor: AppTheme.primary,
           ),
         );
@@ -420,7 +420,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Photo surprise locked! Your partner will see it.'),
+            content: Text('Photo surprise locked! Your friend will see it.'),
             backgroundColor: AppTheme.primary,
           ),
         );
@@ -488,7 +488,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Voice surprise locked! Your partner will hear it.'),
+            content: Text('Voice surprise locked! Your friend will hear it.'),
             backgroundColor: AppTheme.primary,
           ),
         );
@@ -630,7 +630,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                             child: Column(
                               children: [
                                 Text(
-                                  'Write a letter to your partner\'s future self',
+                                  'Write a letter to your friend\'s future self',
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -895,7 +895,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                                     size: 40, color: AppTheme.primaryOrange),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Your partner will spin the wheel before the battle!',
+                                  'Your friend will spin the wheel before the battle!',
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
@@ -1065,7 +1065,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                                     ),
                                   ),
                                   Text(
-                                    'Your partner adds their piece too',
+                                    'Your friend adds their piece too',
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: Theme.of(context)

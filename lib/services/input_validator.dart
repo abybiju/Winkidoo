@@ -79,7 +79,7 @@ class InputValidator {
 
   /// Validates an invite code: alphanumeric only, reasonable length.
   static String? validateInviteCode(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Enter your partner\'s code';
+    if (value == null || value.trim().isEmpty) return 'Enter your friend\'s code';
     final code = value.trim().toUpperCase();
     if (code.length > maxInviteCodeLength) return 'Code is too long';
     if (!RegExp(r'^[A-Z0-9]+$').hasMatch(code)) return 'Code must be letters and numbers only';

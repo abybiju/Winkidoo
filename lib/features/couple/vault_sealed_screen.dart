@@ -121,7 +121,7 @@ class _VaultSealedScreenState extends State<VaultSealedScreen>
 
   Widget _buildSubtext() {
     return Text(
-      'Share this code with your partner to link.',
+      'Share this code with a friend to link.',
       textAlign: TextAlign.center,
       style: GoogleFonts.inter(
         fontSize: 16,
@@ -239,7 +239,7 @@ class _VaultSealedScreenState extends State<VaultSealedScreen>
 
   Widget _buildBottomMicrocopy() {
     return Text(
-      'Only one partner can link to this vault.',
+      'Only one friend can link to this vault.',
       textAlign: TextAlign.center,
       style: GoogleFonts.inter(
         fontSize: 12,

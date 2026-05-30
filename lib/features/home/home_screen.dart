@@ -296,7 +296,7 @@ class _QuestSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '🗺️ Love Quest',
+                    '🗺️ Duo Quest',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -326,7 +326,7 @@ class _QuestSection extends StatelessWidget {
                       color: AppTheme.primaryPink.withValues(alpha: 0.15),
                     ),
                     child: const Text(
-                      'Start Love Quest ⚔️',
+                      'Start Duo Quest ⚔️',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

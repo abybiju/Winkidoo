@@ -48,7 +48,7 @@ class LeaderboardScreen extends ConsumerWidget {
                     if (entries.isEmpty) {
                       return Center(
                         child: Text(
-                          'No couples on the board yet.\nPlay more battles to rank up!',
+                          'No duos on the board yet.\nPlay more battles to rank up!',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             color: Theme.of(context)

@@ -103,7 +103,7 @@ class _LinkVaultScreenState extends State<LinkVaultScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Invite your partner and start hiding surprises.',
+          'Invite a friend and start hiding surprises.',
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: 16,
@@ -117,7 +117,7 @@ class _LinkVaultScreenState extends State<LinkVaultScreen> {
   Widget _buildCreateCard() {
     return _VaultOptionCard(
       title: 'Create a new vault',
-      description: "We'll generate a private invite code for your partner.",
+      description: "We'll generate a private invite code for your friend.",
       child: GestureDetector(
         onTapDown: (_) => setState(() => _createButtonPressed = true),
         onTapUp: (_) => setState(() => _createButtonPressed = false),
@@ -155,7 +155,7 @@ class _LinkVaultScreenState extends State<LinkVaultScreen> {
   Widget _buildJoinCard() {
     return _VaultOptionCard(
       title: 'Join with a code',
-      description: 'Enter the invite code your partner shared.',
+      description: 'Enter the invite code your friend shared.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -213,7 +213,7 @@ class _LinkVaultScreenState extends State<LinkVaultScreen> {
 
   Widget _buildFooter() {
     return Text(
-      'One vault. One partner. Infinite persuasion.',
+      'One vault. One friend. Infinite persuasion.',
       textAlign: TextAlign.center,
       style: GoogleFonts.inter(
         fontSize: 13,

@@ -228,7 +228,7 @@ class _QuestProgressBody extends StatelessWidget {
     if (currentStepSurprise.battleStatus == 'active' &&
         currentStepSurprise.creatorId == currentUserId) {
       return Text(
-        'Waiting for your partner to battle...',
+        'Waiting for your friend to battle...',
         style: GoogleFonts.inter(
           fontSize: 14,
           color: Theme.of(context)

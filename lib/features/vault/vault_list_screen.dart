@@ -95,7 +95,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
       if (next != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Your partner added a surprise'),
+            content: Text('Your friend added a surprise'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -290,7 +290,7 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                               const Text('✏️', style: TextStyle(fontSize: 16)),
                               const SizedBox(width: 8),
                               Text(
-                                'Your partner is crafting something...',
+                                'Your friend is crafting something...',
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
@@ -1121,7 +1121,7 @@ class _EmptyVaultState extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Start by creating your first surprise. Once your partner responds, this vault becomes your shared archive of moments.',
+                'Start by creating your first surprise. Once your friend responds, this vault becomes your shared archive of moments.',
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
@@ -1391,7 +1391,7 @@ class _CollabPieceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Your partner is waiting for your contribution',
+                    'Your friend is waiting for your contribution',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: Theme.of(context)

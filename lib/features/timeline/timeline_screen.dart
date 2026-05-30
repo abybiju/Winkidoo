@@ -97,7 +97,7 @@ class TimelineScreen extends ConsumerWidget {
       milestones.add(_Milestone(
         emoji: '💑',
         title: 'You linked up',
-        subtitle: 'Your couple journey began',
+        subtitle: 'Your journey began',
         date: linkedAt,
       ));
     }
@@ -134,7 +134,7 @@ class TimelineScreen extends ConsumerWidget {
     if (firstQuest != null) {
       milestones.add(_Milestone(
         emoji: '🗺️',
-        title: 'First Love Quest started',
+        title: 'First Duo Quest started',
         subtitle: 'Your quest adventure began',
         date: firstQuest.createdAt,
       ));

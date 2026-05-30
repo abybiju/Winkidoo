@@ -129,7 +129,7 @@ class _AddCollabPieceScreenState extends ConsumerState<AddCollabPieceScreen> {
                                   .withValues(alpha: 0.3)),
                         ),
                         child: Text(
-                          '🤫 Your partner already added their piece. Now add yours — neither of you will see the combined result until you WIN the battle together.',
+                          '🤫 Your friend already added their piece. Now add yours — neither of you will see the combined result until you WIN the battle together.',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color:

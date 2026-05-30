@@ -511,7 +511,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                                       CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Partner\'s piece',
+                                      'Friend\'s piece',
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,

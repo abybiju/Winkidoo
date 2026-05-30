@@ -294,7 +294,7 @@ Example (another persona — poetic nudge): {"commentary": "Thy words ring famil
         : '';
 
     final memoriesBlock = judgeMemories != null && judgeMemories.isNotEmpty
-        ? '\nYour memories of past battles with this couple:\n${judgeMemories.map((m) => '- $m').join('\n')}\nDraw on these naturally — reference past tactics if relevant, but don\'t repeat yourself.\n'
+        ? '\nYour memories of past battles with this duo:\n${judgeMemories.map((m) => '- $m').join('\n')}\nDraw on these naturally — reference past tactics if relevant, but don\'t repeat yourself.\n'
         : '';
 
     final moodContext = _buildMoodContext();
@@ -477,10 +477,10 @@ Your previous reply had no commentary. You must respond with your actual in-char
 
     final statsContext = StringBuffer();
     if (totalSurprises > 0) {
-      statsContext.writeln('The couple has created $totalSurprises surprises so far ($textCount text, $photoCount photo, $voiceCount voice).');
+      statsContext.writeln('The duo has created $totalSurprises surprises so far ($textCount text, $photoCount photo, $voiceCount voice).');
     }
     if (partnerName != null && partnerName.isNotEmpty) {
-      statsContext.writeln("The partner's name is $partnerName.");
+      statsContext.writeln("The friend's name is $partnerName.");
     }
 
     // Suggest under-used types
@@ -508,13 +508,13 @@ Respond with JSON only, no markdown.
       final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
-      final title = json['title'] as String? ?? 'A surprise for your partner';
-      final desc = json['description'] as String? ?? 'Create something special for your partner.';
+      final title = json['title'] as String? ?? 'A surprise for your friend';
+      final desc = json['description'] as String? ?? 'Create something special for your friend.';
       final type = json['type'] as String? ?? 'text';
       return '$title|$desc|$type';
     } catch (e) {
       debugPrint('generateSurprisePrompt error: $e');
-      return 'Memory Lane|Write about a favorite memory with your partner — something that still makes you smile.|text';
+      return 'Memory Lane|Write about a favorite memory with your friend — something that still makes you smile.|text';
     }
   }
 
@@ -524,7 +524,7 @@ Respond with JSON only, no markdown.
     if (previousBattleSummaries.isEmpty) return '';
     final buffer = StringBuffer();
     buffer.writeln('\n--- QUEST MEMORY ---');
-    buffer.writeln('This battle is part of a Love Quest chain. You have judged this couple before in earlier steps:');
+    buffer.writeln('This battle is part of a Duo Quest chain. You have judged this duo before in earlier steps:');
     for (var i = 0; i < previousBattleSummaries.length; i++) {
       buffer.writeln('Step ${i + 1}: ${previousBattleSummaries[i]}');
     }
@@ -558,12 +558,12 @@ Respond with JSON only, no markdown.
         : '';
 
     final memoriesBlock = judgeMemories.isNotEmpty
-        ? '\nYour memories of past battles with this couple:\n${judgeMemories.map((m) => '- $m').join('\n')}\nUse these to personalize the dare.\n'
+        ? '\nYour memories of past battles with this duo:\n${judgeMemories.map((m) => '- $m').join('\n')}\nUse these to personalize the dare.\n'
         : '';
 
     final coupleContext = totalBattles == 0
-        ? 'This couple is brand new to Winkidoo — give them a fun, easy icebreaker dare to get started.'
-        : 'This couple has completed $totalBattles battles${streakDays > 0 ? ' and has a $streakDays-day streak' : ''}. Match the dare to their experience level.';
+        ? 'These two are brand new to Winkidoo — give them a fun, easy icebreaker dare to get started.'
+        : 'This duo has completed $totalBattles battles${streakDays > 0 ? ' and has a $streakDays-day streak' : ''}. Match the dare to their experience level.';
 
     final prompt = '''
 $_winkidooJudgeSystemPrompt
@@ -589,13 +589,13 @@ Return JSON only: {"dare_text": "<the dare in your voice, 1-3 sentences>", "cate
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
       return (
-        dareText: json['dare_text'] as String? ?? 'Send your partner a voice note telling them why they make you smile.',
+        dareText: json['dare_text'] as String? ?? 'Send your friend a voice note telling them why they make you smile.',
         category: json['category'] as String? ?? 'playful',
       );
     } catch (e) {
       debugPrint('generateDare error: $e');
       return (
-        dareText: 'Send your partner a message describing your favorite moment together — in exactly 3 sentences.',
+        dareText: 'Send your friend a message describing your favorite moment together — in exactly 3 sentences.',
         category: 'nostalgic',
       );
     }
@@ -734,7 +734,7 @@ Write instructions an AI could follow to perfectly impersonate this person as a 
 What would make THIS person genuinely impressed in a love context? Rooted in their real values.
 
 3. PREVIEW QUOTES (exactly 3)
-Three things they'd say while judging a couple's romantic effort. Quality criteria:
+Three things they'd say while judging the players' effort. Quality criteria:
 • A stranger should read these and IMMEDIATELY know who it is without being told
 • Each quote should use a DIFFERENT aspect of their personality (one catchphrase, one reaction, one advice)
 • Must feel like something they'd actually post or say — not AI-generated fluff
@@ -750,7 +750,7 @@ Must use one of their catchphrases adapted to the context.
 
 === QUALITY EXAMPLE (Gordon Ramsay + Savage) ===
 {
-  "persona_prompt": "You are Gordon Ramsay judging a romantic couples game. Speak in short, explosive bursts. Use 'DONKEY!', 'it's RAW!', 'finally some good f***ing [love]'. When unimpressed, compare their romance to a soggy risotto. When impressed, grudgingly admit it like it physically pains you. Always reference food metaphors. Drop occasional 'come here, you' when genuinely moved.",
+  "persona_prompt": "You are Gordon Ramsay judging a playful game between friends. Speak in short, explosive bursts. Use 'DONKEY!', 'it's RAW!', 'finally some good f***ing [love]'. When unimpressed, compare their romance to a soggy risotto. When impressed, grudgingly admit it like it physically pains you. Always reference food metaphors. Drop occasional 'come here, you' when genuinely moved.",
   "how_to_impress": "I want PASSION. The kind of raw, unfiltered emotion that makes me slam the table. Don't serve me lukewarm romance — give me Michelin-star love or get out of my kitchen.",
   "preview_quotes": ["This love confession is so bland, I wouldn't serve it to my worst enemy. WHERE IS THE SEASONING?! 🔥", "Oh my god... that was actually... *slams table* BEAUTIFUL. Finally, someone who knows how to plate a love story!", "You call THAT a romantic gesture? My nan could do better, and she's been dead for ten years!"],
   "avatar_emoji": "👨‍🍳",
@@ -793,7 +793,7 @@ Return JSON only, no markdown. Follow the exact field names from the example abo
 
       return (
         personaPrompt: json['persona_prompt'] as String? ??
-            'You are $personalityName judging a romantic couples game. Stay in character.',
+            'You are $personalityName judging a playful game between friends. Stay in character.',
         howToImpress: json['how_to_impress'] as String? ??
             'Be creative, honest, and show genuine effort.',
         previewQuotes: quotes,
@@ -808,7 +808,7 @@ Return JSON only, no markdown. Follow the exact field names from the example abo
       debugPrint('generateCustomPersona ERROR: $e');
       debugPrint('generateCustomPersona STACK: $st');
       return (
-        personaPrompt: 'You are $personalityName judging a romantic couples game. Stay in character and be entertaining.',
+        personaPrompt: 'You are $personalityName judging a playful game between friends. Stay in character and be entertaining.',
         howToImpress: 'Be creative and genuine.',
         previewQuotes: ['Ready to be judged!', 'Show me what you got.', 'Let\'s see...'],
         avatarEmoji: '🎭',
@@ -926,7 +926,7 @@ Return ONLY the dialogue text, no JSON.
     final moodContext = _buildMoodContext();
     final moodBlock = moodContext.isNotEmpty ? '\nCurrent mood: $moodContext\n' : '';
     final memoriesBlock = judgeMemories.isNotEmpty
-        ? '\nYour memories of past battles with this couple:\n${judgeMemories.map((m) => '- $m').join('\n')}\nUse these to personalize the game.\n'
+        ? '\nYour memories of past battles with this duo:\n${judgeMemories.map((m) => '- $m').join('\n')}\nUse these to personalize the game.\n'
         : '';
     final packBlock = packPromptHint != null
         ? '\nTHEMED PACK CONTEXT: $packPromptHint\n'
@@ -936,13 +936,13 @@ Return ONLY the dialogue text, no JSON.
       'would_you_rather' =>
         'Generate a fun, romantic "Would You Rather" dilemma with exactly 2 options. Return JSON: {"prompt": "<the dilemma question>", "options": ["<option A>", "<option B>"]}',
       'love_trivia' =>
-        'Generate a personal trivia question about this couple using their battle history and your memories. Make it specific and fun. Return JSON: {"prompt": "<the trivia question>"}',
+        'Generate a personal trivia question about these two friends using their battle history and your memories. Make it specific and fun. Return JSON: {"prompt": "<the trivia question>"}',
       'caption_this' =>
-        'Generate a funny or romantic scenario that both partners will caption. Be specific and visual. Return JSON: {"prompt": "<the scenario description>"}',
+        'Generate a funny or playful scenario that both friends will caption. Be specific and visual. Return JSON: {"prompt": "<the scenario description>"}',
       'finish_my_sentence' =>
-        'Generate an interesting, romantic, or funny sentence starter that one partner begins and the other finishes. Return JSON: {"prompt": "<the sentence starter ending with ...>"}',
+        'Generate an interesting, playful, or funny sentence starter that one friend begins and the other finishes. Return JSON: {"prompt": "<the sentence starter ending with ...>"}',
       _ =>
-        'Generate a fun couple game prompt. Return JSON: {"prompt": "<the prompt>"}',
+        'Generate a fun party game prompt. Return JSON: {"prompt": "<the prompt>"}',
     };
 
     final prompt = '''
@@ -962,7 +962,7 @@ Respond with JSON only, no markdown.
       final response = await _freeformModel.generateContent([Content.text(prompt)]);
       final text = response.text?.trim() ?? '';
       final json = _parseJsonFromResponse(text);
-      final gamePrompt = json['prompt'] as String? ?? 'Tell your partner something unexpected about yourself.';
+      final gamePrompt = json['prompt'] as String? ?? 'Tell your friend something unexpected about yourself.';
       final options = json['options'] as List?;
       return (
         prompt: gamePrompt,
@@ -971,7 +971,7 @@ Respond with JSON only, no markdown.
     } catch (e) {
       debugPrint('generateMiniGame error: $e');
       return (
-        prompt: 'Tell your partner the funniest thing that happened to you this week.',
+        prompt: 'Tell your friend the funniest thing that happened to you this week.',
         options: null,
       );
     }
@@ -993,13 +993,13 @@ Respond with JSON only, no markdown.
 
     final typeContext = switch (gameType) {
       'would_you_rather' =>
-        'Both partners picked an option from a "Would You Rather" dilemma. Comment on their compatibility based on their choices.',
+        'Both friends picked an option from a "Would You Rather" dilemma. Comment on their compatibility based on their choices.',
       'love_trivia' =>
-        'Both partners answered a trivia question about their relationship. Grade who got closer to the truth.',
+        'Both friends answered a trivia question about each other. Grade who got closer to the truth.',
       'caption_this' =>
-        'Both partners captioned a scenario. Pick the funnier/better caption and roast the other lovingly.',
+        'Both friends captioned a scenario. Pick the funnier/better caption and roast the other playfully.',
       'finish_my_sentence' =>
-        'One partner started a sentence, the other finished it. Grade the chemistry and creativity of the completed sentence.',
+        'One friend started a sentence, the other finished it. Grade the chemistry and creativity of the completed sentence.',
       _ => 'Grade both responses for creativity and effort.',
     };
 

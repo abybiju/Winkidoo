@@ -5,7 +5,8 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/providers/onboarding_provider.dart';
 
-/// 3-screen onboarding: value prop, couple link, first surprise. Shown once to new users.
+/// 3-screen onboarding: surprises, AI personas & games, link up with friends.
+/// Shown once to new users.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({
     super.key,
@@ -48,21 +49,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   children: [
                     _OnboardingPage(
                       icon: Icons.auto_awesome,
-                      title: 'Hide a surprise',
+                      title: 'Hide & unlock surprises',
                       body:
-                          'Lock a message, photo, or voice note. Your partner has to convince the AI judge to unlock it.',
+                          'Lock a message, photo, or voice note — then win over the AI judge to unlock it.',
                     ),
                     _OnboardingPage(
-                      icon: Icons.favorite,
-                      title: 'Link with your partner',
+                      icon: Icons.theater_comedy,
+                      title: 'Chat & play with AI personas',
                       body:
-                          'Create a couple and share a code. Once linked, you can send surprises and battle the judge together.',
+                          'Battle quirky AI judges, build your own, and team up on daily dares and mini-games.',
                     ),
                     _OnboardingPage(
-                      icon: Icons.celebration,
-                      title: 'Unlock the surprise',
+                      icon: Icons.group_add,
+                      title: 'Link up with friends',
                       body:
-                          'Convince the judge with your words—or team up. When you win, the surprise is revealed.',
+                          'Share a code to connect with a friend (or your partner). Play solo or together and collect wins.',
                     ),
                   ],
                 ),

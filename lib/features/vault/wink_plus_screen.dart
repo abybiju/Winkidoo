@@ -52,7 +52,7 @@ class WinkPlusScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Get the full Winkidoo experience for you and your partner.',
+                    'Get the full Winkidoo experience for you and your crew.',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
@@ -83,7 +83,7 @@ class WinkPlusScreen extends ConsumerWidget {
                 _BenefitRow(
                   icon: Icons.auto_awesome,
                   title: 'Premium badge',
-                  detail: 'Show your partner you\'re all in.',
+                  detail: 'Show your friends you\'re all in.',
                 ),
 
                 const SizedBox(height: 32),

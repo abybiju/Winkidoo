@@ -124,7 +124,7 @@ class _QuestCreateScreenState extends ConsumerState<QuestCreateScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Create Love Quest',
+                      'Create Duo Quest',
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,

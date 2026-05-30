@@ -151,7 +151,7 @@ class _CreateCustomJudgeScreenState
                         color: AppTheme.homeTextPrimary,
                       )),
                   const SizedBox(height: 6),
-                  Text('Let other couples use your ${_createdJudge?.personalityName ?? ''} judge!',
+                  Text('Let others use your ${_createdJudge?.personalityName ?? ''} judge!',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 14, color: AppTheme.homeTextSecondary,
@@ -246,7 +246,7 @@ class _CreateCustomJudgeScreenState
 
     final couple = ref.read(coupleProvider).value;
     if (couple == null) {
-      setState(() { _error = 'No couple found.'; });
+      setState(() { _error = 'No link found.'; });
       return;
     }
 
