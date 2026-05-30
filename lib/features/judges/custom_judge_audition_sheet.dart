@@ -116,7 +116,9 @@ class _CustomJudgeAuditionSheetState
           await SharePlus.instance.share(
             ShareParams(
               text:
-                  'I created a ${widget.judge.personalityName} judge on Winkidoo! ${widget.judge.moodDisplayName} mood. Try it: winkidoo.app/judge/${widget.judge.id}',
+                  'I created a ${widget.judge.personalityName} judge on Winkidoo! '
+                  '${widget.judge.moodDisplayName} mood 💝 Download the app to chat with '
+                  'custom AI judges and play surprise-vault battles with your partner.',
             ),
           );
           if (mounted) Navigator.pop(context);
@@ -398,7 +400,7 @@ class _PostAuditionSheet extends StatelessWidget {
                 icon: Icons.share_rounded,
                 iconColor: AppTheme.secondaryViolet,
                 title: 'Share with a Friend',
-                subtitle: 'Send a link so they can try this judge',
+                subtitle: 'Tell your friends about the judge you made',
                 onTap: onShareLink,
               ),
               const SizedBox(height: 10),
