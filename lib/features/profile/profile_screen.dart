@@ -19,7 +19,6 @@ import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/achievements_provider.dart';
 import 'package:winkidoo/services/account_deletion_service.dart';
 import 'package:winkidoo/services/achievement_storage_service.dart';
-import 'package:winkidoo/services/revenuecat_service.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/couple_stats_provider.dart';
@@ -1490,51 +1489,6 @@ class _SettingsCard extends ConsumerWidget {
                 ),
               ),
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.refresh_rounded,
-                  color: AppTheme.textSecondary, size: 22),
-              title: Text(
-                'Restore purchases',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              subtitle: Text(
-                'Recover Wink+ after reinstall or device switch',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              onTap: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                try {
-                  final info =
-                      await RevenueCatService.restorePurchases();
-                  if (info != null) {
-                    ref.invalidate(coupleProvider);
-                    messenger.showSnackBar(
-                      const SnackBar(
-                          content: Text('Purchases restored successfully.')),
-                    );
-                  } else {
-                    messenger.showSnackBar(
-                      const SnackBar(
-                          content: Text(
-                              'No previous purchases found.')),
-                    );
-                  }
-                } catch (_) {
-                  messenger.showSnackBar(
-                    const SnackBar(
-                        content: Text('Restore failed. Please try again.')),
-                  );
-                }
-              },
-            ),
-            const Divider(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.delete_forever_rounded,

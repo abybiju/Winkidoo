@@ -169,39 +169,6 @@ class WinkPlusScreen extends ConsumerWidget {
 
                 const SizedBox(height: 24),
 
-                // ── Restore purchases ──
-                if (!effectiveWinkPlus)
-                  TextButton(
-                    onPressed: purchaseState.status == PurchaseStatus.restoring
-                        ? null
-                        : () {
-                            ref
-                                .read(purchaseNotifierProvider.notifier)
-                                .restore()
-                                .then((success) {
-                              if (success) {
-                                ref.invalidate(coupleProvider);
-                              }
-                            });
-                          },
-                    child: purchaseState.status == PurchaseStatus.restoring
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            'Restore purchases',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                  ),
-
-                const SizedBox(height: 16),
-
                 // ── Legal links ──
                 Text(
                   'Payment will be charged to your App Store or Google Play account. '
