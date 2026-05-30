@@ -156,6 +156,28 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     final messages = messagesAsync.value ?? [];
     final room = roomAsync.value;
 
+    // Members (real names) — used for the WhatsApp-style title and incoming
+    // message labels. Receivers see real names, never personas/tones.
+    final members = ref.watch(roomMembersProvider(widget.roomId)).value ?? [];
+    String roomTitle;
+    if (room == null) {
+      roomTitle = 'Chat';
+    } else if (room.isGroup) {
+      roomTitle =
+          (room.name != null && room.name!.isNotEmpty) ? room.name! : 'Group';
+    } else {
+      final others = members.where((m) => m.userId != user?.id).toList();
+      roomTitle = others.isNotEmpty
+          ? (others.first.displayName ?? others.first.email ?? 'Chat')
+          : ((room.name != null && room.name!.isNotEmpty) ? room.name! : 'Chat');
+    }
+    String? senderNameFor(String id) {
+      for (final m in members) {
+        if (m.userId == id) return m.displayName ?? m.email;
+      }
+      return null;
+    }
+
     // Current persona
     final characterId = ref.watch(selectedCharacterProvider);
     final characters = ref.watch(availableCharactersProvider).value ?? [];
@@ -205,122 +227,60 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                           ),
                         ),
 
-                        // Centered persona pill
+                        // Centered chat title (WhatsApp style) + persona selector.
+                        // The title is the group/contact name (shown to everyone);
+                        // the small "as <persona>" line below is the local user's
+                        // own persona picker — visible only to them.
                         Expanded(
-                          child: Center(
-                            child: GestureDetector(
-                              onTap: () => setState(
-                                  () => _isPopoverOpen = !_isPopoverOpen),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                height: 40,
-                                padding: const EdgeInsets.only(
-                                    left: 6, right: 14),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      accent.withValues(alpha: 0.20),
-                                      accent.withValues(alpha: 0.07),
-                                    ],
-                                  ),
-                                  border: Border.all(
-                                    color: accent.withValues(alpha: 0.40),
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: accent.withValues(alpha: 0.20),
-                                      blurRadius: 16,
-                                    ),
-                                  ],
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                roomTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: -0.01,
                                 ),
+                              ),
+                              const SizedBox(height: 1),
+                              GestureDetector(
+                                onTap: () => setState(
+                                    () => _isPopoverOpen = !_isPopoverOpen),
+                                behavior: HitTestBehavior.opaque,
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // Avatar circle
-                                    Container(
-                                      width: 28,
-                                      height: 28,
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: RadialGradient(
-                                          center:
-                                              const Alignment(-0.3, -0.4),
-                                          colors: [
-                                            accent.withValues(alpha: 0.70),
-                                            accent.withValues(alpha: 0.30),
-                                          ],
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                accent.withValues(alpha: 0.33),
-                                            blurRadius: 8,
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        character.emoji.isNotEmpty
-                                            ? character.emoji
-                                            : character.name
-                                                .substring(0, 1)
-                                                .toUpperCase(),
-                                        style: const TextStyle(fontSize: 14),
+                                    Text(
+                                      tone.isNone
+                                          ? 'as ${character.name.toLowerCase()}'
+                                          : 'as ${character.name.toLowerCase()} · ${tone.name.toLowerCase()}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: accent,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    // Name + mood label
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          character.name.toLowerCase(),
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: accent,
-                                            letterSpacing: -0.01,
-                                            height: 1.1,
-                                          ),
-                                        ),
-                                        if (!tone.isNone)
-                                          Text(
-                                            tone.name.toLowerCase(),
-                                            style: GoogleFonts.jetBrainsMono(
-                                              fontSize: 9,
-                                              color: brightness ==
-                                                      Brightness.dark
-                                                  ? AppTheme.homeTextSecondary
-                                                  : AppTheme
-                                                      .lightTextSecondary,
-                                              letterSpacing: 0.1,
-                                              height: 1.3,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(width: 6),
-                                    // Chevron
                                     AnimatedRotation(
                                       turns: _isPopoverOpen ? 0.5 : 0,
                                       duration:
                                           const Duration(milliseconds: 240),
                                       child: Icon(
                                         Icons.keyboard_arrow_down_rounded,
-                                        size: 18,
+                                        size: 16,
                                         color: accent,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
 
@@ -393,9 +353,12 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                           itemCount: msgs.length,
                           itemBuilder: (context, index) {
                             final msg = msgs[index];
+                            final isMine = msg.senderId == user?.id;
                             return ChatMessageBubble(
                               message: msg,
-                              isMine: msg.senderId == user?.id,
+                              isMine: isMine,
+                              senderName:
+                                  isMine ? null : senderNameFor(msg.senderId),
                             );
                           },
                         );

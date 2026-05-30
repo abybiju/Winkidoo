@@ -10,10 +10,16 @@ class ChatMessageBubble extends StatefulWidget {
     super.key,
     required this.message,
     required this.isMine,
+    this.senderName,
   });
 
   final CharacterChatMessage message;
   final bool isMine;
+
+  /// Real display name of the sender, shown above INCOMING messages (WhatsApp
+  /// style). The persona/tone label is shown only on the sender's own bubbles —
+  /// receivers see the real name instead, never the persona or tone.
+  final String? senderName;
 
   @override
   State<ChatMessageBubble> createState() => _ChatMessageBubbleState();
@@ -34,16 +40,28 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         _showOriginal ? msg.originalContent : msg.displayContent;
     final isTransforming = msg.isTransforming;
 
-    // Build badge label: "as Trump 💕 Romantic", "💕 Romantic", or "as Trump"
+    // Badge: the SENDER sees how they appear ("as Trump 💕 Romantic"); RECEIVERS
+    // see only the sender's real name — never the persona or tone (WhatsApp style).
     final tone = msg.hasTone ? CharacterChatService.toneById(msg.toneId!) : null;
-    final showBadge = !msg.isNormal || msg.hasTone;
+    bool showBadge;
     String badgeText = '';
-    if (!msg.isNormal && msg.hasTone) {
-      badgeText = 'as ${msg.characterName} ${tone!.emoji} ${tone.name}';
-    } else if (!msg.isNormal) {
-      badgeText = 'as ${msg.characterName}';
-    } else if (msg.hasTone) {
-      badgeText = '${tone!.emoji} ${tone.name}';
+    Color badgeColor;
+    if (!isMine) {
+      // Incoming: real name only.
+      showBadge = widget.senderName != null && widget.senderName!.isNotEmpty;
+      badgeText = widget.senderName ?? '';
+      badgeColor = AppTheme.primaryOrange.withValues(alpha: 0.8);
+    } else {
+      showBadge = !msg.isNormal || msg.hasTone;
+      if (!msg.isNormal && msg.hasTone) {
+        badgeText = 'as ${msg.characterName} ${tone!.emoji} ${tone.name}';
+      } else if (!msg.isNormal) {
+        badgeText = 'as ${msg.characterName}';
+      } else if (msg.hasTone) {
+        badgeText = '${tone!.emoji} ${tone.name}';
+      }
+      badgeColor =
+          (tone != null ? tone.color : AppTheme.primaryOrange).withValues(alpha: 0.7);
     }
 
     // Transforming label
@@ -77,8 +95,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: (tone != null ? tone.color : AppTheme.primaryOrange)
-                          .withValues(alpha: 0.7),
+                      color: badgeColor,
                     ),
                   ),
                 ),
