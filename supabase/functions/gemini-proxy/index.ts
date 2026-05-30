@@ -120,10 +120,29 @@ Deno.serve(async (req: Request) => {
   }
 
   const target = `${GOOGLE_BASE}${subpath}${url.search}`;
-  const body = await req.text();
+  const rawBody = await req.text();
 
-  // 4. Forward to Google with the server-side key. The SDK already produced a
-  //    valid Gemini request body, so we pass it through verbatim.
+  // Disable Gemini "thinking". gemini-2.5-flash spends hundreds of output
+  // tokens on internal reasoning (thoughtsTokenCount), which starves the
+  // request's maxOutputTokens budget and returns empty/truncated JSON — the
+  // judge then shows its fallback ("One sec, I need to process that"). We don't
+  // need extended reasoning for short JSON replies, so we force thinkingBudget=0.
+  // Injected here (not in the client) so it applies to every Gemini call and to
+  // already-installed builds without an app release — the old google_generative_ai
+  // SDK can't set thinkingConfig anyway.
+  let body = rawBody;
+  try {
+    const parsed = JSON.parse(rawBody);
+    parsed.generationConfig = parsed.generationConfig ?? {};
+    if (parsed.generationConfig.thinkingConfig == null) {
+      parsed.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
+    body = JSON.stringify(parsed);
+  } catch (_) {
+    // Body isn't JSON we can parse — forward it unchanged.
+  }
+
+  // 4. Forward to Google with the server-side key (now with thinking disabled).
   try {
     const googleResp = await fetch(target, {
       method: "POST",
