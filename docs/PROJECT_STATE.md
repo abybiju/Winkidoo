@@ -6,6 +6,18 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 30, 2026 (later) – Storage RLS fix, image cropping, notification bell + profile gear (tag v0.2.2)
+
+**Surprises storage bucket RLS fix.** Photo/voice surprise uploads failed with `StorageException(... new row violates row-level security policy, statusCode: 403)`. Root cause: the `surprises` Storage bucket had RLS enabled on `storage.objects` but **zero policies** (only `judge-avatars`/`profile-avatars` had policies — the surprises ones were never captured in a migration). Text surprises worked because they don't touch Storage. Fixed by **migration `046_surprises_bucket_rls.sql`**: creates the bucket + insert/select/update/delete policies scoped to couple members (folder = `<couple_id>`, checked against `couples.user_a_id`/`user_b_id`). Also corrected `docs/DATABASE.md` which wrongly documented the surprise path as `<user_id>/` (code uses `<couple_id>/`). To diagnose RLS like a "console", use Supabase Dashboard → Logs (API/Postgres) and `select … from pg_policies where tablename='objects'`.
+
+**Image cropping on all photo uploads.** Added `image_cropper: ^9.1.0` + shared helper `lib/core/utils/image_crop_helper.dart` (`ImageCropHelper.cropOrOriginal`). Wired into all six pick sites: surprise photo, dare photo (**free-form**), and custom-judge avatar (create + my-judges), profile avatar (profile + completion sheet) (**1:1 square lock**). Helper no-ops (returns original bytes) on macOS/desktop where the plugin is unimplemented, and on crop-cancel. Registered `UCropActivity` in `AndroidManifest.xml`. Platform support: Android/iOS/Web only (square lock is best-effort on web).
+
+**Notification bell now works on every tab.** `WinkidooTopBar.onNotificationTap` was only wired on Home and Play; Vault showed the badge but had no tap handler, and Profile used a `const` bar with neither. Added `onNotificationTap → /shell/notifications` + the unread `notificationCount` to Vault and Profile, so all four tabs behave identically.
+
+**Profile edit moved behind a settings gear.** The inline `_GameProfileCard` (name/age/gender/avatar editor) was removed from the Profile body and is now opened from a `_EditProfileGearButton` (⚙️) in the Profile top bar as a bottom sheet (`_EditProfileSheet`). The gear shows a small pink dot when `missingProfileFieldsProvider` is non-empty so the completion nudge isn't lost. (Known minor: the dot may not clear live after saving until auth metadata refreshes.)
+
+Released as tag **`v0.2.2`** (pubspec `0.2.2+4`).
+
 ### May 30, 2026 – Friends repositioning, server-side AI keys, cloud builds + Firebase distribution, judge/chat fix
 
 **Friends-inclusive copy reposition.** ~60 user-facing strings across 28 files reworded from "couples/partner" to friends-forward (still inclusive — romance kept as an option, e.g. the "Romantic" judge mood). Onboarding redesigned to 3 broadened slides (surprises + AI personas/games + linking). Renames: Love Quest→Duo Quest, Couple Wrapped→Duo Wrapped, #CoupleWrapped→#DuoWrapped, "Partner code"→"Friend code". AI-judge prompts softened ("a romantic couples game"→"a playful game between friends"; generated dare/game text "your partner"→"your friend"). **Code identifiers (`couples` table, `coupleProvider`, etc.) intentionally unchanged.**
