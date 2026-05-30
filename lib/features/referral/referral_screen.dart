@@ -48,8 +48,11 @@ class ReferralScreen extends ConsumerWidget {
                     if (couple == null) {
                       return const Center(child: Text('No couple found'));
                     }
-                    final referralLink =
-                        'https://winkidoo.app/join?ref=${couple.inviteCode}';
+                    final inviteCode = couple.inviteCode;
+                    final shareMessage =
+                        'Play Winkidoo with me! 💝 A surprise-vault game where you hide '
+                        'secrets and an AI judge guards them. Download the app, create an '
+                        'account, then enter my invite code: $inviteCode';
 
                     return SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
@@ -103,7 +106,7 @@ class ReferralScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 32),
                           Text(
-                            'Your referral link',
+                            'Your invite code',
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -128,9 +131,11 @@ class ReferralScreen extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    referralLink,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
+                                    inviteCode,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 3,
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface,
@@ -142,10 +147,10 @@ class ReferralScreen extends ConsumerWidget {
                                       size: 18),
                                   onPressed: () {
                                     Clipboard.setData(
-                                        ClipboardData(text: referralLink));
+                                        ClipboardData(text: inviteCode));
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                          content: Text('Link copied!')),
+                                          content: Text('Code copied!')),
                                     );
                                   },
                                 ),
@@ -158,8 +163,7 @@ class ReferralScreen extends ConsumerWidget {
                             child: ElevatedButton.icon(
                               onPressed: () {
                                 SharePlus.instance.share(ShareParams(
-                                  text:
-                                      'Play Winkidoo with your partner! 💝 It\'s a surprise vault game where you hide secrets and fight an AI judge to unlock them. Join here: $referralLink',
+                                  text: shareMessage,
                                 ));
                               },
                               icon: const Icon(Icons.share_rounded),
@@ -195,8 +199,8 @@ class ReferralScreen extends ConsumerWidget {
                                             .onSurface)),
                                 const SizedBox(height: 8),
                                 ...[
-                                  '1. Share your link with another couple',
-                                  '2. They sign up and link their accounts',
+                                  '1. Share your invite code with another couple',
+                                  '2. They download Winkidoo and enter your code',
                                   '3. They complete their first battle',
                                   '4. You both automatically get +50 Winks!',
                                 ].map((s) => Padding(
