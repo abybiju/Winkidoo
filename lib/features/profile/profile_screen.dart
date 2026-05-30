@@ -11,6 +11,7 @@ import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/utils/image_crop_helper.dart';
+import 'package:winkidoo/providers/notification_provider.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
@@ -54,15 +55,21 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const WinkidooTopBar(
+                  WinkidooTopBar(
                     matchLogoToWordmark: true,
                     showLogo: true,
+                    notificationCount:
+                        ref.watch(unreadNotificationCountProvider),
+                    onNotificationTap: () =>
+                        context.push('/shell/notifications'),
+                    trailing: _EditProfileGearButton(
+                      incomplete:
+                          ref.watch(missingProfileFieldsProvider).isNotEmpty,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   _UserHeader(user: user),
                   const SizedBox(height: 24),
-                  const _GameProfileCard(),
-                  const SizedBox(height: 16),
                   _StatsCard(
                     created: created,
                     unlocked: unlocked,
@@ -160,6 +167,138 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
+      ),
+    );
+  }
+}
+
+void _openEditProfileSheet(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => const _EditProfileSheet(),
+  );
+}
+
+/// Settings gear in the profile top bar that opens the editable profile.
+/// Shows a small dot when the profile is incomplete.
+class _EditProfileGearButton extends StatelessWidget {
+  const _EditProfileGearButton({required this.incomplete});
+
+  final bool incomplete;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openEditProfileSheet(context),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: brightness == Brightness.dark
+                  ? AppTheme.glassFillHover
+                  : const Color(0x14000000),
+              border: Border.all(
+                color: brightness == Brightness.dark
+                    ? AppTheme.glassBorder
+                    : AppTheme.lightGlassBorder,
+              ),
+            ),
+            child: Icon(
+              Icons.settings_rounded,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.75),
+              size: 20,
+            ),
+          ),
+          if (incomplete)
+            Positioned(
+              right: -1,
+              top: -1,
+              child: Container(
+                width: 11,
+                height: 11,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primaryPink,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryPink.withValues(alpha: 0.4),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom sheet wrapping the editable [_GameProfileCard].
+class _EditProfileSheet extends StatelessWidget {
+  const _EditProfileSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  'Edit Profile',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const _GameProfileCard(),
+          ],
+        ),
       ),
     );
   }

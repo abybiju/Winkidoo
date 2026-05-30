@@ -214,6 +214,8 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
                           showLogo: true,
                           matchLogoToWordmark: true,
                           notificationCount: ref.watch(unreadNotificationCountProvider),
+                          onNotificationTap: () =>
+                              context.push('/shell/notifications'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
