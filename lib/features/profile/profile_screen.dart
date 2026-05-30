@@ -10,6 +10,7 @@ import 'package:winkidoo/core/constants/avatar_presets.dart';
 import 'package:winkidoo/core/constants/achievement_icons.dart';
 import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/image_crop_helper.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
@@ -446,9 +447,16 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
                                   .pickImage(source: ImageSource.gallery);
                               if (file == null) return;
                               final bytes = await file.readAsBytes();
+                              if (!context.mounted) return;
+                              final cropped =
+                                  await ImageCropHelper.cropOrOriginal(
+                                context: context,
+                                sourcePath: file.path,
+                                originalBytes: bytes,
+                              );
                               if (!mounted) return;
                               setState(() {
-                                _pickedAvatarBytes = bytes;
+                                _pickedAvatarBytes = cropped;
                                 _selectedPreset = null;
                               });
                             },

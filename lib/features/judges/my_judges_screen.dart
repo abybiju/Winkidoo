@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/image_crop_helper.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/models/custom_judge.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
@@ -225,11 +226,20 @@ class _MyJudgeCardState extends ConsumerState<_MyJudgeCard> {
     // the upload is fire-and-forget, UI update is optional.
     try {
       final bytes = await file.readAsBytes();
+      // Only crop while still mounted (cropper needs a BuildContext); if the
+      // widget was disposed during the gallery pick, upload the original.
+      final cropped = mounted
+          ? await ImageCropHelper.cropOrOriginal(
+              context: context,
+              sourcePath: file.path,
+              originalBytes: bytes,
+            )
+          : bytes;
       final client = Supabase.instance.client;
       final userId = client.auth.currentUser?.id ?? 'unknown';
       final path = '$userId/$judgeId.jpg';
-      debugPrint('MyJudges: uploading avatar to judge-avatars/$path (${bytes.length} bytes)');
-      await client.storage.from('judge-avatars').uploadBinary(path, bytes,
+      debugPrint('MyJudges: uploading avatar to judge-avatars/$path (${cropped.length} bytes)');
+      await client.storage.from('judge-avatars').uploadBinary(path, cropped,
           fileOptions: const FileOptions(upsert: true));
       // Store bucket:path so we know which bucket to read from
       final storagePath = 'judge-avatars:$path';

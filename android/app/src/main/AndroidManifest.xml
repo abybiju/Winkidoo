@@ -38,6 +38,11 @@
                 <data android:scheme="winkidoo" android:host="auth" android:pathPrefix="/callback"/>
             </intent-filter>
         </activity>
+        <!-- image_cropper: UCrop activity for crop/aspect-ratio UI -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <receiver
             android:name=".WinkidooWidgetProvider"
             android:exported="true">

@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/image_crop_helper.dart';
 import 'package:winkidoo/features/home/home_screen.dart';
 import 'package:winkidoo/models/daily_dare.dart';
 import 'package:winkidoo/providers/daily_dare_provider.dart';
@@ -68,12 +69,18 @@ class _DareResponseSheetState extends ConsumerState<DareResponseSheet> {
     if (source == null || !mounted) return;
     final file =
         await picker.pickImage(source: source, maxWidth: 1200, imageQuality: 85);
-    if (file != null && mounted) {
-      final bytes = await file.readAsBytes();
-      setState(() {
-        _photoBytes = bytes;
-      });
-    }
+    if (file == null || !mounted) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    final cropped = await ImageCropHelper.cropOrOriginal(
+      context: context,
+      sourcePath: file.path,
+      originalBytes: bytes,
+    );
+    if (!mounted) return;
+    setState(() {
+      _photoBytes = cropped;
+    });
   }
 
   Future<void> _toggleVoiceRecord() async {

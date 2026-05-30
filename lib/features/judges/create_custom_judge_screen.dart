@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/image_crop_helper.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/stagger_entrance.dart';
 import 'package:winkidoo/models/custom_judge.dart';
@@ -65,14 +66,21 @@ class _CreateCustomJudgeScreenState
         source: ImageSource.gallery, maxWidth: 400, imageQuality: 85);
     if (file != null && mounted) {
       final bytes = await file.readAsBytes();
-      setState(() => _avatarBytes = bytes);
+      if (!mounted) return;
+      final cropped = await ImageCropHelper.cropOrOriginal(
+        context: context,
+        sourcePath: file.path,
+        originalBytes: bytes,
+      );
+      if (!mounted) return;
+      setState(() => _avatarBytes = cropped);
 
       // Upload to Supabase Storage if judge already created
       if (_createdJudge != null) {
         final client = Supabase.instance.client;
         final userId = client.auth.currentUser?.id ?? 'unknown';
         final path = '$userId/${_createdJudge!.id}.jpg';
-        await client.storage.from('judge-avatars').uploadBinary(path, bytes,
+        await client.storage.from('judge-avatars').uploadBinary(path, cropped,
             fileOptions: const FileOptions(upsert: true));
         final storagePath = 'judge-avatars:$path';
         await client

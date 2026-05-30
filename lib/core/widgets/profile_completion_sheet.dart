@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:winkidoo/core/constants/avatar_presets.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/image_crop_helper.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
 import 'package:winkidoo/services/input_validator.dart';
@@ -170,9 +171,16 @@ class _ProfileCompletionSheetState
                                 .pickImage(source: ImageSource.gallery);
                             if (file == null) return;
                             final bytes = await file.readAsBytes();
-                            if (!mounted) return;
+                            if (!context.mounted) return;
+                            final cropped =
+                                await ImageCropHelper.cropOrOriginal(
+                              context: context,
+                              sourcePath: file.path,
+                              originalBytes: bytes,
+                            );
+                            if (!context.mounted) return;
                             final uploadErr = InputValidator.validateImageUpload(
-                                bytes, file.name);
+                                cropped, file.name);
                             if (uploadErr != null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(uploadErr),
@@ -181,7 +189,7 @@ class _ProfileCompletionSheetState
                               return;
                             }
                             setState(() {
-                              _pickedAvatarBytes = bytes;
+                              _pickedAvatarBytes = cropped;
                               _selectedPreset = null;
                             });
                           },

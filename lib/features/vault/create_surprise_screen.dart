@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/image_crop_helper.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/features/create/judge_selection_screen.dart';
@@ -177,14 +178,19 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     if (source == null || !mounted) return;
     final file = await picker.pickImage(
         source: source, maxWidth: 1200, imageQuality: 85);
-    if (file != null && mounted) {
-      final bytes = await file.readAsBytes();
-      if (mounted)
-        setState(() {
-          _photoFile = file;
-          _photoBytes = Uint8List.fromList(bytes);
-        });
-    }
+    if (file == null || !mounted) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    final cropped = await ImageCropHelper.cropOrOriginal(
+      context: context,
+      sourcePath: file.path,
+      originalBytes: bytes,
+    );
+    if (!mounted) return;
+    setState(() {
+      _photoFile = file;
+      _photoBytes = cropped;
+    });
   }
 
   Future<void> _submit() async {
