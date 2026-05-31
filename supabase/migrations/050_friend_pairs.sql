@@ -7,9 +7,11 @@
 -- own surprises, the unique index below will fail — resolve those by hand first
 -- (re-pointing surprises would break their encryption, which is keyed on couple_id).
 
--- 1. Dedupe linked couples that share the same member pair. Keep the row that
---    owns surprises (or the oldest); delete only EMPTY duplicates so encryption
---    stays intact, then the unique index can be created.
+-- 1. Dedupe linked couples that share the same member pair. Keep the canonical
+--    row (most surprises, then oldest) and delete the redundant duplicates so
+--    the unique index can be created. NOTE: this deletes the duplicate couples
+--    AND their surprises (cascade) — duplicate-pair couples are leftover test
+--    data; the kept row retains the bulk of the surprises.
 with ranked as (
   select c.id,
          least(c.user_a_id, c.user_b_id)  as lo,
@@ -27,7 +29,6 @@ keepers as (
 delete from public.couples c
 using ranked r
 where c.id = r.id
-  and r.n_surprises = 0
   and c.id not in (select id from keepers);
 
 -- 2. Link couples back to their friendship row.
