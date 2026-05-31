@@ -13,7 +13,6 @@ import 'package:go_router/go_router.dart';
 import 'package:winkidoo/models/judge_response.dart';
 import 'package:winkidoo/providers/ai_judge_provider.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
-import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/winks_provider.dart';
@@ -77,31 +76,31 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
   /// Awards XP and saves judge memory after a battle win. Non-critical.
   Future<void> _awardBattleRewards() async {
     final client = ref.read(supabaseClientProvider);
-    final couple = ref.read(coupleProvider).value;
-    if (couple == null) return;
+    // All rewards/memory are scoped to the SURPRISE's own couple (the friend
+    // pair), not the user's "active" couple.
+    final surprise = await ref.read(
+      surpriseByIdProvider(widget.surpriseId).future,
+    );
+    if (surprise == null) return;
+    final coupleId = surprise.coupleId;
 
     // Award XP for winning a battle
-    await XpService.awardXp(client, couple.id, AppConstants.xpPerBattleWon);
+    await XpService.awardXp(client, coupleId, AppConstants.xpPerBattleWon);
     ref.invalidate(coupleXpProvider);
 
     // Award Battle Pass points for winning
-    await BattlePassService.awardPoints(client, couple.id, 10);
+    await BattlePassService.awardPoints(client, coupleId, 10);
 
     // Award collectible card
     try {
-      final surprise = await ref.read(
-        surpriseByIdProvider(widget.surpriseId).future,
+      await CollectibleService.awardCard(
+        client,
+        coupleId: coupleId,
+        judgePersona: surprise.judgePersona,
+        battleId: widget.surpriseId,
+        seekerScore: surprise.seekerScore,
       );
-      if (surprise != null) {
-        await CollectibleService.awardCard(
-          client,
-          coupleId: couple.id,
-          judgePersona: surprise.judgePersona,
-          battleId: widget.surpriseId,
-          seekerScore: surprise.seekerScore,
-        );
-        ref.invalidate(collectiblesProvider);
-      }
+      ref.invalidate(collectiblesProvider);
     } catch (_) {}
 
     // Save judge memory in background (get messages from DB then summarise).
@@ -110,17 +109,12 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       final messages = await ref.read(
         battleMessagesProvider(widget.surpriseId).future,
       );
-      final surprise = await ref.read(
-        surpriseByIdProvider(widget.surpriseId).future,
+      await JudgeMemoryService.saveMemory(
+        client,
+        coupleId,
+        surprise.judgePersona,
+        messages,
       );
-      if (surprise != null) {
-        await JudgeMemoryService.saveMemory(
-          client,
-          couple.id,
-          surprise.judgePersona,
-          messages,
-        );
-      }
     } catch (_) {}
   }
 
@@ -231,7 +225,6 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
   Future<void> _loadContent() async {
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = ref.read(coupleProvider).value;
       final res = await client
           .from('surprises')
           .select()
@@ -245,6 +238,9 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
         return;
       }
       final surprise = Surprise.fromJson(res);
+      // Always decrypt with the SURPRISE's own couple key — a user may be in
+      // multiple couples, so the "active" couple is not necessarily this one.
+      final decryptCoupleId = surprise.coupleId;
       if (surprise.isPhoto && surprise.contentStoragePath != null) {
         final url = await client.storage
             .from(AppConstants.surpriseStorageBucket)
@@ -279,7 +275,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       }
       final decrypted = await EncryptionService.decrypt(
         contentEncrypted,
-        coupleId: couple?.id,
+        coupleId: decryptCoupleId,
       );
 
       // Decrypt collab partner piece if present
@@ -289,7 +285,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       if (collabEncrypted != null && collabEncrypted.isNotEmpty) {
         partnerPiece = await EncryptionService.decrypt(
           collabEncrypted,
-          coupleId: couple?.id,
+          coupleId: decryptCoupleId,
         );
       }
 

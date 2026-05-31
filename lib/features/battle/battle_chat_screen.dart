@@ -35,7 +35,6 @@ import 'package:winkidoo/services/custom_judge_service.dart';
 import 'package:winkidoo/services/security_logger.dart';
 import 'package:winkidoo/services/phantom_judge_service.dart';
 import 'package:winkidoo/features/battle/widgets/phantom_overlay.dart';
-import 'package:winkidoo/providers/couple_provider.dart';
 
 class BattleChatScreen extends ConsumerStatefulWidget {
   const BattleChatScreen({super.key, required this.surpriseId});
@@ -286,13 +285,13 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           ? 'Surprise type: ${surprise.unlockMethod}'
           : 'romantic surprise';
       final howToImpressHint = _howToImpressHintForSurprise(surprise);
-      // Fetch judge memories so the AI remembers past battles
-      final couple = ref.read(coupleProvider).value;
+      // Fetch judge memories so the AI remembers past battles — scoped to this
+      // surprise's own couple (friend pair), not the user's "active" couple.
       List<String> judgeMemories = [];
-      if (couple != null) {
+      {
         judgeMemories = await JudgeMemoryService.getMemories(
           client,
-          couple.id,
+          surprise.coupleId,
           surprise.judgePersona,
         );
       }

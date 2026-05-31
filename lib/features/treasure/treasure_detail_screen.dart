@@ -12,8 +12,8 @@ import 'package:winkidoo/models/battle_message.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/models/surprise.dart';
 import 'package:winkidoo/providers/battle_provider.dart';
-import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
 import 'package:winkidoo/providers/surprise_provider.dart';
 import 'package:winkidoo/providers/user_profile_provider.dart';
@@ -55,7 +55,6 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
   Future<void> _loadContent() async {
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = ref.read(coupleProvider).value;
       final res = await client
           .from('surprises')
           .select()
@@ -69,6 +68,8 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
         return;
       }
       final surprise = Surprise.fromJson(res);
+      // Decrypt with the surprise's own couple key (user may be in many couples).
+      final decryptCoupleId = surprise.coupleId;
       if (surprise.isPhoto && surprise.contentStoragePath != null) {
         final url = await client.storage
             .from(AppConstants.surpriseStorageBucket)
@@ -103,7 +104,7 @@ class _TreasureDetailScreenState extends ConsumerState<TreasureDetailScreen> {
       }
       final decrypted = await EncryptionService.decrypt(
         contentEncrypted,
-        coupleId: couple?.id,
+        coupleId: decryptCoupleId,
       );
       if (mounted) {
         setState(() {
