@@ -77,13 +77,27 @@ class AiJudgeService {
             temperature: 0.85,
             maxOutputTokens: 1024,
           ),
+        ),
+        // Character-chat transforms must stay short — tight token cap keeps
+        // outputs punchy and cheap. Separate from _textModel so the future-letter
+        // rewrite (wants 2-3 paragraphs) keeps its headroom.
+        _transformModel = GenerativeModel(
+          model: 'gemini-2.5-flash',
+          apiKey: _proxiedKey,
+          httpClient: _proxyClient,
+          generationConfig: GenerationConfig(
+            temperature: 0.9,
+            maxOutputTokens: 220,
+          ),
         );
 
   final GenerativeModel _model;
   /// Model without schema constraint — for custom persona, dare, and mini-game generation.
   final GenerativeModel _freeformModel;
-  /// Plain text model — for character chat text transformation (no JSON wrapping).
+  /// Plain text model — for phantom judge + future-letter rewrite (no JSON wrapping).
   final GenerativeModel _textModel;
+  /// Tight-budget text model — for short character-chat transforms.
+  final GenerativeModel _transformModel;
 
   /// Winkidoo v2.0–style base: identity, safety, adaptation, criteria. Persona is layered on top.
   static const _winkidooJudgeSystemPrompt = '''
@@ -1185,23 +1199,34 @@ Return JSON only: {"commentary": "<your 2-3 sentence in-character grading>", "sc
       buffer.writeln();
     }
 
-    buffer.writeln('''RULES:
-- Preserve the MEANING and INTENT of the original message exactly
-- Transform ONLY the style, vocabulary, and tone
-- Keep the output roughly the same length (max 2x the original)
-- Do NOT add new information, reply to the message, or change the subject
-- Do NOT act as a chatbot — you are transforming text, not having a conversation
-- Do NOT include any meta-commentary like "Here's the message:" or quotation marks
-- Output ONLY the transformed message text, nothing else
-- Make it genuinely entertaining — lean into the character's most iconic traits and the tone's energy
-- If the original is very short (1-3 words), still transform but keep it brief and punchy
+    // Length budget — keep the transform proportional to the input so a short
+    // line stays a short line (saves tokens, reads better). Persona shows in
+    // word choice, not volume.
+    final wordCount = originalText.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final lengthBudget = wordCount <= 6
+        ? 'The original is very short. Reply in ONE short line of about the same length — max 1 sentence. Do NOT expand it into a speech.'
+        : wordCount <= 20
+            ? 'Keep it to 1–2 short sentences, about the same length as the original.'
+            : 'Match the original\'s length. Never exceed it by much.';
+
+    buffer.writeln('''LENGTH (most important rule): $lengthBudget
+
+RULES:
+- Brevity is the default. Match the original's length and energy — short in, short out.
+- The persona shows in WORD CHOICE, rhythm, and at most ONE signature phrase — NOT in length. Do not pad, explain, ramble, or add new ideas.
+- Preserve the MEANING and INTENT of the original message exactly.
+- Transform ONLY the style, vocabulary, and tone.
+- Do NOT add new information, reply to the message, or change the subject.
+- Do NOT act as a chatbot — you are transforming text, not having a conversation.
+- Do NOT include any meta-commentary like "Here's the message:" or quotation marks.
+- Output ONLY the transformed message text, nothing else.
 
 ORIGINAL MESSAGE:
 ${InputValidator.sanitizeForPrompt(originalText)}
 
 TRANSFORMED MESSAGE:''');
 
-    final response = await _textModel.generateContent([Content.text(buffer.toString())]);
+    final response = await _transformModel.generateContent([Content.text(buffer.toString())]);
     final text = response.text?.trim() ?? originalText;
     if (text.startsWith('"') && text.endsWith('"')) {
       return text.substring(1, text.length - 1);
