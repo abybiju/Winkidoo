@@ -50,6 +50,10 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 45. **045_judge_use_for.sql** — Add `use_for` column (`battle`/`chat`/`both`) to `custom_judges` for marketplace tab filtering
 46. **046_surprises_bucket_rls.sql** — Create `surprises` storage bucket + RLS policies (insert/select/update/delete) scoped to couple members. Fixes 403 `new row violates row-level security policy` on photo/voice surprise upload — the bucket previously had RLS enabled with no policies.
 47. **047_surprises_judge_persona_dynamic.sql** — Drop the hard-coded `surprises_judge_persona_check`. The static 5-persona enum (from 001) rejected judge-pack personas (024/027) and `'custom'` judges, throwing 23514 `violates check constraint "surprises_judge_persona_check"` when hiding a surprise with any non-original judge. Personas are now a dynamic set; validation lives in the app + judges tables.
+48. **048_surprises_delete_policy.sql** — Add a DELETE RLS policy on `surprises` scoped to the creator (`creator_id = auth.uid()`). The table had no delete policy, so the new "delete surprise" action was blocked. battle_messages cascade; storage objects are removed client-side first.
+49. **049_profiles_identity_and_search.sql** — Friend-system search foundation: `profiles.display_name` + `pg_trgm` index + backfill from auth metadata; `search_users_by_name(p_query)` security-definer RPC; `user_friends.requested_by` to distinguish incoming vs outgoing requests.
+50. **050_friend_pairs.sql** — Make `couples` a per-friend-pair container: dedupe duplicate couple rows, add unique index on the unordered member pair (linked only), `couples.friendship_id`, and backfill `user_friends` (accepted) for existing linked couples. Run BEFORE 051.
+51. **051_auto_pair_on_accept.sql** — Trigger on `user_friends` that auto-creates the pair's couple row when a request is accepted; `join_couple_by_code` drops the single-couple gate and records the friendship. Run AFTER 050.
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 

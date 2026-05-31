@@ -6,6 +6,18 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of May 2026)
 
+### May 30, 2026 (newest) – Friends/social layer: delete, notif fix, friend system, many-friend play (migrations 048–051, NOT yet tagged)
+
+Three-phase social rework so the app is no longer one fixed couple — anyone can have many friends and send different surprises to different friends (each surprise still strictly 1:1). Chat stays open to anyone with a chat code.
+
+**Phase 1 (shipped).** Creator can **delete a surprise** anytime: migration `048` adds a creator-scoped DELETE RLS policy; the vault card gets a 🗑 → confirm dialog → storage cleanup + row delete (battle_messages cascade). **Notification fix**: `getSeekerId` in `send_battle_notification` returned `userB ?? userA` on a no-match (could resolve to the creator → creator got the seeker's "A Surprise Awaits"); now returns null + a guard. Edge function redeployed.
+
+**Phase 2 (shipped).** **Friend system** UI on the existing `user_friends` backend. Migration `049`: `profiles.display_name` + `pg_trgm` + backfill, `search_users_by_name` RPC, `user_friends.requested_by`. Profile save mirrors the name into `profiles.display_name`. Friends screen (`add_friends_screen.dart`): search by name → send request, incoming requests accept/decline, named friends list, plus join-chat-by-code. New providers: `incomingFriendRequestsProvider`, `friendDirectoryProvider`.
+
+**Phase 3 (shipped).** Couples become **per-friend-pair containers** (a user may be in many couples). Decryption/rewards now key on `surprise.coupleId` (not the active couple) — critical for multi-couple correctness. Migrations `050` (dedupe + unique pair index + `friendship_id` + backfill user_friends) and `051` (trigger auto-creates the couple on friend-accept; `join_couple_by_code` drops the single-couple gate). Redirect no longer forces `/couple-link`. Home **avatar rail shows real friends** (`friendPairsProvider`) + Invite tile; tapping a friend creates a surprise for that pair. `surprisesListProvider` aggregates across all the user's couples. New: `couplesListProvider`, `friendPairsProvider`, `FriendPair`.
+
+**Known follow-ups:** vault realtime still watches only the legacy couple channel (other friends' surprises appear on refresh, not live); preset (non-uploaded) friend avatars show a colored initial in the rail; the generic + create button picks the only/most-recent couple when multiple friends exist (per-friend tap is exact). **Run migrations 048→051 in order; 050 before 051.**
+
 ### May 30, 2026 (latest) – Battle judge fixes + WhatsApp-style character chat (tag v0.2.3)
 
 **Custom judge persona was ignored in battles.** `surprises.custom_judge_id` was saved on create but never read back (no field on the `Surprise` model), and `judgeChat` received `persona: 'custom'` with no override → it fell back to the default Sassy Cupid voice ("darling/love/honey"). Fixed: `Surprise` now parses `custom_judge_id`, `CustomJudgeService.getJudgeById` loads the judge, and `battle_chat_screen` passes `personaPromptOverride` + `howToImpressOverride` so the custom judge speaks in-character. The judge **opening message** loads the same override.
