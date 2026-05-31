@@ -9,7 +9,8 @@ class FriendService {
 
   final SupabaseClient _client;
 
-  /// Searches profiles by name or email. Returns user metadata.
+  /// Searches users by display name via the `search_users_by_name` RPC.
+  /// Returns rows: user_id, display_name, avatar_url, avatar_mode, avatar_asset_path.
   Future<List<Map<String, dynamic>>> searchUsers(
     String query, {
     int limit = 20,
@@ -21,21 +22,26 @@ class FriendService {
     final rl = ApiRateLimiter.checkAndRecord('friend_search', userId);
     if (!rl.allowed) return [];
 
-    // Search auth user metadata via profiles table
-    // Profiles have user_id; we join with auth.users via RPC or query metadata
-    final currentUserId = _client.auth.currentUser?.id;
     final results = await _client
-        .from('profiles')
-        .select('user_id, avatar_url, avatar_mode, avatar_asset_path')
-        .neq('user_id', currentUserId ?? '')
-        .limit(limit);
+        .rpc('search_users_by_name', params: {'p_query': query});
+    return (results as List).cast<Map<String, dynamic>>();
+  }
 
-    // Also search auth users by email (partial match)
-    // Note: Supabase doesn't expose auth.users to client queries directly,
-    // so we use the user metadata stored at signup.
-    // For now, return profile data and let the UI match display names
-    // from user metadata on the client side.
-    return results.cast<Map<String, dynamic>>();
+  /// Fetches display name + avatar for a set of user ids (for requests/friends UI).
+  /// Returns a map keyed by user_id.
+  Future<Map<String, Map<String, dynamic>>> fetchProfiles(
+    List<String> userIds,
+  ) async {
+    if (userIds.isEmpty) return {};
+    final rows = await _client
+        .from('profiles')
+        .select('user_id, display_name, avatar_url, avatar_mode, avatar_asset_path')
+        .inFilter('user_id', userIds);
+    final map = <String, Map<String, dynamic>>{};
+    for (final r in (rows as List).cast<Map<String, dynamic>>()) {
+      map[r['user_id'] as String] = r;
+    }
+    return map;
   }
 
   /// Sends a friend request. Stores lower UUID as user_a for consistency.
@@ -44,11 +50,14 @@ class FriendService {
     if (!rl.allowed) throw Exception(rl.userMessage);
 
     final sorted = [fromUserId, toUserId]..sort();
-    await _client.from('user_friends').insert({
+    // upsert: if a friendship row already exists for this pair (either direction),
+    // do nothing rather than throwing on the unique(user_a,user_b) constraint.
+    await _client.from('user_friends').upsert({
       'user_a_id': sorted[0],
       'user_b_id': sorted[1],
       'status': 'pending',
-    });
+      'requested_by': fromUserId,
+    }, onConflict: 'user_a_id,user_b_id', ignoreDuplicates: true);
   }
 
   /// Accepts a pending friend request. Verifies caller is a party to it.

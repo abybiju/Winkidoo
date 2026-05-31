@@ -132,11 +132,35 @@ final friendsListProvider = FutureProvider<List<UserFriend>>((ref) async {
   return service.fetchFriends(user.id);
 });
 
-/// Pending incoming friend requests.
+/// All pending friend requests involving the current user (both directions).
 final pendingFriendRequestsProvider =
     FutureProvider<List<UserFriend>>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return [];
   final service = ref.watch(friendServiceProvider);
   return service.fetchPendingRequests(user.id);
+});
+
+/// Pending requests the current user RECEIVED (can accept/decline).
+final incomingFriendRequestsProvider =
+    FutureProvider<List<UserFriend>>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return [];
+  final pending = await ref.watch(pendingFriendRequestsProvider.future);
+  return pending.where((f) => f.isIncomingFor(user.id)).toList();
+});
+
+/// display_name + avatar for every friend and pending-request counterparty,
+/// keyed by user_id. Used to render names in the friends UI.
+final friendDirectoryProvider =
+    FutureProvider<Map<String, Map<String, dynamic>>>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return {};
+  final friends = await ref.watch(friendsListProvider.future);
+  final pending = await ref.watch(pendingFriendRequestsProvider.future);
+  final ids = <String>{
+    ...friends.map((f) => f.friendId(user.id)),
+    ...pending.map((f) => f.friendId(user.id)),
+  }.toList();
+  return ref.watch(friendServiceProvider).fetchProfiles(ids);
 });

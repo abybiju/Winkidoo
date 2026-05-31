@@ -476,6 +476,11 @@ class _GameProfileCardState extends ConsumerState<_GameProfileCard> {
 
       await Supabase.instance.client.auth
           .updateUser(UserAttributes(data: merged));
+      // Mirror the name into profiles so friends can find this user by search.
+      await Supabase.instance.client.from('profiles').upsert({
+        'user_id': user.id,
+        'display_name': _nameController.text.trim(),
+      });
       if (_pickedAvatarBytes != null) {
         await ref.read(profileAvatarServiceProvider).uploadAvatar(
               userId: user.id,
