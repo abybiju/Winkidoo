@@ -19,6 +19,7 @@ import 'package:winkidoo/features/season/season_recap_screen.dart';
 import 'package:winkidoo/models/achievement.dart';
 import 'package:winkidoo/providers/achievements_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/quest_provider.dart';
 import 'package:winkidoo/providers/season_recap_provider.dart';
 import 'package:winkidoo/providers/streak_provider.dart';
@@ -55,10 +56,52 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _checkedHomeCelebrations = false;
 
-  Future<void> _goToCreateWithProfileGate() async {
+  Future<void> _goToCreateWithProfileGate({String? coupleId}) async {
     final ok = await ensureProfileComplete(context, ref);
     if (!mounted || !ok) return;
-    context.push('/shell/create');
+    context.push('/shell/create',
+        extra: coupleId != null ? {'coupleId': coupleId} : null);
+  }
+
+  /// Handles a tap on the home avatar rail: the Invite tile opens the friends
+  /// screen; a friend avatar starts a surprise for that friend pair.
+  void _onAvatarTap(HomeAvatarOption option) {
+    if (option.type == HomeAvatarType.invite) {
+      context.push('/shell/chat/add-friends');
+      return;
+    }
+    _goToCreateWithProfileGate(coupleId: option.coupleId);
+  }
+
+  /// Builds the avatar rail from the user's real friends (+ an Invite tile).
+  List<HomeAvatarOption> _friendAvatarOptions(List<FriendPair> pairs) {
+    final colors = [
+      AppTheme.primaryOrangeLight,
+      AppTheme.primaryOrange,
+      AppTheme.premiumAmber,
+      AppTheme.primaryPink,
+      AppTheme.secondaryViolet,
+    ];
+    final options = <HomeAvatarOption>[];
+    for (var i = 0; i < pairs.length; i++) {
+      final p = pairs[i];
+      // Only network (uploaded) avatars render an image; presets/none show the
+      // colored initial.
+      final url = (p.avatarMode == 'upload') ? p.avatarUrl : null;
+      options.add(HomeAvatarOption(
+        label: p.name,
+        type: HomeAvatarType.regular,
+        color: colors[i % colors.length],
+        avatarUrl: (url != null && url.isNotEmpty) ? url : null,
+        coupleId: p.coupleId,
+      ));
+    }
+    options.add(const HomeAvatarOption(
+      label: 'Add',
+      type: HomeAvatarType.invite,
+      isHot: true,
+    ));
+    return options;
   }
 
   Future<void> _checkNewUnlocks(
@@ -117,41 +160,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) async {
     await _checkSeasonRecap(context, recap);
     if (context.mounted) await _checkNewUnlocks(context, achievements);
-  }
-
-  List<HomeAvatarOption> _avatarOptions() {
-    return const [
-      HomeAvatarOption(
-        label: 'Ava',
-        type: HomeAvatarType.regular,
-        color: AppTheme.primaryOrangeLight,
-        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Ava&backgroundColor=ffb067',
-      ),
-      HomeAvatarOption(
-        label: 'Maya',
-        type: HomeAvatarType.regular,
-        color: AppTheme.primaryOrange,
-        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Maya&backgroundColor=ff8c42',
-      ),
-      HomeAvatarOption(
-        label: 'Kevin',
-        type: HomeAvatarType.regular,
-        color: AppTheme.premiumAmber,
-        badge: '3',
-        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Kevin&backgroundColor=ffaa33',
-      ),
-      HomeAvatarOption(
-        label: 'Ria',
-        type: HomeAvatarType.regular,
-        color: AppTheme.primaryPink,
-        avatarUrl: 'https://api.dicebear.com/7.x/notionists/png?seed=Ria&backgroundColor=ff4488',
-      ),
-      HomeAvatarOption(
-        label: 'Add',
-        type: HomeAvatarType.invite,
-        isHot: true,
-      ),
-    ];
   }
 
   double _clamped(double width, double factor, double min, double max) {
@@ -223,8 +231,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     SizedBox(height: gap),
                     HeroSection(
                       height: heroHeight,
-                      items: _avatarOptions(),
-                      onAvatarTap: (_) => _goToCreateWithProfileGate(),
+                      items: _friendAvatarOptions(
+                          ref.watch(friendPairsProvider).value ?? const []),
+                      onAvatarTap: _onAvatarTap,
                     ),
                     SizedBox(height: gap),
                     StaggerEntrance(

@@ -10,13 +10,16 @@ final partnerAddedSurpriseAtProvider = StateProvider<DateTime?>((ref) => null);
 final surprisesListProvider = FutureProvider<List<Surprise>>((ref) async {
   try {
     final client = ref.watch(supabaseClientProvider);
-    final couple = ref.watch(coupleProvider).value;
-    if (couple == null) return [];
+    // Aggregate across ALL the user's couples (one per friend pair). RLS still
+    // restricts rows to couples the user belongs to.
+    final couples = await ref.watch(couplesListProvider.future);
+    final coupleIds = couples.map((c) => c.id).toList();
+    if (coupleIds.isEmpty) return [];
 
     final data = await client
         .from('surprises')
         .select()
-        .eq('couple_id', couple.id)
+        .inFilter('couple_id', coupleIds)
         .order('created_at', ascending: false);
 
     final list = data is List ? data : (data != null ? [data] : <dynamic>[]);

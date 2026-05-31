@@ -12,6 +12,7 @@ class HomeAvatarOption {
     this.badge,
     this.isHot = false,
     this.avatarUrl,
+    this.coupleId,
   });
 
   final String label;
@@ -20,6 +21,8 @@ class HomeAvatarOption {
   final String? badge;
   final bool isHot;
   final String? avatarUrl;
+  /// For friend avatars: the couple (friend pair) to start a surprise with.
+  final String? coupleId;
 }
 
 class AvatarSelector extends StatelessWidget {

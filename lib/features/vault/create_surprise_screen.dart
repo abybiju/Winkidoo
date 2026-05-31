@@ -15,6 +15,7 @@ import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/features/create/judge_selection_screen.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/models/couple.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/judges_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
@@ -29,7 +30,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateSurpriseScreen extends ConsumerStatefulWidget {
-  const CreateSurpriseScreen({super.key});
+  const CreateSurpriseScreen({super.key, this.initialCoupleId});
+
+  /// When launched from a friend tap, the couple (friend pair) to send to.
+  final String? initialCoupleId;
 
   @override
   ConsumerState<CreateSurpriseScreen> createState() =>
@@ -60,10 +64,14 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
   late Animation<double> _formFadeAnimation;
   bool _checkedProfileGate = false;
   RealtimeChannel? _presenceChannel;
+  /// The couple (friend pair) this surprise is for. Resolved from the launch
+  /// arg, the friend picker, or the only/most-recent linked couple.
+  String? _targetCoupleId;
 
   @override
   void initState() {
     super.initState();
+    _targetCoupleId = widget.initialCoupleId;
     _formFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -85,8 +93,22 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     });
   }
 
+  /// Resolves which couple (friend pair) this surprise targets: the explicitly
+  /// chosen one, else the only linked couple, else the legacy single couple.
+  Couple? _resolveTargetCouple() {
+    final couples = ref.read(couplesListProvider).value ?? const <Couple>[];
+    if (_targetCoupleId != null) {
+      for (final c in couples) {
+        if (c.id == _targetCoupleId) return c;
+      }
+    }
+    final linked = couples.where((c) => c.isLinked).toList();
+    if (linked.length == 1) return linked.first;
+    return ref.read(coupleProvider).value;
+  }
+
   void _startPresence() {
-    final couple = ref.read(coupleProvider).value;
+    final couple = _resolveTargetCouple();
     if (couple == null) return;
     final client = ref.read(supabaseClientProvider);
     _presenceChannel = client.channel('presence:${couple.id}');
@@ -266,7 +288,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     setState(() => _isLoading = true);
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = ref.read(coupleProvider).value;
+      final couple = _resolveTargetCouple();
       final userId = ref.read(currentUserProvider)?.id;
       if (couple == null || userId == null) throw Exception('Not linked');
 
@@ -321,7 +343,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     setState(() => _isLoading = true);
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = ref.read(coupleProvider).value;
+      final couple = _resolveTargetCouple();
       final userId = ref.read(currentUserProvider)?.id;
       if (couple == null || userId == null) throw Exception('Not linked');
 
@@ -384,7 +406,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     setState(() => _isLoading = true);
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = ref.read(coupleProvider).value;
+      final couple = _resolveTargetCouple();
       final userId = ref.read(currentUserProvider)?.id;
       if (couple == null || userId == null) throw Exception('Not linked');
 
@@ -450,7 +472,7 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
     setState(() => _isLoading = true);
     try {
       final client = ref.read(supabaseClientProvider);
-      final couple = ref.read(coupleProvider).value;
+      final couple = _resolveTargetCouple();
       final userId = ref.read(currentUserProvider)?.id;
       if (couple == null || userId == null) throw Exception('Not linked');
       final file = File(_voicePath!);

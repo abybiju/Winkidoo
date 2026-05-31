@@ -110,21 +110,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         if (loc != '/onboarding') return '/onboarding';
         return null;
       }
-      if (routerRefreshNotifier.hasCouple == false) {
-        if (loc != '/couple-link') return '/couple-link';
-        return null;
+      // Friend-first model: no couple is required to enter the app. Users add
+      // friends in-app and create surprises per friend. /couple-link and
+      // /vault-sealed stay reachable as an opt-in "add by code" path.
+      if (loc == '/' || loc == '/login' || loc == '/onboarding') {
+        return '/shell/vault';
       }
-      if (routerRefreshNotifier.hasCouple == true) {
-        final isLinked = routerRefreshNotifier.isCoupleLinked == true;
-        if (loc == '/' ||
-            loc == '/login' ||
-            loc == '/onboarding' ||
-            loc == '/couple-link') {
-          return isLinked ? '/shell/vault' : '/vault-sealed';
-        }
-        if (loc == '/vault-sealed' && isLinked) return '/shell/vault';
-        if (loc == '/shell') return '/shell/vault';
-      }
+      if (loc == '/shell') return '/shell/vault';
       return null;
     },
     routes: [
@@ -290,7 +282,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/shell/create',
-        builder: (_, __) => const CreateSurpriseScreen(),
+        builder: (_, state) {
+          final extra = state.extra;
+          final coupleId =
+              extra is Map ? extra['coupleId'] as String? : null;
+          return CreateSurpriseScreen(initialCoupleId: coupleId);
+        },
       ),
       GoRoute(
         path: '/shell/battle/:id',
