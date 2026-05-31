@@ -144,9 +144,13 @@ async function getCoupleMembers(coupleId: string): Promise<{ userA: string; user
 
 async function getSeekerId(coupleId: string, creatorId: string): Promise<string | null> {
   const { userA, userB } = await getCoupleMembers(coupleId);
+  // The seeker is the OTHER member. If creatorId doesn't match either member
+  // (malformed/missing), return null rather than guessing — the old
+  // `userB ?? userA` fallback could resolve to the creator, so the creator
+  // received the seeker's "A Surprise Awaits" notification.
   if (creatorId === userA) return userB;
   if (creatorId === userB) return userA;
-  return userB ?? userA;
+  return null;
 }
 
 async function getTokens(userIds: string[]): Promise<{ token: string; platform: string }[]> {
@@ -535,7 +539,8 @@ Deno.serve(async (req) => {
 
     if (payload.type === "INSERT") {
       const seekerId = await getSeekerId(record.couple_id, record.creator_id);
-      if (seekerId) {
+      // Never notify the creator about their own surprise.
+      if (seekerId && seekerId !== record.creator_id) {
         notifications.push({
           userId: seekerId,
           title: "A Surprise Awaits",

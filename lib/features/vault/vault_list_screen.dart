@@ -1078,12 +1078,65 @@ class _MyVaultCard extends ConsumerWidget {
         isForMe: false,
         subtitle: active ? 'Battle in progress - tap to join' : null,
         onTap: active ? () => onTapBattle?.call(surprise.id) : () {},
+        onDelete: () => _confirmDelete(context, ref),
       ),
       loading: () =>
           _SurpriseCard(surprise: surprise, isForMe: false, onTap: () {}),
       error: (_, __) =>
           _SurpriseCard(surprise: surprise, isForMe: false, onTap: () {}),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete surprise?'),
+        content: const Text(
+          'This permanently deletes the surprise and its battle. This can\'t be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final client = ref.read(supabaseClientProvider);
+    try {
+      // Remove the media object first (photo/voice surprises) so storage isn't
+      // orphaned — the row delete cascades battle_messages.
+      final path = surprise.contentStoragePath;
+      if (path != null && path.isNotEmpty) {
+        await client.storage
+            .from(AppConstants.surpriseStorageBucket)
+            .remove([path]);
+      }
+      await client.from('surprises').delete().eq('id', surprise.id);
+      ref.invalidate(surprisesListProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Surprise deleted')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not delete: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -1204,12 +1257,15 @@ class _SurpriseCard extends StatelessWidget {
     required this.isForMe,
     required this.onTap,
     this.subtitle,
+    this.onDelete,
   });
 
   final Surprise surprise;
   final bool isForMe;
   final VoidCallback onTap;
   final String? subtitle;
+  /// When set (creator's own surprises), shows a trailing delete button.
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -1304,7 +1360,15 @@ class _SurpriseCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (isTimeLocked)
+            if (onDelete != null)
+              IconButton(
+                tooltip: 'Delete surprise',
+                visualDensity: VisualDensity.compact,
+                icon: Icon(PhosphorIconsBold.trash,
+                    color: AppTheme.error.withValues(alpha: 0.85), size: 20),
+                onPressed: onDelete,
+              )
+            else if (isTimeLocked)
               Icon(Icons.hourglass_top_rounded,
                   color: AppTheme.premiumGold.withValues(alpha: 0.6), size: 20)
             else if (isForMe || subtitle != null)
