@@ -4,9 +4,22 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ---
 
-## Implemented (as of May 2026)
+## Implemented (as of June 2026)
 
-### May 30, 2026 (newest) – Friends/social layer: delete, notif fix, friend system, many-friend play (migrations 048–051, NOT yet tagged)
+### June 1, 2026 (newest) – "Holla-warm" v2 redesign + realtime character chat (tag v0.2.5)
+
+**WhatsApp-grade character chat realtime (commit cd04104).** The old chat invalidated and refetched all 50 messages on every realtime event (the cause of "I have to go back and refresh"), and fired twice per sent message. Now delivery is incremental: `chatMessagesProvider` is an `AsyncNotifier` (`upsert`/`reconcile`/`remove`); `character_chat_realtime_service.dart` runs **one channel per room** = postgres-changes (messages applied from `payload.newRecord`) **+ Supabase Presence** for a live "X is typing…" indicator (same Presence pattern as the vault crafting banner). The sender optimistically echoes its message then reconciles with the server row; `insertMessage`/`updateTransformedContent` now return the full row. New `TypingIndicator` widget; `ChatInputBar` gained an `onChanged` hook. **No DB migration** — `character_chat_messages` was already in the realtime publication.
+
+**Visual redesign — "Holla-warm" warm-glass system (from a Claude Design handoff).** Replaced the cosmic-midnight purple look with a deep warm-charcoal field, orbit/radar rings + warm glow, glossy orange `›››` CTAs, italic-serif highlight headlines, and cream chat bubbles. Built as **foundation + hero screens**:
+- **Theme** (`lib/core/theme/app_theme.dart`): repointed all **dark** tokens to warm values (bg `#0A0704`, ink `#FCF5EA`, brand orange → `#FF8A1E`), added a warm token set (`warmBg0`, `orangeHi`, `gold`, `cream`, `glossyButtonGradient`, …), switched dark display/headings to a grotesque, and added `mono()` (Space Mono) + `serifAccent()` (Instrument Serif italic). **Light theme is unchanged.** `theme_provider` now **defaults to dark**. (The design specified Hanken Grotesque, which isn't in google_fonts 8.0.2, so headings use Space Grotesk — the closest bundled grotesque.)
+- **New primitives** `lib/core/widgets/warm_kit.dart`: `OrbitField` (CustomPaint rings + radial glow, the warm analog of `CosmicBackground`), `GlossyButton`, `WarmCard`, `HighlightHeadline` (wrap a word in `{braces}` → italic-serif highlight), `MonoLabel`, `GradientAvatar`, `CreamBubble`, `WarmMeter` (Cold→Unlock), `WarmChip`, `WarmSeg`.
+- **Bottom nav** (`wink_bottom_nav.dart`): warm glass bar + round orange **+** FAB; same 4 tabs/routes/API.
+- **Home** fully restyled to the design on **real data**: greeting bar, duo orbit (you ↔ partner + dotted arc/heart), Linked/streak chips, "waiting-for-you" card → *Enter the battle*, active-battle card + meter — friends rail, quest, recent wins, and celebration sequence all retained.
+- **Vault / Create / Profile**: orbit-field backgrounds; Create's submit is a glossy "Seal & send". Their cards/sections recolor via the theme; all logic (encryption, uploads, filtering, roulette/time-capsule/collab) preserved. **Play is recolor-only (layout unchanged), per the user.**
+- Verified: `flutter analyze` 0 errors; `flutter build web` ✓.
+- **Follow-ups:** deep per-card restyles of Vault (segmented For-you/From-you cards) and Profile (design "Me" identity/stats); a redesigned warm light palette; Hanken Grotesque if it lands in google_fonts. The whole redesign is one commit (`1f03577`) + tag `v0.2.5`, so reverting to v0.2.4 is clean.
+
+### May 30, 2026 – Friends/social layer: delete, notif fix, friend system, many-friend play (migrations 048–051, tag v0.2.4)
 
 Three-phase social rework so the app is no longer one fixed couple — anyone can have many friends and send different surprises to different friends (each surprise still strictly 1:1). Chat stays open to anyone with a chat code.
 
