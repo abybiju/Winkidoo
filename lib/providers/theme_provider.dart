@@ -10,7 +10,8 @@ final themeModeProvider =
 });
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.system) {
+  // Default to the warm-glass dark experience until the user picks otherwise.
+  ThemeModeNotifier() : super(ThemeMode.dark) {
     _load();
   }
 
@@ -19,10 +20,11 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     final name = prefs.getString(_keyThemeMode);
     if (name == 'light') {
       state = ThemeMode.light;
-    } else if (name == 'dark') {
-      state = ThemeMode.dark;
-    } else {
+    } else if (name == 'system') {
       state = ThemeMode.system;
+    } else {
+      // No saved preference (or 'dark') → warm-glass dark default.
+      state = ThemeMode.dark;
     }
   }
 

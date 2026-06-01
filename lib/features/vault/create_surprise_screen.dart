@@ -11,7 +11,7 @@ import 'package:record/record.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/utils/image_crop_helper.dart';
-import 'package:winkidoo/core/widgets/cosmic_background.dart';
+import 'package:winkidoo/core/widgets/warm_kit.dart';
 import 'package:winkidoo/core/widgets/profile_completion_sheet.dart';
 import 'package:winkidoo/features/create/judge_selection_screen.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
@@ -586,8 +586,12 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
             )
           : FadeTransition(
               opacity: _formFadeAnimation,
-              child: CosmicBackground(
-                glowColor: AppTheme.primaryOrange,
+              child: OrbitField(
+                cx: 0.5,
+                cy: 0.1,
+                intensity: 0.7,
+                rings: 3,
+                baseR: 72,
                 child: SafeArea(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
@@ -1117,18 +1121,12 @@ class _CreateSurpriseScreenState extends ConsumerState<CreateSurpriseScreen>
                         Semantics(
                           label: 'Create surprise',
                           button: true,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _submit,
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('Lock it!'),
+                          child: GlossyButton(
+                            label: _isLoading ? 'Sealing…' : 'Seal & send',
+                            full: true,
+                            chevron: !_isLoading,
+                            icon: _isLoading ? null : Icons.lock_rounded,
+                            onTap: _isLoading ? null : _submit,
                           ),
                         ),
                       ],

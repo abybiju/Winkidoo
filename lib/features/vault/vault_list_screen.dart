@@ -11,7 +11,7 @@ import 'package:winkidoo/core/widgets/error_screen.dart';
 import 'package:winkidoo/core/widgets/pill_cta.dart';
 import 'package:winkidoo/core/widgets/skeleton_card.dart';
 import 'package:winkidoo/core/widgets/wink_card.dart';
-import 'package:winkidoo/core/widgets/cosmic_background.dart';
+import 'package:winkidoo/core/widgets/warm_kit.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/battle/battle_chat_screen.dart';
 import 'package:winkidoo/features/vault/create_surprise_screen.dart';
@@ -154,9 +154,12 @@ class _VaultListScreenState extends ConsumerState<VaultListScreen>
     }
 
     return Scaffold(
-      body: CosmicBackground(
-        showStars: true,
-        glowColor: AppTheme.primaryOrange,
+      body: OrbitField(
+        cx: 0.86,
+        cy: 0.06,
+        intensity: 0.5,
+        rings: 3,
+        baseR: 72,
         child: SafeArea(
           child: surprisesAsync.when(
               data: (surprises) {

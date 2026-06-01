@@ -12,7 +12,7 @@ import 'package:winkidoo/core/constants/judge_asset_map.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/utils/image_crop_helper.dart';
 import 'package:winkidoo/providers/notification_provider.dart';
-import 'package:winkidoo/core/widgets/cosmic_background.dart';
+import 'package:winkidoo/core/widgets/warm_kit.dart';
 import 'package:winkidoo/core/widgets/winkidoo_top_bar.dart';
 import 'package:winkidoo/features/profile/achievement_unlocked_dialog.dart';
 import 'package:winkidoo/features/profile/couple_wrapped_card.dart';
@@ -47,8 +47,12 @@ class ProfileScreen extends ConsumerWidget {
         surprises.fold<int>(0, (sum, s) => sum + s.creatorDefenseCount);
 
     return Scaffold(
-      body: CosmicBackground(
-        glowColor: AppTheme.primaryOrange,
+      body: OrbitField(
+        cx: 0.5,
+        cy: 0.04,
+        intensity: 0.7,
+        rings: 3,
+        baseR: 72,
         child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

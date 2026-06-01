@@ -119,7 +119,7 @@ class WinkBottomNav extends StatelessWidget {
                   ),
                   if (brightness == Brightness.dark)
                     BoxShadow(
-                      color: AppTheme.plum.withValues(alpha: 0.08),
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.06),
                       blurRadius: 20,
                       offset: const Offset(0, -2),
                     ),
@@ -253,9 +253,9 @@ class _NavItemState extends State<_NavItem>
               const SizedBox(height: 2),
               AnimatedDefaultTextStyle(
                 duration: AppTheme.microDuration,
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 10.5,
+                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                   color: color,
                 ),
                 child: Text(widget.label),
@@ -340,47 +340,37 @@ class _CenterActionState extends State<_CenterAction>
             );
           },
           child: Container(
-            width: 108,
-            height: 52,
+            width: 60,
+            height: 60,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  widget.style.centerBackground,
-                  widget.style.centerBackground.withValues(alpha: 0.85),
-                ],
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: AppTheme.glossyButtonGradient,
+                stops: [0.0, 0.52, 1.0],
               ),
               border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.28), width: 1.2),
+                  color: const Color(0xFFFFCD82).withValues(alpha: 0.6), width: 1.2),
               boxShadow: [
+                // ring of the field colour so the FAB reads as floating
                 BoxShadow(
-                  color: widget.style.centerBackground.withValues(alpha: 0.35),
-                  blurRadius: 16,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 4),
+                  color: brightness == Brightness.dark
+                      ? AppTheme.warmBg0
+                      : AppTheme.lightBackgroundStart,
+                  spreadRadius: 6,
+                  blurRadius: 0,
                 ),
-                ...AppTheme.elevation2(brightness),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(widget.style.icons.battle,
-                    color: widget.style.centerForeground, size: 18),
-                const SizedBox(width: 4),
-                Text(
-                  'Battle',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: widget.style.centerForeground,
-                    letterSpacing: -0.2,
-                  ),
+                BoxShadow(
+                  color: AppTheme.orangeDeep.withValues(alpha: 0.5),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
+            child: const Icon(PhosphorIconsBold.plus,
+                color: Color(0xFF2B1500), size: 27),
           ),
         ),
       ),

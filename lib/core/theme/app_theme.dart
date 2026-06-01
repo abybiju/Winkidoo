@@ -10,25 +10,56 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   // BRAND COLORS — Cosmic Orange Identity
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color primaryOrange = Color(0xFFFF6200);
-  static const Color primaryOrangeLight = Color(0xFFFF8C42);
-  static const Color primaryOrangeDark = Color(0xFFCC4E00);
+  static const Color primaryOrange = Color(0xFFFF8A1E); // holla warm orange
+  static const Color primaryOrangeLight = Color(0xFFFFB44D);
+  static const Color primaryOrangeDark = Color(0xFFFF6A00);
   static const Color secondaryViolet = Color(0xFF7C5CFC);
   static const Color secondaryVioletMuted = Color(0xFF5A3EBF);
   static const Color secondaryVioletFaint = Color(0xFF3D2A8A);
-  static const Color premiumAmber = Color(0xFFFFAA33);
+  static const Color premiumAmber = Color(0xFFFFCE6A); // warm gold
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // WARM-GLASS (v2 "Holla-warm") TOKENS — dark redesign accents
+  // ───────────────────────────────────────────────────────────────────────────
+  static const Color warmBg0 = Color(0xFF0A0704);
+  static const Color warmBg1 = Color(0xFF140D06);
+  static const Color warmInk = Color(0xFFFCF5EA);
+  static const Color warmInk70 = Color(0xA8FCF5EA); // ~66%
+  static const Color warmInk45 = Color(0x6BFCF5EA); // ~42%
+  static const Color warmInk25 = Color(0x33FCF5EA); // ~20%
+  static const Color orange = Color(0xFFFF8A1E);
+  static const Color orangeHi = Color(0xFFFFB44D);
+  static const Color orangeDeep = Color(0xFFFF6A00);
+  static const Color gold = Color(0xFFFFCE6A);
+  static const Color cream = Color(0xFFF6EEE1);
+  static const Color creamInk = Color(0xFF1D1409);
+  static const Color warmLine = Color(0x1AFFEEDC); // rgba(255,238,220,0.10)
+  static const Color warmLineHi = Color(0x2EFFEEDC); // ~0.18
+  static const Color warmOk = Color(0xFF8EE3A8);
+  static const Color warmGlassBg = Color(0x0BFFF4E6); // warm white ~4.5%
+
+  /// Glossy holla CTA gradient (top→bottom).
+  static const List<Color> glossyButtonGradient = [
+    Color(0xFFFFC169),
+    Color(0xFFFF8E20),
+    Color(0xFFFF7100),
+  ];
+
+  /// Gradient for gloss avatars / orbs.
+  static const List<Color> orbGradient = [orangeHi, orangeDeep];
+  static const List<Color> goldGradient = [gold, orange];
 
   // ───────────────────────────────────────────────────────────────────────────
   // DARK MODE — Cosmic Midnight
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color bgTop = Color(0xFF050810);
-  static const Color bgBottom = Color(0xFF0D0620);
+  static const Color bgTop = Color(0xFF0A0704);
+  static const Color bgBottom = Color(0xFF140D06);
 
-  /// Surface layers: frosted glass approach
-  static const Color surface1 = Color(0xFF0F0B1E);
-  static const Color surface2 = Color(0xFF161030);
-  static const Color surface3 = Color(0xFF1E1640);
-  static const Color surfaceInput = Color(0xFF130E26);
+  /// Surface layers: frosted glass approach (warm)
+  static const Color surface1 = Color(0xFF140D06);
+  static const Color surface2 = Color(0xFF1A1109);
+  static const Color surface3 = Color(0xFF22160B);
+  static const Color surfaceInput = Color(0xFF17100A);
 
   /// Glass tokens (dark mode)
   static const Color glassFill = Color(0x0AFFFFFF); // white 4%
@@ -37,9 +68,9 @@ class AppTheme {
   static const Color glassBorderSubtle = Color(0x0AFFFFFF); // white 4%
   static const Color glassBorderOrange = Color(0x26FF8C42); // orange 15%
 
-  /// Card surfaces (dark)
-  static const Color darkCardA = Color(0xFF14102A);
-  static const Color darkCardB = Color(0xFF0C0918);
+  /// Card surfaces (dark, warm)
+  static const Color darkCardA = Color(0xFF1B1209);
+  static const Color darkCardB = Color(0xFF0F0A05);
 
   // ───────────────────────────────────────────────────────────────────────────
   // LIGHT MODE — Crystal Dawn
@@ -68,10 +99,10 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   // TEXT COLORS
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color textPrimary = Color(0xFFF0EDF8);
-  static const Color textSecondary = Color(0xB3C8BEE0); // 70%
-  static const Color textMuted = Color(0x73A093C0); // 45%
-  static const Color textOrangeAccent = Color(0xFFFFB067);
+  static const Color textPrimary = Color(0xFFFCF5EA); // warm cream ink
+  static const Color textSecondary = Color(0xA8FCF5EA); // ~66%
+  static const Color textMuted = Color(0x6BFCF5EA); // ~42%
+  static const Color textOrangeAccent = Color(0xFFFFB44D);
 
   static const Color lightTextPrimary = Color(0xFF1A1028);
   static const Color lightTextSecondary = Color(0xFF6B5A80);
@@ -80,69 +111,69 @@ class AppTheme {
   // ───────────────────────────────────────────────────────────────────────────
   // ACCENT GRADIENTS
   // ───────────────────────────────────────────────────────────────────────────
-  /// Battle/primary CTA gradient (orange)
-  static const Color battleGradientA = Color(0xFFFF9A42);
-  static const Color battleGradientB = Color(0xFFFF6B1A);
+  /// Battle/primary CTA gradient (holla orange)
+  static const Color battleGradientA = Color(0xFFFFB44D);
+  static const Color battleGradientB = Color(0xFFFF6A00);
 
   /// CTA gradient (orange capsule — Holla-inspired)
-  static const Color ctaOrangeA = Color(0xFFFF8C42);
-  static const Color ctaOrangeB = Color(0xFFFF6200);
+  static const Color ctaOrangeA = Color(0xFFFF8E20);
+  static const Color ctaOrangeB = Color(0xFFFF7100);
   static const Color ctaInnerGlow = Color(0x66FFC88C); // warm highlight
-  static const Color ctaOuterGlow = Color(0x80FF6200); // shadow glow
+  static const Color ctaOuterGlow = Color(0x80FF7100); // shadow glow
 
   /// Gold CTA gradient (premium)
   static const Color ctaGoldA = Color(0xFFFFD666);
-  static const Color ctaGoldB = Color(0xFFFFAA33);
+  static const Color ctaGoldB = Color(0xFFFFCE6A);
 
-  /// Vault gradient (cards)
-  static const Color vaultGradientA = Color(0xFF151030);
-  static const Color vaultGradientB = Color(0xFF0D0820);
+  /// Vault gradient (cards, warm)
+  static const Color vaultGradientA = Color(0xFF1B1209);
+  static const Color vaultGradientB = Color(0xFF0F0A05);
 
-  /// Spotlight gradient
-  static const Color spotlightGradientA = Color(0xFF161030);
-  static const Color spotlightGradientB = Color(0xFF1E1640);
+  /// Spotlight gradient (warm)
+  static const Color spotlightGradientA = Color(0xFF1A1109);
+  static const Color spotlightGradientB = Color(0xFF22160B);
 
   // ───────────────────────────────────────────────────────────────────────────
   // HOME SCREEN PALETTE
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color homeBgTop = Color(0xFF050810);
-  static const Color homeBgBottom = Color(0xFF0D0620);
-  static const Color homeGlowOrange = Color(0xFFFF6200);
-  static const Color homeGlowPink = Color(0xFFD631E8); // deep purple/pink magic glow
-  static const Color homeTextPrimary = Color(0xFFF0EDF8);
-  static const Color homeTextSecondary = Color(0xB3D2CAE6);
-  static const Color homeSurfaceMuted = Color(0x26130E26);
-  static const Color homeSurfaceCard = Color(0x33161030);
-  static const Color homeDivider = Color(0x337C5CFC); // violet divider
-  static const Color homeCtaNavyA = Color(0xFF1A1838);
-  static const Color homeCtaNavyB = Color(0xFF110E28);
+  static const Color homeBgTop = Color(0xFF0A0704);
+  static const Color homeBgBottom = Color(0xFF140D06);
+  static const Color homeGlowOrange = Color(0xFFFF8A1E);
+  static const Color homeGlowPink = Color(0xFFFF6A00); // warm secondary glow
+  static const Color homeTextPrimary = Color(0xFFFCF5EA);
+  static const Color homeTextSecondary = Color(0xA8FCF5EA);
+  static const Color homeSurfaceMuted = Color(0x26171009);
+  static const Color homeSurfaceCard = Color(0x331A1109);
+  static const Color homeDivider = Color(0x1AFFEEDC); // warm divider
+  static const Color homeCtaNavyA = Color(0xFF1B1209);
+  static const Color homeCtaNavyB = Color(0xFF0F0A05);
 
   // ───────────────────────────────────────────────────────────────────────────
   // VAULT SCREEN PALETTE
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color vaultStatusLinked = Color(0xFF4DE8A5);
-  static const Color vaultStatusPending = Color(0xFFFFD166);
-  static const Color vaultCardUrgent = Color(0xFFFF8C42);
-  static const Color vaultCardOwned = Color(0xFFFFAA33);
-  static const Color vaultDramaSurfaceA = Color(0xFF151030);
-  static const Color vaultDramaSurfaceB = Color(0xFF0A0618);
-  static const Color vaultDramaVignette = Color(0x990A0618);
-  static const Color vaultCtaPrimaryA = Color(0xFFFF9A42);
-  static const Color vaultCtaPrimaryB = Color(0xFFFF6B1A);
+  static const Color vaultStatusLinked = Color(0xFF8EE3A8);
+  static const Color vaultStatusPending = Color(0xFFFFCE6A);
+  static const Color vaultCardUrgent = Color(0xFFFFB44D);
+  static const Color vaultCardOwned = Color(0xFFFFCE6A);
+  static const Color vaultDramaSurfaceA = Color(0xFF1B1209);
+  static const Color vaultDramaSurfaceB = Color(0xFF0A0704);
+  static const Color vaultDramaVignette = Color(0x990A0704);
+  static const Color vaultCtaPrimaryA = Color(0xFFFFB44D);
+  static const Color vaultCtaPrimaryB = Color(0xFFFF6A00);
   static const Color vaultCtaInnerGlow = Color(0x4DFFC88C);
-  static const Color vaultCtaSecondaryStroke = Color(0x4DD6C8FF);
-  static const Color vaultCtaSecondaryFill = Color(0x14FFFFFF);
-  static const Color vaultHeroCharacterOverlay = Color(0x33FF8C42);
+  static const Color vaultCtaSecondaryStroke = Color(0x4DFFE3C0);
+  static const Color vaultCtaSecondaryFill = Color(0x0BFFF4E6);
+  static const Color vaultHeroCharacterOverlay = Color(0x33FF8A1E);
 
   // ───────────────────────────────────────────────────────────────────────────
   // NAVIGATION PALETTE
   // ───────────────────────────────────────────────────────────────────────────
-  static const Color footerBase = Color(0xFF0A0B18);
-  static const Color footerStroke = Color(0x33786AAA);
-  static const Color footerActive = Color(0xFFFF6200);
-  static const Color footerInactive = Color(0xFF6B6080);
-  static const Color footerCenter = Color(0xFFFF6200);
-  static const Color footerCenterOn = Color(0xFFFFFFFF);
+  static const Color footerBase = Color(0xFF140D06);
+  static const Color footerStroke = Color(0x1AFFEEDC);
+  static const Color footerActive = Color(0xFFFF8A1E);
+  static const Color footerInactive = Color(0xFF6B5E4D);
+  static const Color footerCenter = Color(0xFFFF8A1E);
+  static const Color footerCenterOn = Color(0xFF2B1500);
 
   // ───────────────────────────────────────────────────────────────────────────
   // SEMANTIC
@@ -164,9 +195,9 @@ class AppTheme {
   static const Color backgroundStart = bgTop;
   static const Color backgroundEnd = bgBottom;
   static const Color surface = surface1;
-  static const Color sparkColor = Color(0xFFFF9A42);
-  static const Color orbitalLine = Color(0xFF7C5CFC);
-  static const Color winsSurface = Color(0x33161030);
+  static const Color sparkColor = Color(0xFFFFB44D);
+  static const Color orbitalLine = Color(0x33FF8A1E); // warm orbit ring
+  static const Color winsSurface = Color(0x331A1109);
   static const Color ctaBattleA = battleGradientA;
   static const Color ctaBattleB = battleGradientB;
 
@@ -178,56 +209,83 @@ class AppTheme {
   // TYPOGRAPHY SCALE
   // ───────────────────────────────────────────────────────────────────────────
 
-  /// Display — hero numbers, large stats (Space Grotesk)
+  /// Display — hero numbers, large stats (Hanken Grotesque, tight)
   static TextStyle display(Brightness brightness) =>
       GoogleFonts.spaceGrotesk(
         fontSize: 36,
         fontWeight: FontWeight.w800,
-        height: 1.1,
-        letterSpacing: -0.8,
+        height: 1.05,
+        letterSpacing: -1.1,
         color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
       );
 
-  /// Stat numbers — XP, levels, streak counts (Space Grotesk)
+  /// Stat numbers — XP, levels, streak counts (Hanken Grotesque)
   static TextStyle statNumber(Brightness brightness) =>
       GoogleFonts.spaceGrotesk(
         fontSize: 24,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         height: 1.1,
         letterSpacing: -0.5,
         color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
       );
 
-  static TextStyle heading1(Brightness brightness) => GoogleFonts.poppins(
+  static TextStyle heading1(Brightness brightness) =>
+      GoogleFonts.spaceGrotesk(
         fontSize: 28,
         fontWeight: FontWeight.w800,
-        height: 1.15,
-        letterSpacing: -0.5,
+        height: 1.12,
+        letterSpacing: -0.7,
         color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
       );
 
-  static TextStyle heading2(Brightness brightness) => GoogleFonts.poppins(
+  static TextStyle heading2(Brightness brightness) =>
+      GoogleFonts.spaceGrotesk(
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        height: 1.2,
-        letterSpacing: -0.3,
+        height: 1.18,
+        letterSpacing: -0.4,
         color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
       );
 
-  static TextStyle heading3(Brightness brightness) => GoogleFonts.poppins(
+  static TextStyle heading3(Brightness brightness) =>
+      GoogleFonts.spaceGrotesk(
         fontSize: 18,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         height: 1.25,
+        letterSpacing: -0.2,
         color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
       );
 
   /// Subheading — section labels, pill text
-  static TextStyle subheading(Brightness brightness) => GoogleFonts.poppins(
+  static TextStyle subheading(Brightness brightness) =>
+      GoogleFonts.spaceGrotesk(
         fontSize: 15,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         height: 1.3,
-        letterSpacing: 0.2,
+        letterSpacing: 0.0,
         color: brightness == Brightness.dark ? textPrimary : lightTextPrimary,
+      );
+
+  /// Mono label — Space Mono uppercase tracked (eyebrows, timers, counts).
+  static TextStyle mono(Brightness brightness,
+          {double size = 10.5, Color? color}) =>
+      GoogleFonts.spaceMono(
+        fontSize: size,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.6,
+        color: color ??
+            (brightness == Brightness.dark ? textMuted : lightTextMuted),
+      );
+
+  /// Serif accent — Instrument Serif italic, the "highlight word" treatment.
+  static TextStyle serifAccent(Brightness brightness,
+          {double size = 38, Color? color}) =>
+      GoogleFonts.instrumentSerif(
+        fontSize: size,
+        fontStyle: FontStyle.italic,
+        fontWeight: FontWeight.w400,
+        height: 1.0,
+        color: color ?? orangeHi,
       );
 
   static TextStyle bodyLarge(Brightness brightness) => GoogleFonts.inter(
@@ -296,14 +354,14 @@ class AppTheme {
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? secondaryViolet.withValues(alpha: 0.15)
+              ? primaryOrange.withValues(alpha: 0.10)
               : secondaryViolet.withValues(alpha: 0.08),
           blurRadius: 16,
           offset: const Offset(0, 4),
         ),
       ];
 
-  /// Level 3: premium glow — multi-layer with orange/violet tint
+  /// Level 3: premium glow — multi-layer with warm orange tint
   static List<BoxShadow> elevation3(Brightness brightness) => [
         BoxShadow(
           color: brightness == Brightness.dark
@@ -321,7 +379,7 @@ class AppTheme {
         ),
         BoxShadow(
           color: brightness == Brightness.dark
-              ? secondaryViolet.withValues(alpha: 0.12)
+              ? primaryOrange.withValues(alpha: 0.10)
               : secondaryViolet.withValues(alpha: 0.08),
           blurRadius: 16,
           offset: const Offset(0, 4),
@@ -513,7 +571,7 @@ class AppTheme {
 
   static Color premiumBorder30(Brightness brightness) =>
       brightness == Brightness.dark
-          ? secondaryViolet.withValues(alpha: 0.20)
+          ? warmLine
           : const Color(0x33785AB4);
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -528,7 +586,7 @@ class AppTheme {
   /// 3-stop cosmic background gradient
   static List<Color> cosmicBackgroundGradient(Brightness brightness) =>
       brightness == Brightness.dark
-          ? const [bgTop, Color(0xFF090618), bgBottom]
+          ? const [bgTop, Color(0xFF0F0A05), bgBottom]
           : const [lightBackgroundStart, lightBackgroundEnd];
 
   static List<Color> homeBackgroundGradient(Brightness brightness) =>
@@ -614,10 +672,10 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.spaceGrotesk(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.4,
           color: textPrimary,
         ),
       ),
@@ -625,13 +683,13 @@ class AppTheme {
         displayLarge: GoogleFonts.spaceGrotesk(
           fontSize: 36,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.8,
+          letterSpacing: -1.1,
           color: textPrimary,
         ),
-        displayMedium: GoogleFonts.poppins(
+        displayMedium: GoogleFonts.spaceGrotesk(
           fontSize: 24,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
           color: textPrimary,
         ),
         bodyLarge: GoogleFonts.inter(
