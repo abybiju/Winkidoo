@@ -61,13 +61,52 @@ final roomMembersProvider =
 
 // ── Message providers ──
 
-/// Messages for a specific room (invalidated by realtime callback).
-final chatMessagesProvider =
-    FutureProvider.family<List<CharacterChatMessage>, String>(
-        (ref, roomId) async {
-  final service = ref.watch(characterChatServiceProvider);
-  return service.fetchMessages(roomId);
-});
+/// Messages for a specific room. Realtime (postgres changes) and optimistic
+/// sends push targeted upserts into this notifier instead of refetching the
+/// whole list — so new messages apply instantly with no flicker.
+final chatMessagesProvider = AsyncNotifierProvider.family<ChatMessagesNotifier,
+    List<CharacterChatMessage>, String>(ChatMessagesNotifier.new);
+
+class ChatMessagesNotifier
+    extends AsyncNotifier<List<CharacterChatMessage>> {
+  ChatMessagesNotifier(this.roomId);
+
+  final String roomId;
+
+  @override
+  Future<List<CharacterChatMessage>> build() async {
+    final service = ref.watch(characterChatServiceProvider);
+    return service.fetchMessages(roomId);
+  }
+
+  /// Insert-or-replace by id, keeping the list sorted by createdAt ascending.
+  void upsert(CharacterChatMessage msg) {
+    final current = state.value ?? const <CharacterChatMessage>[];
+    final next = [...current];
+    final idx = next.indexWhere((m) => m.id == msg.id);
+    if (idx >= 0) {
+      next[idx] = msg;
+    } else {
+      next.add(msg);
+    }
+    next.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    state = AsyncData(next);
+  }
+
+  /// Removes a message by id (e.g. dropping a failed optimistic send).
+  void remove(String id) {
+    final current = state.value ?? const <CharacterChatMessage>[];
+    state = AsyncData(current.where((m) => m.id != id).toList());
+  }
+
+  /// Replaces an optimistic temp message with the authoritative server row.
+  void reconcile(String tempId, CharacterChatMessage real) {
+    final current = state.value ?? const <CharacterChatMessage>[];
+    final next = current.where((m) => m.id != tempId).toList()..add(real);
+    next.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    state = AsyncData(next);
+  }
+}
 
 // ── Character providers ──
 

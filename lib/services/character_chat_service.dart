@@ -353,7 +353,9 @@ class CharacterChatService {
   }
 
   /// Inserts a message (optimistic — may have is_transforming = true).
-  Future<String> insertMessage({
+  /// Returns the full inserted row so callers have the authoritative id +
+  /// server created_at for optimistic reconciliation.
+  Future<CharacterChatMessage> insertMessage({
     required String roomId,
     required String senderId,
     required String originalContent,
@@ -377,28 +379,44 @@ class CharacterChatService {
     final result = await _client
         .from('character_chat_messages')
         .insert(row)
-        .select('id')
+        .select()
         .single();
 
-    return result['id'] as String;
+    return CharacterChatMessage.fromJson(result);
   }
 
-  /// Updates a message with the Gemini-transformed content.
-  Future<void> updateTransformedContent(
+  /// Updates a message with the Gemini-transformed content. Returns the
+  /// updated row so the caller can apply it locally without a refetch.
+  Future<CharacterChatMessage> updateTransformedContent(
     String messageId,
     String transformedContent,
   ) async {
-    await _client.from('character_chat_messages').update({
-      'transformed_content': transformedContent,
-      'is_transforming': false,
-    }).eq('id', messageId);
+    final result = await _client
+        .from('character_chat_messages')
+        .update({
+          'transformed_content': transformedContent,
+          'is_transforming': false,
+        })
+        .eq('id', messageId)
+        .select()
+        .single();
+
+    return CharacterChatMessage.fromJson(result);
   }
 
-  /// Marks a failed transform — falls back to original text.
-  Future<void> markTransformFailed(String messageId) async {
-    await _client.from('character_chat_messages').update({
-      'is_transforming': false,
-    }).eq('id', messageId);
+  /// Marks a failed transform — falls back to original text. Returns the
+  /// updated row so the caller can apply it locally without a refetch.
+  Future<CharacterChatMessage> markTransformFailed(String messageId) async {
+    final result = await _client
+        .from('character_chat_messages')
+        .update({
+          'is_transforming': false,
+        })
+        .eq('id', messageId)
+        .select()
+        .single();
+
+    return CharacterChatMessage.fromJson(result);
   }
 
   // ── Room management ──

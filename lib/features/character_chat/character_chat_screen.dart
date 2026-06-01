@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +12,10 @@ import 'package:winkidoo/core/theme/app_theme.dart';
 import 'package:winkidoo/core/widgets/cosmic_background.dart';
 import 'package:winkidoo/features/character_chat/widgets/chat_input_bar.dart';
 import 'package:winkidoo/features/character_chat/widgets/chat_message_bubble.dart';
+import 'package:winkidoo/features/character_chat/widgets/typing_indicator.dart';
+import 'package:winkidoo/models/character_chat_message.dart';
 import 'package:winkidoo/models/character_preset.dart';
+import 'package:winkidoo/models/chat_room.dart';
 import 'package:winkidoo/providers/ai_judge_provider.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/character_chat_provider.dart';
@@ -34,23 +39,79 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
   late final CharacterChatRealtimeService _realtimeService;
   bool _isSending = false;
   bool _isPopoverOpen = false;
+  List<TypingUser> _typingOthers = const [];
+  Timer? _typingTimer;
+  bool _selfNameResolved = false;
 
   @override
   void initState() {
     super.initState();
-    _realtimeService =
-        CharacterChatRealtimeService(Supabase.instance.client);
-    _realtimeService.subscribe(widget.roomId, () {
-      ref.invalidate(chatMessagesProvider(widget.roomId));
-    });
+    _realtimeService = CharacterChatRealtimeService(Supabase.instance.client);
+    final user = ref.read(currentUserProvider);
+    _realtimeService.subscribe(
+      widget.roomId,
+      selfUid: user?.id ?? '',
+      selfName: _fallbackSelfName(user),
+      onMessage: (msg) {
+        ref.read(chatMessagesProvider(widget.roomId).notifier).upsert(msg);
+        _scrollToBottom();
+      },
+      onTypingChanged: (others) {
+        if (!mounted) return;
+        setState(() => _typingOthers = others);
+      },
+    );
   }
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
     _realtimeService.dispose();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Best-effort self name before room members load (auth metadata / email).
+  String _fallbackSelfName(User? user) {
+    final meta = user?.userMetadata;
+    final dn = meta?['display_name'] ?? meta?['full_name'] ?? meta?['name'];
+    if (dn is String && dn.trim().isNotEmpty) return dn.trim();
+    final email = user?.email;
+    if (email != null && email.isNotEmpty) return email.split('@').first;
+    return 'Someone';
+  }
+
+  /// Once room members load, push my real display name into presence so peers
+  /// see the right name in the typing indicator.
+  void _resolveSelfName(List<ChatRoomMember> members, String? myId) {
+    if (_selfNameResolved || myId == null || members.isEmpty) return;
+    for (final m in members) {
+      if (m.userId == myId) {
+        final name = m.displayName ?? m.email;
+        if (name != null && name.isNotEmpty) {
+          _selfNameResolved = true;
+          _realtimeService.updateSelfName(name);
+        }
+        return;
+      }
+    }
+  }
+
+  void _onInputChanged(String _) {
+    _realtimeService.setTyping(true);
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(milliseconds: 2500), () {
+      _realtimeService.setTyping(false);
+    });
+  }
+
+  String _typingLabel(List<TypingUser> others) {
+    if (others.length == 1) return '${others.first.name} is typing';
+    if (others.length == 2) {
+      return '${others[0].name}, ${others[1].name} are typing';
+    }
+    return '${others[0].name}, ${others[1].name} +${others.length - 2} are typing';
   }
 
   void _scrollToBottom() {
@@ -103,9 +164,29 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     final isNormal = character.id == 'normal';
     final needsTransform = !isNormal || hasTone;
     final service = ref.read(characterChatServiceProvider);
+    final notifier = ref.read(chatMessagesProvider(widget.roomId).notifier);
+
+    // Typing stops the moment you send.
+    _typingTimer?.cancel();
+    _realtimeService.setTyping(false);
+
+    // Optimistic local echo — show the bubble instantly.
+    final tempId = 'temp-${DateTime.now().microsecondsSinceEpoch}';
+    notifier.upsert(CharacterChatMessage(
+      id: tempId,
+      roomId: widget.roomId,
+      senderId: user.id,
+      originalContent: text,
+      characterId: character.id,
+      characterName: character.name,
+      toneId: hasTone ? tone.id : null,
+      isTransforming: needsTransform,
+      createdAt: DateTime.now().toUtc(),
+    ));
+    _scrollToBottom();
 
     try {
-      final messageId = await service.insertMessage(
+      final inserted = await service.insertMessage(
         roomId: widget.roomId,
         senderId: user.id,
         originalContent: text,
@@ -115,7 +196,7 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
         isTransforming: needsTransform,
       );
 
-      ref.invalidate(chatMessagesProvider(widget.roomId));
+      notifier.reconcile(tempId, inserted);
       _scrollToBottom();
 
       if (needsTransform) {
@@ -128,14 +209,14 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
             toneInstructions: hasTone ? tone.promptInstructions : null,
             toneName: hasTone ? tone.name : null,
           );
-          await service.updateTransformedContent(messageId, transformed);
+          notifier.upsert(
+              await service.updateTransformedContent(inserted.id, transformed));
         } catch (e) {
-          await service.markTransformFailed(messageId);
+          notifier.upsert(await service.markTransformFailed(inserted.id));
         }
       }
-
-      ref.invalidate(chatMessagesProvider(widget.roomId));
     } catch (e) {
+      notifier.remove(tempId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to send message')),
@@ -159,6 +240,7 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     // Members (real names) — used for the WhatsApp-style title and incoming
     // message labels. Receivers see real names, never personas/tones.
     final members = ref.watch(roomMembersProvider(widget.roomId)).value ?? [];
+    _resolveSelfName(members, user?.id);
     String roomTitle;
     if (room == null) {
       roomTitle = 'Chat';
@@ -377,11 +459,19 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                     ),
                   ),
 
+                  // ── Typing indicator ──
+                  if (_typingOthers.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TypingIndicator(label: _typingLabel(_typingOthers)),
+                    ),
+
                   // ── Input bar ──
                   ChatInputBar(
                     controller: _textController,
                     onSend: _sendMessage,
                     isSending: _isSending,
+                    onChanged: _onInputChanged,
                   ),
                 ],
               ),

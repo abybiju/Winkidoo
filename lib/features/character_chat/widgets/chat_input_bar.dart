@@ -14,11 +14,13 @@ class ChatInputBar extends ConsumerWidget {
     required this.controller,
     required this.onSend,
     required this.isSending,
+    this.onChanged,
   });
 
   final TextEditingController controller;
   final VoidCallback onSend;
   final bool isSending;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -108,6 +110,7 @@ class ChatInputBar extends ConsumerWidget {
                     minLines: 1,
                     textCapitalization: TextCapitalization.sentences,
                     textInputAction: TextInputAction.send,
+                    onChanged: onChanged,
                     onSubmitted: (_) => onSend(),
                   ),
                 ),
