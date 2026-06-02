@@ -28,6 +28,17 @@ class NotificationRouter {
       case 'custom_judge_ready':
         router.go('/shell/my-judges');
         return;
+      case 'friend_request':
+      case 'friend_accepted':
+        router.push('/shell/chat/add-friends');
+        return;
+      case 'chat_join_request':
+      case 'chat_join_approved':
+        final roomId = data['room_id'] as String?;
+        if (roomId != null && roomId.isNotEmpty) {
+          router.push('/shell/chat/$roomId');
+        }
+        return;
     }
     final surpriseId = data['surprise_id'] as String?;
     if (surpriseId == null || surpriseId.isEmpty) return;

@@ -63,6 +63,7 @@ class ChatRoomMember {
     required this.userId,
     required this.role,
     required this.joinedAt,
+    this.status = 'active',
     this.displayName,
     this.email,
   });
@@ -71,11 +72,23 @@ class ChatRoomMember {
   final String roomId;
   final String userId;
   final String role; // 'admin', 'member'
+  final String status; // 'active', 'pending'
   final DateTime joinedAt;
   final String? displayName;
   final String? email;
 
   bool get isAdmin => role == 'admin';
+  bool get isPending => status == 'pending';
+  bool get isActive => status == 'active';
+
+  /// Best human label for this member: real name, else email local part.
+  String get label {
+    final n = displayName?.trim();
+    if (n != null && n.isNotEmpty) return n;
+    final e = email?.trim();
+    if (e != null && e.isNotEmpty) return e.split('@').first;
+    return 'Winkidoo friend';
+  }
 
   factory ChatRoomMember.fromJson(Map<String, dynamic> json) {
     return ChatRoomMember(
@@ -83,7 +96,10 @@ class ChatRoomMember {
       roomId: json['room_id'] as String,
       userId: json['user_id'] as String,
       role: json['role'] as String? ?? 'member',
+      status: json['status'] as String? ?? 'active',
       joinedAt: DateTime.parse(json['joined_at'] as String),
+      displayName: json['display_name'] as String?,
+      email: json['email'] as String?,
     );
   }
 }

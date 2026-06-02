@@ -22,6 +22,7 @@ import 'package:winkidoo/providers/achievements_provider.dart';
 import 'package:winkidoo/services/account_deletion_service.dart';
 import 'package:winkidoo/services/achievement_storage_service.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
+import 'package:winkidoo/providers/character_chat_provider.dart';
 import 'package:winkidoo/providers/couple_provider.dart';
 import 'package:winkidoo/providers/couple_stats_provider.dart';
 import 'package:winkidoo/providers/supabase_provider.dart';
@@ -86,6 +87,16 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   const _AchievementsSection(),
                   const SizedBox(height: 16),
+                  _ProfileActionCard(
+                    icon: Icons.group_rounded,
+                    label: 'Friends & Requests',
+                    subtitle: 'Add friends, accept or decline requests',
+                    badgeCount:
+                        ref.watch(incomingFriendRequestsProvider).value?.length ??
+                            0,
+                    onTap: () => context.push('/shell/chat/add-friends'),
+                  ),
+                  const SizedBox(height: 12),
                   _ProfileActionCard(
                     icon: Icons.auto_awesome_rounded,
                     label: 'Duo Wrapped',
@@ -1416,12 +1427,16 @@ class _ProfileActionCard extends StatelessWidget {
     required this.label,
     required this.subtitle,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final String subtitle;
   final VoidCallback onTap;
+
+  /// When > 0, shows a count pill before the chevron (e.g. pending requests).
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1444,8 +1459,32 @@ class _ProfileActionCard extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
-        trailing: const Icon(Icons.chevron_right_rounded,
-            color: AppTheme.textSecondary),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (badgeCount > 0)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: const BoxDecoration(
+                  color: AppTheme.primaryOrange,
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.all(Radius.circular(999)),
+                ),
+                child: Text(
+                  '$badgeCount',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppTheme.textSecondary),
+          ],
+        ),
         onTap: onTap,
       ),
     );

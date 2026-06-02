@@ -78,7 +78,18 @@ class _AddFriendsScreenState extends ConsumerState<AddFriendsScreen> {
       ref.invalidate(incomingFriendRequestsProvider);
       ref.invalidate(pendingFriendRequestsProvider);
       ref.invalidate(friendsListProvider);
-    } catch (_) {}
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Friend added')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not accept request: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _decline(String friendshipId) async {
@@ -86,7 +97,13 @@ class _AddFriendsScreenState extends ConsumerState<AddFriendsScreen> {
       await ref.read(friendServiceProvider).removeFriend(friendshipId);
       ref.invalidate(incomingFriendRequestsProvider);
       ref.invalidate(pendingFriendRequestsProvider);
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not decline request: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _joinByCode() async {

@@ -52,11 +52,27 @@ final chatRoomProvider =
   }
 });
 
-/// Members of a specific room.
+/// Members of a specific room (enriched with names). Returns [] if the caller
+/// isn't an active member yet (e.g. pending approval) — the RPC throws in that
+/// case, which we swallow so the waiting screen can render.
 final roomMembersProvider =
     FutureProvider.family<List<ChatRoomMember>, String>((ref, roomId) async {
   final service = ref.watch(characterChatServiceProvider);
-  return service.fetchMembers(roomId);
+  try {
+    return await service.fetchMembers(roomId);
+  } catch (_) {
+    return const [];
+  }
+});
+
+/// The caller's OWN membership in a room (status/role). Drives the pending
+/// "waiting for approval" screen. Null if not a member.
+final myMembershipProvider =
+    FutureProvider.family<ChatRoomMember?, String>((ref, roomId) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return null;
+  final service = ref.watch(characterChatServiceProvider);
+  return service.fetchMyMembership(roomId, user.id);
 });
 
 // ── Message providers ──

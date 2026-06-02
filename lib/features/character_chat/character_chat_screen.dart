@@ -227,6 +227,41 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     }
   }
 
+  Future<void> _approveMember(String userId) async {
+    try {
+      await ref
+          .read(characterChatServiceProvider)
+          .approveMember(widget.roomId, userId);
+      ref.invalidate(roomMembersProvider(widget.roomId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Member approved')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not approve: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _declineMember(String userId) async {
+    try {
+      await ref
+          .read(characterChatServiceProvider)
+          .removeMember(widget.roomId, userId);
+      ref.invalidate(roomMembersProvider(widget.roomId));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not decline: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(chatMessagesProvider(widget.roomId));
@@ -241,6 +276,14 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     // message labels. Receivers see real names, never personas/tones.
     final members = ref.watch(roomMembersProvider(widget.roomId)).value ?? [];
     _resolveSelfName(members, user?.id);
+
+    // Caller's own membership drives the "waiting for approval" gate.
+    final myMembership = ref.watch(myMembershipProvider(widget.roomId)).value;
+    final amPending = myMembership?.isPending ?? false;
+    final amAdmin = members.any((m) => m.userId == user?.id && m.isAdmin);
+    final pendingMembers =
+        members.where((m) => m.isPending && m.userId != user?.id).toList();
+
     String roomTitle;
     if (room == null) {
       roomTitle = 'Chat';
@@ -250,14 +293,18 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     } else {
       final others = members.where((m) => m.userId != user?.id).toList();
       roomTitle = others.isNotEmpty
-          ? (others.first.displayName ?? others.first.email ?? 'Chat')
+          ? others.first.label
           : ((room.name != null && room.name!.isNotEmpty) ? room.name! : 'Chat');
     }
     String? senderNameFor(String id) {
       for (final m in members) {
-        if (m.userId == id) return m.displayName ?? m.email;
+        if (m.userId == id) return m.label;
       }
       return null;
+    }
+
+    if (amPending) {
+      return _PendingApprovalScreen(roomTitle: roomTitle);
     }
 
     // Current persona
@@ -396,6 +443,14 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                       ],
                     ),
                   ),
+
+                  // ── Pending join requests (admin only) ──
+                  if (amAdmin && pendingMembers.isNotEmpty)
+                    _PendingRequestsBanner(
+                      pending: pendingMembers,
+                      onApprove: _approveMember,
+                      onDecline: _declineMember,
+                    ),
 
                   // ── Messages ──
                   Expanded(
@@ -727,6 +782,171 @@ class _PersonaPopover extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Shown to a user who joined a group by invite code and is awaiting the room
+/// admin's approval. They cannot see or send messages until approved.
+class _PendingApprovalScreen extends StatelessWidget {
+  const _PendingApprovalScreen({required this.roomTitle});
+
+  final String roomTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: CosmicBackground(
+        showStars: true,
+        glowColor: AppTheme.primaryOrange,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => context.pop(),
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.glassFill,
+                          border: Border.all(color: AppTheme.glassBorder),
+                        ),
+                        child: const Icon(Icons.arrow_back_ios_rounded,
+                            color: Colors.white, size: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        roomTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PhosphorIconsFill.hourglassMedium,
+                            size: 52,
+                            color: AppTheme.primaryOrange.withValues(alpha: 0.6)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Waiting for approval',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'The group admin needs to approve you before you can see and send messages.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppTheme.homeTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Admin-only banner listing people who requested to join via invite code,
+/// each with approve / decline actions.
+class _PendingRequestsBanner extends StatelessWidget {
+  const _PendingRequestsBanner({
+    required this.pending,
+    required this.onApprove,
+    required this.onDecline,
+  });
+
+  final List<ChatRoomMember> pending;
+  final Future<void> Function(String userId) onApprove;
+  final Future<void> Function(String userId) onDecline;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: AppTheme.glassFill,
+        border: Border.all(color: AppTheme.primaryOrange.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Join requests (${pending.length})',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.primaryOrange,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...pending.map(
+            (m) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      m.label,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.check_circle,
+                        color: AppTheme.primaryOrange),
+                    onPressed: () => onApprove(m.userId),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.cancel,
+                        color: AppTheme.homeTextSecondary),
+                    onPressed: () => onDecline(m.userId),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

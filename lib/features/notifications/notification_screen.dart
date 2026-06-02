@@ -272,6 +272,14 @@ class _NotificationTile extends StatelessWidget {
         return Icons.theater_comedy_rounded;
       case NotificationType.seasonLaunch:
         return Icons.auto_awesome_rounded;
+      case NotificationType.friendRequest:
+        return Icons.person_add_rounded;
+      case NotificationType.friendAccepted:
+        return Icons.how_to_reg_rounded;
+      case NotificationType.chatJoinRequest:
+        return Icons.group_add_rounded;
+      case NotificationType.chatJoinApproved:
+        return Icons.check_circle_rounded;
       case NotificationType.unknown:
         return Icons.notifications_rounded;
     }
@@ -297,6 +305,14 @@ class _NotificationTile extends StatelessWidget {
         return const Color(0xFFE57373);
       case NotificationType.seasonLaunch:
         return const Color(0xFFFFD700);
+      case NotificationType.friendRequest:
+        return AppTheme.primaryOrange;
+      case NotificationType.friendAccepted:
+        return const Color(0xFF81C784);
+      case NotificationType.chatJoinRequest:
+        return AppTheme.primaryOrange;
+      case NotificationType.chatJoinApproved:
+        return const Color(0xFF81C784);
       case NotificationType.unknown:
         return AppTheme.primaryOrange;
     }

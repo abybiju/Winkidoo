@@ -8,10 +8,22 @@ enum NotificationType {
   campaign,
   customJudgeReady,
   seasonLaunch,
+  friendRequest,
+  friendAccepted,
+  chatJoinRequest,
+  chatJoinApproved,
   unknown;
 
   static NotificationType fromString(String? value) {
     switch (value) {
+      case 'friend_request':
+        return friendRequest;
+      case 'friend_accepted':
+        return friendAccepted;
+      case 'chat_join_request':
+        return chatJoinRequest;
+      case 'chat_join_approved':
+        return chatJoinApproved;
       case 'surprise_new':
         return surpriseNew;
       case 'battle_update':
@@ -55,6 +67,14 @@ enum NotificationType {
         return 'custom_judge_ready';
       case seasonLaunch:
         return 'season_launch';
+      case friendRequest:
+        return 'friend_request';
+      case friendAccepted:
+        return 'friend_accepted';
+      case chatJoinRequest:
+        return 'chat_join_request';
+      case chatJoinApproved:
+        return 'chat_join_approved';
       case unknown:
         return 'unknown';
     }

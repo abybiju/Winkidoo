@@ -503,6 +503,56 @@ Deno.serve(async (req) => {
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // USER_FRIENDS — friend request + accept (PUSH ONLY).
+    // In-app rows are written by the notify_friend_event() DB trigger (migration
+    // 055); here we only deliver push so there are no duplicate in-app rows.
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (payload.table === "user_friends" && (payload.type === "INSERT" || payload.type === "UPDATE")) {
+      const record = payload.record as {
+        id?: string; user_a_id?: string; user_b_id?: string;
+        status?: string; requested_by?: string;
+      } | null;
+      const oldRecord = (payload.old_record as { status?: string } | null) ?? null;
+      if (!record?.id || !record?.user_a_id || !record?.user_b_id || !record?.requested_by) {
+        return respond({ ok: true, skipped: "user_friends no record" });
+      }
+
+      const other = record.requested_by === record.user_a_id ? record.user_b_id : record.user_a_id;
+      const nameOf = async (uid: string): Promise<string> => {
+        const { data } = await supabaseAdmin()
+          .from("profiles").select("display_name").eq("user_id", uid).maybeSingle();
+        const n = (data?.display_name as string | null)?.trim();
+        return n && n.length > 0 ? n : "Someone";
+      };
+
+      let push: { userId: string; title: string; body: string; data: Record<string, string> } | null = null;
+      if (payload.type === "INSERT" && record.status === "pending") {
+        // Notify the recipient that a request arrived.
+        push = {
+          userId: other,
+          title: "New friend request",
+          body: `${await nameOf(record.requested_by)} wants to be friends`,
+          data: { type: "friend_request", friendship_id: record.id },
+        };
+      } else if (
+        payload.type === "UPDATE" && record.status === "accepted" &&
+        oldRecord?.status !== "accepted"
+      ) {
+        // Notify the original requester that their request was accepted.
+        push = {
+          userId: record.requested_by,
+          title: "Friend request accepted",
+          body: `${await nameOf(other)} accepted your friend request`,
+          data: { type: "friend_accepted", friendship_id: record.id },
+        };
+      }
+
+      if (!push) return respond({ ok: true, skipped: "user_friends no-op" });
+      const sent = await sendNotifications([push]);
+      return respond({ ok: true, table: "user_friends", sent });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // SURPRISES — battle notifications (original)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (payload.table !== "surprises" || (payload.type !== "INSERT" && payload.type !== "UPDATE")) {

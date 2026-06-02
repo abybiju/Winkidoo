@@ -259,36 +259,21 @@ class CharacterChatService {
     required List<String> memberIds,
     required String createdBy,
   }) async {
-    final roomResult = await _client
-        .from('character_chat_rooms')
-        .insert({
-          'type': type,
-          'name': name,
-          'created_by': createdBy,
-        })
-        .select('id, invite_code')
-        .single();
-
-    final roomId = roomResult['id'] as String;
-
-    // Add creator as admin
-    final membersToInsert = <Map<String, dynamic>>[
-      {'room_id': roomId, 'user_id': createdBy, 'role': 'admin'},
-    ];
-
-    // Add other members
-    for (final memberId in memberIds) {
-      if (memberId != createdBy) {
-        membersToInsert.add({
-          'room_id': roomId,
-          'user_id': memberId,
-          'role': 'member',
-        });
-      }
-    }
-
-    await _client.from('character_chat_members').insert(membersToInsert);
-    return roomId;
+    // Use the SECURITY DEFINER RPC: the members INSERT RLS policy only allows
+    // adding your OWN row, so a client-side multi-member insert fails. The RPC
+    // adds the caller as admin and each selected friend as an ACTIVE member
+    // (verifying friendship). Invite-code joiners go through joinRoomByCode and
+    // land 'pending' for admin approval instead.
+    final others = memberIds.where((id) => id != createdBy).toList();
+    final roomId = await _client.rpc(
+      'create_chat_room',
+      params: {
+        'p_type': type,
+        'p_name': name,
+        'p_member_ids': others,
+      },
+    );
+    return roomId as String;
   }
 
   /// Joins a room via invite code using RPC (bypasses RLS for lookup).
@@ -323,7 +308,9 @@ class CharacterChatService {
     return rooms.map((r) => ChatRoom.fromJson(r)).toList();
   }
 
-  /// Fetches members of a room via RPC (bypasses RLS to see all members).
+  /// Fetches members of a room via RPC (bypasses RLS to see all members,
+  /// enriched with display_name + email). Throws if the caller is not an
+  /// active member — callers should handle that (e.g. pending users).
   Future<List<ChatRoomMember>> fetchMembers(String roomId) async {
     final rows = await _client.rpc(
       'get_chat_room_members',
@@ -333,6 +320,27 @@ class CharacterChatService {
     return rows
         .map((r) => ChatRoomMember.fromJson(Map<String, dynamic>.from(r)))
         .toList();
+  }
+
+  /// Reads the caller's OWN membership row for a room (allowed by RLS even when
+  /// pending). Returns null if not a member. Used to drive the waiting screen.
+  Future<ChatRoomMember?> fetchMyMembership(String roomId, String userId) async {
+    final row = await _client
+        .from('character_chat_members')
+        .select()
+        .eq('room_id', roomId)
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (row == null) return null;
+    return ChatRoomMember.fromJson(row);
+  }
+
+  /// Admin approves a pending member (invite-code joiner) into the room.
+  Future<void> approveMember(String roomId, String userId) async {
+    await _client.rpc(
+      'approve_chat_room_member',
+      params: {'p_room_id': roomId, 'p_target_user_id': userId},
+    );
   }
 
   // ── Message operations ──
@@ -437,7 +445,14 @@ class CharacterChatService {
     );
   }
 
+  /// Leaves a room by deleting one's OWN membership row. (removeMember uses the
+  /// admin-only RPC, so non-admins must delete their own row directly — allowed
+  /// by the "Users can leave rooms" RLS policy.)
   Future<void> leaveRoom(String roomId, String userId) async {
-    await removeMember(roomId, userId);
+    await _client
+        .from('character_chat_members')
+        .delete()
+        .eq('room_id', roomId)
+        .eq('user_id', userId);
   }
 }

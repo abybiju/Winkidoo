@@ -255,7 +255,11 @@ class _CreateCustomJudgeScreenState
 
     final couple = ref.read(coupleProvider).value;
     if (couple == null) {
-      setState(() { _error = 'No link found.'; });
+      setState(() {
+        _error = _useFor == 'battle'
+            ? 'Add a friend first — your own judges live in a shared space. Tap Friends to send a request.'
+            : 'Add a friend first — your own characters live in a shared space. Tap Friends to send a request.';
+      });
       return;
     }
 

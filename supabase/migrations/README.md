@@ -54,6 +54,11 @@ Run these in order in the Supabase SQL Editor (Dashboard → SQL Editor → New 
 49. **049_profiles_identity_and_search.sql** — Friend-system search foundation: `profiles.display_name` + `pg_trgm` index + backfill from auth metadata; `search_users_by_name(p_query)` security-definer RPC; `user_friends.requested_by` to distinguish incoming vs outgoing requests.
 50. **050_friend_pairs.sql** — Make `couples` a per-friend-pair container: dedupe duplicate couple rows, add unique index on the unordered member pair (linked only), `couples.friendship_id`, and backfill `user_friends` (accepted) for existing linked couples. Run BEFORE 051.
 51. **051_auto_pair_on_accept.sql** — Trigger on `user_friends` that auto-creates the pair's couple row when a request is accepted; `join_couple_by_code` drops the single-couple gate and records the friendship. Run AFTER 050.
+52. **052_resilient_friend_accept.sql** — Fixes "Accept friend request does nothing". 051's trigger used `ON CONFLICT` on the `couples_unique_pair` index, which never built on prod (duplicate self-pair couple rows). Rewrites the trigger to use `IF NOT EXISTS` instead — no unique-index dependency — wrapped in an exception guard so couple-creation can never roll back the accept. Ensures `couples.friendship_id` exists and backfills couple rows for already-accepted friendships. Non-destructive (leaves junk self-pair rows alone); idempotent.
+53. **053_auto_populate_display_name.sql** — Every new signup now gets a `profiles.display_name` (trigger `on_auth_user_created` → `handle_new_user`, name from auth metadata else email local part) + re-backfills existing null names. Fixes "Winkidoo user" labels, blank chat sender names, and users being unfindable in search.
+54. **054_search_excludes_existing_friends.sql** — `search_users_by_name` RPC now excludes anyone who already has a `user_friends` row with the caller (any direction/status), so you can't re-send a request to an existing/pending friend.
+55. **055_friend_notifications.sql** — Trigger `notify_friend_event` on `user_friends` writes an in-app notification on new pending request (→ recipient) and on accept (→ requester). In-app only; push is handled by the edge function + webhook below.
+56. **056_chat_member_names_and_approval.sql** — (A) `get_chat_room_members` enriched with `display_name`+`email` so chat shows WhatsApp-style sender names. (B) Adds `character_chat_members.status` ('active'/'pending'); friends added at room creation are active, invite-code joiners (`join_chat_room_by_code`) are pending until a room admin calls `approve_chat_room_member`; pending users can't read/send messages. Plus in-app notifications for join request (→ admin) and approval (→ joiner).
 
 If you see `relation "public.surprises" does not exist`, run **001** first, then 002, 003, 004, 005, 006, 007, 008.
 
@@ -62,6 +67,7 @@ If you see `relation "public.surprises" does not exist`, run **001** first, then
 - Deploy the Edge Function: `supabase functions deploy send_battle_notification`.
 - Set secret: `supabase secrets set FIREBASE_SERVICE_ACCOUNT='<full JSON of Firebase service account>'`.
 - In Dashboard → Database → Webhooks: (1) Create a webhook on table `public.surprises`, events **INSERT** and **UPDATE**, URL `https://<PROJECT_REF>.supabase.co/functions/v1/send_battle_notification`. (2) Create a second webhook on table `public.judges`, events **INSERT** and **UPDATE**, same URL. Payload for both: include record and old_record.
+- **Friend push (added with migration 055):** redeploy `send_battle_notification` (it now has a `user_friends` branch that sends PUSH only — in-app rows come from the 055 trigger). Then create a webhook on table `public.user_friends`, events **INSERT** and **UPDATE**, same URL, include record + old_record. Without this webhook, friend notifications still appear in-app (via the trigger) but won't push while the app is closed.
 
 ### RevenueCat webhook (Edge Function)
 
