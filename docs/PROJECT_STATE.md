@@ -6,7 +6,23 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of June 2026)
 
-### June 1, 2026 (newest) – "Holla-warm" v2 redesign + realtime character chat (tag v0.2.5)
+### June 2, 2026 (newest) – Friends/notifications/chat-group UX fixes (migrations 052–056, tag v0.2.6)
+
+A sweep of friend-system, notification, and chat-group bugs reported from live testing. **Run migrations 052→056 in order** (052 was hotfixed live earlier; 053→054→055→056 follow). Edge function redeployed; new Database Webhook on `public.user_friends` (INSERT+UPDATE) added for friend push.
+
+- **"Accept friend request does nothing" (052).** 051's couple-auto-create trigger used `ON CONFLICT` on the `couples_unique_pair` index, which never built on prod (duplicate **self-pair** couple rows where `user_a_id = user_b_id`, leftover junk). So every accept threw inside the trigger and rolled back — and the client swallowed the error with `catch(_){}`. 052 rewrites the trigger to use `IF NOT EXISTS` (no index dependency) wrapped in an exception guard so couple-creation can never block the accept; backfills couples for already-accepted friendships. Client now surfaces accept/decline errors via SnackBar.
+- **"Winkidoo user" instead of real names (053).** `profiles.display_name` was only ever written on manual profile edit, so most users had none — breaking the friends list, chat sender names, AND search (RPC filtered null names). 053 adds an `auth.users` signup trigger (`handle_new_user`) that seeds `display_name` from metadata/email, plus a re-backfill. Name fallback chain is now name → email-prefix → "Winkidoo friend".
+- **Re-requesting existing friends (054).** `search_users_by_name` now excludes anyone with any `user_friends` row (either direction/status) with the caller.
+- **Friends entry in Profile.** New "Friends & Requests" card with a pending-count badge → `/shell/chat/add-friends` (accept/decline already lived there).
+- **Friend notifications (055 + edge function).** Trigger `notify_friend_event` writes in-app notifications on request (→recipient) and accept (→requester). The `send_battle_notification` function gained a **push-only** `user_friends` branch (no duplicate in-app rows) driven by the new webhook. New `NotificationType`s (friend + chat-join), tap-routing, and icons.
+- **Chat sender names (056).** `get_chat_room_members` now joins `profiles`/`auth.users` so the WhatsApp-style sender label has data (`ChatRoomMember.label`).
+- **Chat group approval (056).** New `character_chat_members.status` (`active`/`pending`). Friends added at room creation are active; invite-code joiners (`join_chat_room_by_code`) land **pending** and a room admin approves them (`approve_chat_room_member`). Pending users can't read/send messages (message RLS now requires active) and see a "Waiting for approval" screen; admins see a Join-requests banner. In-app notifications for join request (→admin) and approval (→joiner).
+- **Latent bugs fixed:** `create_chat_room` RPC replaces the client multi-member insert that always failed the `auth.uid()=user_id` members-INSERT RLS (so group creation could never add friends); it verifies friendship before adding. `leaveRoom` now deletes the caller's own row (the admin-only remove RPC meant non-admins couldn't leave).
+- **"No link found" on create-character** clarified to "Add a friend first…" (creating a custom judge/character is still couple-scoped by design; 052's backfill means anyone with a friend now has a couple).
+
+**Known follow-ups:** custom-judge/character creation is still couple-scoped (solo users can't create one — deferred by choice); chat-join push is in-app only (no edge-function push branch); vault realtime still single-channel (carried over from v0.2.4).
+
+### June 1, 2026 – "Holla-warm" v2 redesign + realtime character chat (tag v0.2.5)
 
 **WhatsApp-grade character chat realtime (commit cd04104).** The old chat invalidated and refetched all 50 messages on every realtime event (the cause of "I have to go back and refresh"), and fired twice per sent message. Now delivery is incremental: `chatMessagesProvider` is an `AsyncNotifier` (`upsert`/`reconcile`/`remove`); `character_chat_realtime_service.dart` runs **one channel per room** = postgres-changes (messages applied from `payload.newRecord`) **+ Supabase Presence** for a live "X is typing…" indicator (same Presence pattern as the vault crafting banner). The sender optimistically echoes its message then reconciles with the server row; `insertMessage`/`updateTransformedContent` now return the full row. New `TypingIndicator` widget; `ChatInputBar` gained an `onChanged` hook. **No DB migration** — `character_chat_messages` was already in the realtime publication.
 
