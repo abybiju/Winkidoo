@@ -6,7 +6,13 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of June 2026)
 
-### June 2, 2026 (newest) – Friends/notifications/chat-group UX fixes (migrations 052–056, tag v0.2.6)
+### June 3, 2026 (newest) – Battle unlock fix + "crack the lock" meter redesign (tag v0.2.7, no migration)
+
+**Bug: the persuasion meter could fill but the surprise never unlocked.** The meter draws `seekerScore` vs `resistanceScore`, implying "cross the line = win" — but the unlock condition in `battle_chat_screen.dart` was `(isVerdictNow && judgeResponse.isUnlocked) || effectiveRes == 0`, i.e. it only honored the AI judge's own `is_unlocked` flag (its holistic score vs `requiredScoreFor`, 80–130) or fatigue grinding resistance to exactly 0. The mechanical `seekerScore` crossing the drawn threshold did nothing, so a moody judge could stall forever. **Fix:** added `meterCrossed = newSeekerScore >= effectiveRes` as a third win condition, making the meter authoritative (what you see is what wins) and guaranteeing battles are always winnable (resistance decays 2/turn). The AI `is_unlocked` remains a faster path. Same downstream resolve/reveal path as the existing `effectiveRes == 0` win. (Caveat: a meter-crossing win can leave the judge's last bubble reading "keep going" before the reveal — identical to the pre-existing fatigue-to-zero behavior; not yet polished with a concession line.)
+
+**`PersuasionMeter` fully redesigned** (`lib/features/battle/persuasion_meter.dart`) from the confusing orange-fill + pink-marker + purple-remainder tri-color bar into a single **"crack the lock" progress bar**: one glossy-orange fill = `progress = seekerScore / resistance` (the exact unlock ratio), a **goal lock 🔒 pinned at the right** that opens 🔓 + glows `warmOk` green at 100%, a leading-edge spark at the fill tip, and a **stage word + %** header ("Make your case → Warming up → They're listening → Winning them over → So close! → Unlocked"). Feedback animations repurposed: lock hardens (scale) on `pulseResistanceTrigger` (vault reinforced), fill sheen-flashes on `flickerResistanceTrigger` (fatigue weakened). Uses v2 warm tokens (`glossyButtonGradient`, `warmOk`, `gold`, `AppTheme.mono`). Constructor unchanged — drop-in for `battle_chat_screen`.
+
+### June 2, 2026 – Friends/notifications/chat-group UX fixes (migrations 052–056, tag v0.2.6)
 
 A sweep of friend-system, notification, and chat-group bugs reported from live testing. **Run migrations 052→056 in order** (052 was hotfixed live earlier; 053→054→055→056 follow). Edge function redeployed; new Database Webhook on `public.user_friends` (INSERT+UPDATE) added for friend push.
 

@@ -352,8 +352,16 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         fatigueLevel: seekerMessageCount,
         rouletteResult: latestSurprise.rouletteResult,
       );
-      final seekerWins =
-          (isVerdictNow && judgeResponse.isUnlocked) || effectiveRes == 0;
+      // Unlock when EITHER the judge delivers an unlock verdict, OR the seeker's
+      // persuasion has caught up to the (fatigue-decayed) resistance. The second
+      // condition is what the meter actually draws (orange vs the threshold line),
+      // so crossing the line now genuinely unlocks — previously only the judge's
+      // own is_unlocked flag (or resistance hitting exactly 0) could win, which
+      // left the meter looking full while the surprise stayed locked.
+      final meterCrossed = newSeekerScore >= effectiveRes;
+      final seekerWins = (isVerdictNow && judgeResponse.isUnlocked) ||
+          effectiveRes == 0 ||
+          meterCrossed;
       final battleService = ref.read(battleServiceProvider);
       if (seekerWins) {
         await battleService.resolveAsSeekerWin(
