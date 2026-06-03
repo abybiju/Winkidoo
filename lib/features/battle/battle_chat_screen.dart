@@ -323,17 +323,11 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
 
       final isVerdictNow = judgeResponse.isVerdict;
 
-      await client.from('battle_messages').insert({
-        'id': const Uuid().v4(),
-        'surprise_id': widget.surpriseId,
-        'sender_type': 'judge',
-        'sender_id': null,
-        'content': judgeResponse.commentary,
-        'is_verdict': isVerdictNow,
-        'verdict_score': isVerdictNow ? judgeResponse.score : null,
-        'verdict_unlocked': isVerdictNow ? judgeResponse.isUnlocked : null,
-      });
-
+      // Compute scores + the win decision BEFORE persisting the judge's message,
+      // so a mechanical win (meter crossed / resistance exhausted) can be
+      // delivered as a proper concession VERDICT — not the judge's mid-battle
+      // "keep going" line — which also lets the creator's realtime handler find a
+      // verdict message and open the reveal.
       final now = DateTime.now().toUtc().toIso8601String();
       final seekerMessageCount =
           messages.where((m) => m.senderType == 'seeker').length + 1;
@@ -353,15 +347,39 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         rouletteResult: latestSurprise.rouletteResult,
       );
       // Unlock when EITHER the judge delivers an unlock verdict, OR the seeker's
-      // persuasion has caught up to the (fatigue-decayed) resistance. The second
-      // condition is what the meter actually draws (orange vs the threshold line),
-      // so crossing the line now genuinely unlocks — previously only the judge's
-      // own is_unlocked flag (or resistance hitting exactly 0) could win, which
-      // left the meter looking full while the surprise stayed locked.
+      // persuasion has caught up to the (fatigue-decayed) resistance — the latter
+      // is exactly what the meter draws, so crossing the line genuinely unlocks
+      // (previously only the judge's own is_unlocked flag or resistance hitting
+      // exactly 0 could win, leaving the meter full while the surprise stayed locked).
+      final aiVerdictWin = isVerdictNow && judgeResponse.isUnlocked;
       final meterCrossed = newSeekerScore >= effectiveRes;
-      final seekerWins = (isVerdictNow && judgeResponse.isUnlocked) ||
-          effectiveRes == 0 ||
-          meterCrossed;
+      final mechanicalWin =
+          !aiVerdictWin && (effectiveRes == 0 || meterCrossed);
+      final seekerWins = aiVerdictWin || mechanicalWin;
+
+      // A mechanical win has no AI verdict speech, so synthesize a persona-voiced
+      // concession — this becomes the judge's final bubble AND the reveal verdict.
+      final verdictResponse = mechanicalWin
+          ? JudgeResponse(
+              score: newSeekerScore,
+              isUnlocked: true,
+              commentary: _concessionLine(surprise.judgePersona),
+              moodEmoji: _concessionEmoji(surprise.judgePersona),
+              isVerdict: true,
+            )
+          : judgeResponse;
+      final emitVerdict = isVerdictNow || mechanicalWin;
+
+      await client.from('battle_messages').insert({
+        'id': const Uuid().v4(),
+        'surprise_id': widget.surpriseId,
+        'sender_type': 'judge',
+        'sender_id': null,
+        'content': verdictResponse.commentary,
+        'is_verdict': emitVerdict,
+        'verdict_score': emitVerdict ? verdictResponse.score : null,
+        'verdict_unlocked': emitVerdict ? verdictResponse.isUnlocked : null,
+      });
       final battleService = ref.read(battleServiceProvider);
       if (seekerWins) {
         await battleService.resolveAsSeekerWin(
@@ -456,7 +474,10 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           if (!mounted) return;
           context.push(
             '/shell/reveal/${widget.surpriseId}',
-            extra: {'response': judgeResponse, 'creatorId': surprise.creatorId},
+            extra: {
+              'response': verdictResponse,
+              'creatorId': surprise.creatorId
+            },
           );
         });
       }
@@ -589,6 +610,43 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
   }
 
   /// Derives a short "how to impress" hint from surprise (unlock method; MVP1 is message-only).
+  /// Persona-voiced concession spoken when the seeker wins by crossing the meter
+  /// (rather than the AI itself choosing to unlock). Falls back to a neutral line
+  /// for judge packs / custom judges whose voice we can't script.
+  String _concessionLine(String persona) {
+    switch (persona) {
+      case AppConstants.personaSassyCupid:
+        return "Oh, fine — you've gone and melted me, darling. 💘 The vault is yours. Don't make me blush again.";
+      case AppConstants.personaPoeticRomantic:
+        return 'Your words have worn a soft path to my heart… I yield. The vault opens for you. 🌹';
+      case AppConstants.personaChaosGremlin:
+        return 'AAAGH FINE, you absolute menace — you WORE ME DOWN. 😤 Take the vault and go feral with it!! 🎉';
+      case AppConstants.personaTheEx:
+        return "…ugh. I really didn't think you'd pull it off. Fine. It's unlocked. Don't let it go to your head.";
+      case AppConstants.personaDrLove:
+        return 'Assessment complete: you cleared the threshold. 📋 Resistance overcome — the vault is officially unlocked. Well argued.';
+      default:
+        return "Alright — you've earned it. I'm convinced. The vault is yours. 🔓";
+    }
+  }
+
+  String _concessionEmoji(String persona) {
+    switch (persona) {
+      case AppConstants.personaSassyCupid:
+        return '💘';
+      case AppConstants.personaPoeticRomantic:
+        return '🌹';
+      case AppConstants.personaChaosGremlin:
+        return '🎉';
+      case AppConstants.personaTheEx:
+        return '🙄';
+      case AppConstants.personaDrLove:
+        return '📋';
+      default:
+        return '🔓';
+    }
+  }
+
   String? _howToImpressHintForSurprise(Surprise surprise) {
     switch (surprise.unlockMethod) {
       case AppConstants.unlockPersuade:

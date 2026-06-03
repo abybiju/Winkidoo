@@ -6,7 +6,11 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ## Implemented (as of June 2026)
 
-### June 3, 2026 (newest) – Battle unlock fix + "crack the lock" meter redesign (tag v0.2.7, no migration)
+### June 3, 2026 (newest) – Judge concession line for meter-crossing wins (tag v0.2.8, no migration)
+
+Follow-up polish to v0.2.7's unlock fix. When the seeker won by **crossing the meter** (rather than the AI judge choosing to unlock), the judge's last bubble stayed a mid-battle "keep going" line, and it was persisted as a *non-verdict* message — so the **creator's device never navigated to the reveal** (its realtime handler only looks for a verdict message). Fix in `battle_chat_screen.dart`: the win decision is now computed BEFORE the judge message is persisted; on a `mechanicalWin` (`!aiVerdictWin && (meterCrossed || effectiveRes==0)`) we synthesize a **persona-voiced concession** `JudgeResponse` (`isVerdict:true, isUnlocked:true, score:newSeekerScore`) via new helpers `_concessionLine(persona)` / `_concessionEmoji(persona)` (scripted lines for the 5 core personas + a neutral fallback for packs/custom judges), persist it as a real verdict (`is_verdict=true`), and pass it to the reveal. AI-verdict wins and denials are unchanged. This also fixes the creator-side reveal navigation (both devices now find a verdict message).
+
+### June 3, 2026 – Battle unlock fix + "crack the lock" meter redesign (tag v0.2.7, no migration)
 
 **Bug: the persuasion meter could fill but the surprise never unlocked.** The meter draws `seekerScore` vs `resistanceScore`, implying "cross the line = win" — but the unlock condition in `battle_chat_screen.dart` was `(isVerdictNow && judgeResponse.isUnlocked) || effectiveRes == 0`, i.e. it only honored the AI judge's own `is_unlocked` flag (its holistic score vs `requiredScoreFor`, 80–130) or fatigue grinding resistance to exactly 0. The mechanical `seekerScore` crossing the drawn threshold did nothing, so a moody judge could stall forever. **Fix:** added `meterCrossed = newSeekerScore >= effectiveRes` as a third win condition, making the meter authoritative (what you see is what wins) and guaranteeing battles are always winnable (resistance decays 2/turn). The AI `is_unlocked` remains a faster path. Same downstream resolve/reveal path as the existing `effectiveRes == 0` win. (Caveat: a meter-crossing win can leave the judge's last bubble reading "keep going" before the reveal — identical to the pre-existing fatigue-to-zero behavior; not yet polished with a concession line.)
 
