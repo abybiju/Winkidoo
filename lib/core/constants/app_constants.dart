@@ -92,6 +92,34 @@ class AppConstants {
   /// Minimum effective resistance drop (points) to show "Resistance weakened..." (avoids noise from tiny drops).
   static const int fatigueWeakenedMinDrop = 3;
 
+  // ── AI Judge liveliness ──
+
+  /// Live-battle judge temperature (Gemini 2.5 default is 1.0; JSON schema output stays reliable here).
+  static const double judgeChatTemperature = 1.0;
+
+  /// Chaos Gremlin runs hotter for unhinged variety.
+  static const double judgeChatChaosTemperature = 1.15;
+
+  /// Battle-opening generation temperature.
+  static const double battleOpeningTemperature = 1.05;
+
+  /// How many of the judge's own recent replies to feed back as "do not repeat these".
+  static const int judgeRecentRepliesWindow = 6;
+
+  /// History cap: above this many messages, trim the serialized battle transcript.
+  static const int battleHistoryMaxMessages = 40;
+
+  /// When trimming history: keep this many from the start (judge opener + first move)...
+  static const int battleHistoryHeadKeep = 2;
+
+  /// ...and this many most-recent messages.
+  static const int battleHistoryTailKeep = 30;
+
+  /// Emotional-stage thresholds on meter progress (blueprint ladder: Cold→Curious→Intrigued→Cracking→Unlock).
+  static const double stageCuriousThreshold = 0.25;
+  static const double stageIntriguedThreshold = 0.50;
+  static const double stageCrackingThreshold = 0.75;
+
   // ── Surprise Roulette ──
 
   /// Weighted segments: Easy 30%, Medium 30%, Hard 25%, Chaos 10%, Golden 5%

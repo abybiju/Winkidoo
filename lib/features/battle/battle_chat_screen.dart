@@ -32,6 +32,7 @@ import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/input_validator.dart';
 import 'package:winkidoo/services/judge_memory_service.dart';
 import 'package:winkidoo/services/custom_judge_service.dart';
+import 'package:winkidoo/services/pack_service.dart';
 import 'package:winkidoo/services/security_logger.dart';
 import 'package:winkidoo/services/phantom_judge_service.dart';
 import 'package:winkidoo/features/battle/widgets/phantom_overlay.dart';
@@ -141,6 +142,44 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
     });
   }
 
+  /// Judge persona/how-to-impress overrides for this battle: custom judges use
+  /// their generated persona; pack judges use the active pack's skin (scoped to
+  /// THIS surprise's couple, like judge memories — not the user's active
+  /// couple). Memoized: at most one lookup per screen lifecycle.
+  ({String? personaPrompt, String? howToImpress})? _judgeOverridesCache;
+
+  Future<({String? personaPrompt, String? howToImpress})> _loadJudgeOverrides(
+      Surprise surprise) async {
+    final cached = _judgeOverridesCache;
+    if (cached != null) return cached;
+    final client = ref.read(supabaseClientProvider);
+    String? personaPrompt;
+    String? howToImpress;
+    try {
+      if (surprise.judgePersona == 'custom' && surprise.customJudgeId != null) {
+        final customJudge = await CustomJudgeService.getJudgeById(
+            client, surprise.customJudgeId!);
+        personaPrompt = customJudge?.generatedPersonaPrompt;
+        howToImpress = customJudge?.generatedHowToImpress;
+      } else {
+        final packId =
+            await PackService.getCoupleActivePackId(client, surprise.coupleId);
+        if (packId != null) {
+          final overrides =
+              await PackService.getPackJudgeOverrides(client, packId);
+          final override = overrides[surprise.judgePersona];
+          personaPrompt = override?.overridePersonaPrompt;
+          howToImpress = override?.overrideHowToImpress;
+        }
+      }
+    } catch (e) {
+      // Non-fatal: fall back to the built-in persona sheet.
+      debugPrint('loadJudgeOverrides error: $e');
+    }
+    return _judgeOverridesCache =
+        (personaPrompt: personaPrompt, howToImpress: howToImpress);
+  }
+
   /// Inserts a one-time opening message from the judge when the seeker enters
   /// the battle, so the judge greets them and states what it expects up front.
   Future<void> _ensureOpeningMessage(Surprise surprise) async {
@@ -153,16 +192,17 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
           await ref.read(battleMessagesProvider(widget.surpriseId).future);
       if (existing.isNotEmpty) return;
 
-      String? personaPromptOverride;
-      String? howToImpressOverride;
-      if (surprise.judgePersona == 'custom' &&
-          surprise.customJudgeId != null) {
-        final customJudge = await CustomJudgeService.getJudgeById(
-            client, surprise.customJudgeId!);
-        if (customJudge != null) {
-          personaPromptOverride = customJudge.generatedPersonaPrompt;
-          howToImpressOverride = customJudge.generatedHowToImpress;
-        }
+      final overrides = await _loadJudgeOverrides(surprise);
+
+      List<String> judgeMemories = [];
+      try {
+        judgeMemories = await JudgeMemoryService.getMemories(
+          client,
+          surprise.coupleId,
+          surprise.judgePersona,
+        );
+      } catch (e) {
+        debugPrint('opening memories fetch error: $e');
       }
 
       final ai = ref.read(aiJudgeServiceProvider);
@@ -172,8 +212,9 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         surpriseContextHint: surprise.unlockMethod.isNotEmpty
             ? 'Surprise type: ${surprise.unlockMethod}'
             : null,
-        personaPromptOverride: personaPromptOverride,
-        howToImpressOverride: howToImpressOverride,
+        personaPromptOverride: overrides.personaPrompt,
+        howToImpressOverride: overrides.howToImpress,
+        judgeMemories: judgeMemories.isNotEmpty ? judgeMemories : null,
       );
 
       if (!mounted) return;
@@ -296,19 +337,19 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         );
       }
 
-      // Custom judge: load its generated persona so the judge speaks in the
-      // creator's chosen character instead of falling back to Sassy Cupid.
-      String? personaPromptOverride;
-      String? howToImpressOverride;
-      if (surprise.judgePersona == 'custom' &&
-          surprise.customJudgeId != null) {
-        final customJudge =
-            await CustomJudgeService.getJudgeById(client, surprise.customJudgeId!);
-        if (customJudge != null) {
-          personaPromptOverride = customJudge.generatedPersonaPrompt;
-          howToImpressOverride = customJudge.generatedHowToImpress;
-        }
-      }
+      // Custom judge: generated persona; pack judge: pack skin (memoized).
+      final overrides = await _loadJudgeOverrides(surprise);
+
+      // Battle state for the judge's TONE (stage + anti-repetition) — mirrors
+      // the meter the seeker sees. Read-only: the win/score math below is
+      // computed separately and stays untouched.
+      final seekerTurns =
+          messages.where((m) => m.senderType == 'seeker').length;
+      final meterResistance = surprise.resistanceScore ??
+          BattleMath.baseResistance(surprise.difficultyLevel);
+      final meterProgress = meterResistance <= 0
+          ? 1.0
+          : (surprise.seekerScore / meterResistance).clamp(0.0, 1.0).toDouble();
 
       final judgeResponse = await ai.judgeChat(
         persona: surprise.judgePersona,
@@ -317,8 +358,10 @@ class _BattleChatScreenState extends ConsumerState<BattleChatScreen> {
         surpriseContextHint: surpriseContextHint,
         howToImpressHint: howToImpressHint,
         judgeMemories: judgeMemories.isNotEmpty ? judgeMemories : null,
-        personaPromptOverride: personaPromptOverride,
-        howToImpressOverride: howToImpressOverride,
+        personaPromptOverride: overrides.personaPrompt,
+        howToImpressOverride: overrides.howToImpress,
+        meterProgress: meterProgress,
+        turnNumber: seekerTurns,
       );
 
       final isVerdictNow = judgeResponse.isVerdict;
