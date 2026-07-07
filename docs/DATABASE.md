@@ -53,8 +53,21 @@ Migrations in `supabase/migrations/` must be run **manually** in numeric order v
 | 040 | `040_join_couple_by_code_rpc.sql` | Secure `join_couple_by_code` RPC — ownership validation, duplicate-join prevention, race-condition guard |
 | 041 | `041_security_logs.sql` | `security_logs` table — auth/API event monitoring; write-only from client; indexed by event_type + user_id |
 | 042 | `042_rate_limits.sql` | `rate_limit_entries` table + `check_rate_limit` RPC — server-side sliding-window rate limiting per user/action |
+| 043 | `043_notifications.sql` | `notifications` table for the in-app notification center — indexed by `(user_id, is_read, created_at DESC)`, RLS select+update own rows, added to Realtime publication |
+| 044 | `044_chat_tone_mode.sql` | `tone_id` column on `character_chat_messages` for the mood/tone transformation overlay |
+| 045 | `045_judge_use_for.sql` | `use_for` column (`battle`/`chat`/`both`) on `custom_judges` for marketplace tab filtering |
 | 046 | `046_surprises_bucket_rls.sql` | `surprises` storage bucket + RLS policies (insert/select/update/delete) scoped to couple members — fixes 403 on photo/voice surprise upload |
 | 047 | `047_surprises_judge_persona_dynamic.sql` | Drop `surprises_judge_persona_check` — the static 5-persona enum rejected judge-pack/custom personas (23514). Personas are now a dynamic set validated in-app |
+| 048 | `048_surprises_delete_policy.sql` | DELETE RLS policy on `surprises` scoped to the creator (`creator_id = auth.uid()`) — the table had no delete policy, so the "delete surprise" action was blocked |
+| 049 | `049_profiles_identity_and_search.sql` | Friend-search foundation: `profiles.display_name` + `pg_trgm` index + backfill; `search_users_by_name(p_query)` security-definer RPC; `user_friends.requested_by` |
+| 050 | `050_friend_pairs.sql` | `couples` becomes a per-friend-pair container: dedupe duplicate rows, unique index on the unordered member pair (linked only), `couples.friendship_id`, backfill `user_friends` for existing linked couples. Run BEFORE 051 |
+| 051 | `051_auto_pair_on_accept.sql` | Trigger on `user_friends` auto-creates the pair's couple row when a request is accepted; `join_couple_by_code` drops the single-couple gate and records the friendship. Run AFTER 050 |
+| 052 | `052_resilient_friend_accept.sql` | Rewrite 051's trigger to `IF NOT EXISTS` (no unique-index dependency) with an exception guard — fixes "accept friend request does nothing"; backfills couple rows for already-accepted friendships. Idempotent |
+| 053 | `053_auto_populate_display_name.sql` | `handle_new_user` trigger populates `profiles.display_name` on signup (auth metadata else email local part) + re-backfills nulls — fixes "Winkidoo user" labels and unfindable users |
+| 054 | `054_search_excludes_existing_friends.sql` | `search_users_by_name` now excludes anyone with an existing `user_friends` row with the caller (any direction/status) — no re-requesting existing/pending friends |
+| 055 | `055_friend_notifications.sql` | `notify_friend_event` trigger on `user_friends` — in-app notification on new pending request (→ recipient) and on accept (→ requester); push handled by the Edge Function webhook |
+| 056 | `056_chat_member_names_and_approval.sql` | `get_chat_room_members` returns `display_name`+`email` (chat sender names); `character_chat_members.status` active/pending + `approve_chat_room_member` join-approval flow with in-app notifications |
+| 057 | `057_collectibles_fk_on_delete.sql` | Recreate `judge_collectibles_battle_id_fkey` as `ON DELETE SET NULL` — 021 had no ON DELETE action, so deleting a surprise that earned a collectible failed with 23503; the card survives, its `battle_id` is nulled |
 
 **Note:** Migrations `010a` and `010b` are independent of each other but both depend on `001`. Run all files in filename order. Both `010_` files must be applied.
 
