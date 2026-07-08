@@ -17,6 +17,7 @@ import 'package:winkidoo/features/dare/dare_response_sheet.dart';
 import 'package:winkidoo/features/play/widgets/battle_pass_bar.dart';
 import 'package:winkidoo/features/play/widgets/play_card_stack.dart';
 import 'package:winkidoo/features/play/widgets/play_header.dart';
+import 'package:winkidoo/features/play/widgets/scene_party_card.dart';
 import 'package:winkidoo/core/constants/app_constants.dart';
 import 'package:winkidoo/models/judge.dart';
 import 'package:winkidoo/providers/daily_dare_provider.dart';
@@ -157,6 +158,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                           brightness: brightness,
                           isCompact: isCompact,
                           onTap: () => context.push('/shell/chat'),
+                        ),
+                        // Index-coupled with playCardMetas in
+                        // play_card_stack_state.dart — keep positions in sync.
+                        ScenePartyCard(
+                          brightness: brightness,
+                          isCompact: isCompact,
+                          onTap: () => context.push('/shell/scenes'),
                         ),
                       ],
                     ),

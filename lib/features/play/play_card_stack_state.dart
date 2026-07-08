@@ -48,4 +48,9 @@ const playCardMetas = <PlayCardMeta>[
     icon: PhosphorIconsFill.chatTeardropDots,
     accentColor: AppTheme.info,
   ),
+  PlayCardMeta(
+    label: 'Scene Party',
+    icon: PhosphorIconsFill.maskHappy,
+    accentColor: AppTheme.gold,
+  ),
 ];

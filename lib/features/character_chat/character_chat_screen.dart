@@ -22,6 +22,10 @@ import 'package:winkidoo/providers/character_chat_provider.dart';
 import 'package:winkidoo/services/character_chat_realtime_service.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/character_chat_service.dart';
+import 'package:winkidoo/services/scene_realtime_service.dart';
+import 'package:winkidoo/providers/scene_party_provider.dart';
+import 'package:winkidoo/features/scene_party/widgets/scene_header.dart';
+import 'package:winkidoo/features/scene_party/widgets/scene_message_bubbles.dart';
 
 class CharacterChatScreen extends ConsumerStatefulWidget {
   const CharacterChatScreen({super.key, required this.roomId});
@@ -37,6 +41,7 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   late final CharacterChatRealtimeService _realtimeService;
+  late final SceneRealtimeService _sceneRealtime;
   bool _isSending = false;
   bool _isPopoverOpen = false;
   List<TypingUser> _typingOthers = const [];
@@ -61,12 +66,25 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
         setState(() => _typingOthers = others);
       },
     );
+    // Scene Party: live session updates for this room. Harmless for plain
+    // chat rooms (no scene_sessions row → no events).
+    _sceneRealtime = SceneRealtimeService(Supabase.instance.client);
+    _sceneRealtime.subscribe(
+      roomId: widget.roomId,
+      onSession: (session) {
+        ref
+            .read(sceneSessionProvider(widget.roomId).notifier)
+            .apply(session);
+        ref.invalidate(sceneCastProvider(widget.roomId));
+      },
+    );
   }
 
   @override
   void dispose() {
     _typingTimer?.cancel();
     _realtimeService.dispose();
+    _sceneRealtime.dispose();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -139,7 +157,13 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
       return;
     }
 
-    final rl = ApiRateLimiter.checkAndRecord('ai_character_chat', user.id);
+    // Scene mode: your claimed character IS your voice; separate rate bucket.
+    final sceneSession =
+        ref.read(sceneSessionProvider(widget.roomId)).value;
+    final inScene = sceneSession != null && !sceneSession.isEnded;
+
+    final rl = ApiRateLimiter.checkAndRecord(
+        inScene ? 'scene_message' : 'ai_character_chat', user.id);
     if (!rl.allowed) {
       setState(() => _isSending = false);
       if (mounted) {
@@ -150,14 +174,22 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
       return;
     }
 
-    final characterId = ref.read(selectedCharacterProvider);
-    final characters = ref.read(availableCharactersProvider).value ?? [];
-    final character = characters.firstWhere(
-      (c) => c.id == characterId,
-      orElse: () => CharacterChatService.builtInPresets.first,
-    );
+    late final CharacterPreset character;
+    if (inScene) {
+      // Unclaimed scene members speak as themselves (no transform).
+      character =
+          ref.read(myClaimedCharacterProvider(widget.roomId)).value ??
+              CharacterChatService.builtInPresets.first;
+    } else {
+      final characterId = ref.read(selectedCharacterProvider);
+      final characters = ref.read(availableCharactersProvider).value ?? [];
+      character = characters.firstWhere(
+        (c) => c.id == characterId,
+        orElse: () => CharacterChatService.builtInPresets.first,
+      );
+    }
 
-    final toneId = ref.read(selectedToneProvider);
+    final toneId = inScene ? 'none' : ref.read(selectedToneProvider);
     final tone = CharacterChatService.toneById(toneId);
     final hasTone = !tone.isNone;
 
@@ -296,7 +328,8 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
           ? others.first.label
           : ((room.name != null && room.name!.isNotEmpty) ? room.name! : 'Chat');
     }
-    String? senderNameFor(String id) {
+    String? senderNameFor(String? id) {
+      if (id == null) return null; // bot messages carry their own character name
       for (final m in members) {
         if (m.userId == id) return m.label;
       }
@@ -307,19 +340,30 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
       return _PendingApprovalScreen(roomTitle: roomTitle);
     }
 
+    // Scene Party session (null = plain chat room). In scene mode the claimed
+    // character replaces the persona picker.
+    final sceneSession =
+        ref.watch(sceneSessionProvider(widget.roomId)).value;
+    final inScene = sceneSession != null;
+    final claimedCharacter = inScene
+        ? ref.watch(myClaimedCharacterProvider(widget.roomId)).value
+        : null;
+
     // Current persona
     final characterId = ref.watch(selectedCharacterProvider);
     final characters = ref.watch(availableCharactersProvider).value ?? [];
-    final character = characters.isEmpty
-        ? CharacterChatService.builtInPresets.first
-        : characters.firstWhere(
-            (c) => c.id == characterId,
-            orElse: () => characters.first,
-          );
+    final character = inScene
+        ? (claimedCharacter ?? CharacterChatService.builtInPresets.first)
+        : characters.isEmpty
+            ? CharacterChatService.builtInPresets.first
+            : characters.firstWhere(
+                (c) => c.id == characterId,
+                orElse: () => characters.first,
+              );
     final accent = character.color ?? AppTheme.primaryOrange;
 
-    // Current tone
-    final toneId = ref.watch(selectedToneProvider);
+    // Current tone (tones are disabled in scene mode — the character is the voice)
+    final toneId = inScene ? 'none' : ref.watch(selectedToneProvider);
     final tone = CharacterChatService.toneById(toneId);
 
     if (messages.isNotEmpty) _scrollToBottom();
@@ -379,33 +423,41 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                               ),
                               const SizedBox(height: 1),
                               GestureDetector(
-                                onTap: () => setState(
-                                    () => _isPopoverOpen = !_isPopoverOpen),
+                                // Scene mode: your claim IS your voice — no picker.
+                                onTap: inScene
+                                    ? null
+                                    : () => setState(
+                                        () => _isPopoverOpen = !_isPopoverOpen),
                                 behavior: HitTestBehavior.opaque,
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      tone.isNone
-                                          ? 'as ${character.name.toLowerCase()}'
-                                          : 'as ${character.name.toLowerCase()} · ${tone.name.toLowerCase()}',
+                                      inScene
+                                          ? (claimedCharacter != null
+                                              ? 'as ${claimedCharacter.name}'
+                                              : 'no character claimed yet')
+                                          : tone.isNone
+                                              ? 'as ${character.name.toLowerCase()}'
+                                              : 'as ${character.name.toLowerCase()} · ${tone.name.toLowerCase()}',
                                       style: GoogleFonts.inter(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                         color: accent,
                                       ),
                                     ),
-                                    AnimatedRotation(
-                                      turns: _isPopoverOpen ? 0.5 : 0,
-                                      duration:
-                                          const Duration(milliseconds: 240),
-                                      child: Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        size: 16,
-                                        color: accent,
+                                    if (!inScene)
+                                      AnimatedRotation(
+                                        turns: _isPopoverOpen ? 0.5 : 0,
+                                        duration:
+                                            const Duration(milliseconds: 240),
+                                        child: Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          size: 16,
+                                          color: accent,
+                                        ),
                                       ),
-                                    ),
                                   ],
                                 ),
                               ),
@@ -452,6 +504,10 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                       onDecline: _declineMember,
                     ),
 
+                  // ── Scene Party banner ──
+                  if (inScene)
+                    SceneHeader(roomId: widget.roomId, session: sceneSession),
+
                   // ── Messages ──
                   Expanded(
                     child: messagesAsync.when(
@@ -490,7 +546,19 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
                           itemCount: msgs.length,
                           itemBuilder: (context, index) {
                             final msg = msgs[index];
-                            final isMine = msg.senderId == user?.id;
+                            // Scene Party bot rows render as their own bubbles.
+                            if (msg.isDirector) {
+                              return DirectorBubble(message: msg);
+                            }
+                            if (msg.isCastmate) {
+                              return CastmateBubble(message: msg);
+                            }
+                            if (msg.isSystem || msg.isGameCard) {
+                              // game_card gets a real card in Phase C.
+                              return SceneSystemLine(message: msg);
+                            }
+                            final isMine =
+                                msg.senderId != null && msg.senderId == user?.id;
                             return ChatMessageBubble(
                               message: msg,
                               isMine: isMine,

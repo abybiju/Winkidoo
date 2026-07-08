@@ -48,6 +48,9 @@ import 'package:winkidoo/features/character_chat/chat_rooms_screen.dart';
 import 'package:winkidoo/features/character_chat/character_chat_screen.dart';
 import 'package:winkidoo/features/character_chat/add_friends_screen.dart';
 import 'package:winkidoo/features/character_chat/create_room_screen.dart';
+import 'package:winkidoo/features/scene_party/scene_pack_list_screen.dart';
+import 'package:winkidoo/features/scene_party/scene_pack_detail_screen.dart';
+import 'package:winkidoo/features/scene_party/scene_casting_screen.dart';
 import 'package:winkidoo/features/notifications/notification_screen.dart';
 import 'package:winkidoo/features/notifications/realtime_notifications_subscription.dart';
 import 'package:winkidoo/models/judge_response.dart';
@@ -463,6 +466,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final roomId = state.pathParameters['roomId']!;
           return CharacterChatScreen(roomId: roomId);
+        },
+      ),
+      GoRoute(
+        path: '/shell/scenes',
+        name: 'scenes',
+        builder: (_, __) => const ScenePackListScreen(),
+      ),
+      GoRoute(
+        path: '/shell/scenes/cast/:roomId',
+        name: 'scene-casting',
+        builder: (_, state) {
+          final roomId = state.pathParameters['roomId']!;
+          return SceneCastingScreen(roomId: roomId);
+        },
+      ),
+      GoRoute(
+        path: '/shell/scenes/:slug',
+        name: 'scene-pack',
+        builder: (_, state) {
+          final slug = state.pathParameters['slug']!;
+          return ScenePackDetailScreen(packSlug: slug);
         },
       ),
       GoRoute(

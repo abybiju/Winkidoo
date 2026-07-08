@@ -27,6 +27,9 @@ class ApiRateLimiter {
     'couple_join': const _BucketConfig(5, const Duration(minutes: 15)),
     'surprise_create': const _BucketConfig(10, const Duration(minutes: 10)),
     'battle_start': const _BucketConfig(10, const Duration(minutes: 10)),
+    'scene_message': const _BucketConfig(20, Duration(minutes: 5)),
+    'scene_game_submit': const _BucketConfig(10, Duration(minutes: 5)),
+    'scene_create': const _BucketConfig(3, Duration(minutes: 10)),
   };
 
   /// Per-action, per-key attempt timestamps.
