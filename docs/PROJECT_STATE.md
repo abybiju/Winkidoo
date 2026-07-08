@@ -4,9 +4,23 @@ Short reference for what’s implemented and what’s next. No secrets or keys.
 
 ---
 
-## Implemented (as of June 2026)
+## Implemented (as of July 2026)
 
-### June 3, 2026 (newest) – Judge concession line for meter-crossing wins (tag v0.2.8, no migration)
+### July 8, 2026 (newest) – Scene Party Phases A+B: themed roleplay rooms with an AI Director (tags v0.2.10 + v0.2.11, migrations 058–060)
+
+**The new flagship social feature, built as 4 production phases (A+B shipped; C = in-chat games, D = recap/premium — full plan in `~/.claude/plans/shimmering-pondering-quill.md`).** Friends pick a **theme pack**, each claims a **character**, messages are voice-transformed into that character, an **AI Director** runs the story in acts, and **AI castmates** play unclaimed characters so even solo users get a full scene. All content is original/seasonal/public-domain — **no real movie/show IP** (Disney C&D'd Character.AI for exactly that, Sept 2025).
+
+- **Architecture:** scene rooms ARE `character_chat_rooms` (type `group`) + a 1:1 `scene_sessions` row; the existing chat screen flips into "scene mode" when a session exists. Content is 100% server-side data (`scene_packs`/`scene_characters`/`scene_act_templates`, judge_packs pattern) — new packs ship via SQL INSERT, zero app release. `is_premium` + Wink+ gate hooks built but dormant (all 4 launch packs free): Midsummer Carnival (seasonal, ends Sep 5), Haunted Mansion, Campus Drama, Royal Court — 24 curated character sheets + 12 acts with twist decks (059).
+- **Phase A (v0.2.10, migrations 058+059):** pack browser → pack detail + friend picker → casting screen (claim grid, per-player 🤫 secret goals, invite-code share) → themed chat. `character_chat_messages` extended with `message_type` ('user'/'director'/'castmate'/'game_card'/'system') + `payload jsonb`, `sender_id` made nullable (bot rows are service-role-only; client insert RLS tightened to 'user'). RPCs `create_scene_session` / `claim_scene_character` (race-safe) / `get_scene_cast`.
+- **Phase B (v0.2.11, migration 060 + 3 edge-fn deploys):** new **`scene-director` Edge Function** — the first server-side AI orchestration in the app (gemini-proxy pattern: JWT → active-membership → Gemini with explicit safetySettings → service-role bot inserts). Every client fires a debounced `tick` after each send; `claim_director_turn` (single-statement **CAS + 25s lease**) collapses concurrent ticks to exactly ONE action. Turn policy (mirrored in `lib/core/utils/scene_state.dart`): act close (at the act's message budget, with AI-judged 🏆 **Best Performance**) > director twist (every 6 user msgs) > castmate reply (every 2, cap 8/act). Cost caps: per-room 40/10min + 300/day, per-user tick 30/5min (~$0.05–0.09 per 3-act episode). Every prompt carries `SCENE_SAFETY_BLOCK` (PG-13, de-escalation, 988). Gemini failures degrade to canned lines — chat never blocks. **gemini-proxy now injects default Gemini safetySettings app-wide** (closed a launch-era gap). Notifications: `scene_started` (060 trigger + push) / `scene_act_ended` (edge-fn + push) via a new `scene_sessions` webhook branch.
+- **Bug fixed in 060:** 058's `get_scene_cast` joined `profiles.id` but profiles is keyed by `user_id` → the v0.2.10 casting grid loaded empty; 060 recreates the RPC (server-side fix, no app update needed).
+- **Verified live (user test):** Director opens Act 1 addressing characters by name, castmates reply in voice, user messages transform into the claimed character, act meter fills. **Known follow-ups:** tone chips (Romantic/Flirty/…) still render in scene mode but are ignored — hide next build; first-time UX needs an explainer (user was initially confused about what was happening); scene_sessions webhook may still need adding in the dashboard for push.
+
+### July 6, 2026 – Judge liveliness overhaul (tag v0.2.9, no migration) + migration 057
+
+The battle judge felt robotic (re-asked satisfied demands, identical openers). Overhaul in `ai_judge_service.dart` + new `lib/core/utils/judge_battle_state.dart`: per-turn LIVE BATTLE STATE block (meter% → Cold/Curious/Intrigued/Cracking stage directions with a scoring firewall, the judge's own last 6 lines as a programmatic do-not-repeat list, concede-satisfied-demands rules), 5 personas expanded to full ~200-word character sheets, random per-persona opening angles, judge temp 0.8→1.0 (Chaos Gremlin 1.15 via dedicated model), pack-judge skins finally wired into live battles (`_loadJudgeOverrides`), transcript capped at 40 messages. Win/scoring math untouched. Separately, **migration 057**: `judge_collectibles.battle_id` FK recreated `ON DELETE SET NULL` — deleting a surprise that earned a collectible used to fail with 23503.
+
+### June 3, 2026 – Judge concession line for meter-crossing wins (tag v0.2.8, no migration)
 
 Follow-up polish to v0.2.7's unlock fix. When the seeker won by **crossing the meter** (rather than the AI judge choosing to unlock), the judge's last bubble stayed a mid-battle "keep going" line, and it was persisted as a *non-verdict* message — so the **creator's device never navigated to the reveal** (its realtime handler only looks for a verdict message). Fix in `battle_chat_screen.dart`: the win decision is now computed BEFORE the judge message is persisted; on a `mechanicalWin` (`!aiVerdictWin && (meterCrossed || effectiveRes==0)`) we synthesize a **persona-voiced concession** `JudgeResponse` (`isVerdict:true, isUnlocked:true, score:newSeekerScore`) via new helpers `_concessionLine(persona)` / `_concessionEmoji(persona)` (scripted lines for the 5 core personas + a neutral fallback for packs/custom judges), persist it as a real verdict (`is_verdict=true`), and pass it to the reveal. AI-verdict wins and denials are unchanged. This also fixes the creator-side reveal navigation (both devices now find a verdict message).
 
@@ -446,6 +460,9 @@ Released as tag **`v0.2.2`** (pubspec `0.2.2+4`).
 
 ## Next / optional
 
+- **Scene Party Phase C** — in-chat games (migration 061: `scene_games` state machine; "Who Said It?" with neutral-voice anonymization + voting, "Fate Cards" secret roles from act twist decks) — full design in the plan file.
+- **Scene Party Phase D** — episode recap/share sheet, premium-flip drill, seasonal pack runbook.
+- **Scene Party polish** — hide tone chips in scene mode (ignored but still visible); first-scene explainer overlay (new players don't immediately get the improv-show concept); verify the `scene_sessions` UPDATE webhook exists for push.
 - **Android launch** — see blockers list above; Google Play account is the immediate gate.
 - Configure RevenueCat dashboard: create project, add Google Play app, create `wink_plus` entitlement, `default` offering with monthly/yearly packages.
 - Deploy `revenuecat-webhook` Edge Function and set `REVENUECAT_WEBHOOK_SECRET` in Supabase secrets.
