@@ -30,6 +30,11 @@ final scenePackCharactersProvider =
   return ref.watch(scenePartyServiceProvider).getPackCharacters(packId);
 });
 
+final scenePackActsProvider =
+    FutureProvider.family<List<SceneActTemplate>, String>((ref, packId) async {
+  return ref.watch(scenePartyServiceProvider).getPackActs(packId);
+});
+
 /// The scene session for a room (null = plain chat room, not a scene).
 /// Realtime updates are pushed in via [apply] from SceneRealtimeService.
 final sceneSessionProvider = AsyncNotifierProvider.family<SceneSessionNotifier,

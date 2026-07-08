@@ -69,6 +69,28 @@ class ScenePack {
   }
 }
 
+/// An act template within a pack (scene_act_templates table).
+/// director_brief/twist_hints stay server-side — the client only needs pacing.
+class SceneActTemplate {
+  const SceneActTemplate({
+    required this.actNumber,
+    required this.title,
+    required this.minUserMessages,
+  });
+
+  final int actNumber;
+  final String title;
+  final int minUserMessages;
+
+  factory SceneActTemplate.fromJson(Map<String, dynamic> json) {
+    return SceneActTemplate(
+      actNumber: json['act_number'] as int,
+      title: json['title'] as String,
+      minUserMessages: json['min_user_messages'] as int? ?? 12,
+    );
+  }
+}
+
 /// A claimable character within a pack (scene_characters table).
 class SceneCharacter {
   const SceneCharacter({

@@ -12,6 +12,8 @@ enum NotificationType {
   friendAccepted,
   chatJoinRequest,
   chatJoinApproved,
+  sceneStarted,
+  sceneActEnded,
   unknown;
 
   static NotificationType fromString(String? value) {
@@ -24,6 +26,10 @@ enum NotificationType {
         return chatJoinRequest;
       case 'chat_join_approved':
         return chatJoinApproved;
+      case 'scene_started':
+        return sceneStarted;
+      case 'scene_act_ended':
+        return sceneActEnded;
       case 'surprise_new':
         return surpriseNew;
       case 'battle_update':
@@ -75,6 +81,10 @@ enum NotificationType {
         return 'chat_join_request';
       case chatJoinApproved:
         return 'chat_join_approved';
+      case sceneStarted:
+        return 'scene_started';
+      case sceneActEnded:
+        return 'scene_act_ended';
       case unknown:
         return 'unknown';
     }

@@ -75,6 +75,22 @@ class ScenePartyService {
     }
   }
 
+  Future<List<SceneActTemplate>> getPackActs(String packId) async {
+    try {
+      final rows = await _client
+          .from('scene_act_templates')
+          .select('act_number, title, min_user_messages')
+          .eq('pack_id', packId)
+          .order('act_number');
+      return (rows as List)
+          .map((r) => SceneActTemplate.fromJson(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('ScenePartyService.getPackActs: $e');
+      return [];
+    }
+  }
+
   /// Creates room + session + all-AI cast. Returns the new room id.
   /// Throws on PREMIUM_REQUIRED / pack-inactive so the UI can react.
   Future<String> createSceneSession({

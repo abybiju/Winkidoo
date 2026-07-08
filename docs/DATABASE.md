@@ -70,6 +70,7 @@ Migrations in `supabase/migrations/` must be run **manually** in numeric order v
 | 057 | `057_collectibles_fk_on_delete.sql` | Recreate `judge_collectibles_battle_id_fkey` as `ON DELETE SET NULL` — 021 had no ON DELETE action, so deleting a surprise that earned a collectible failed with 23503; the card survives, its `battle_id` is nulled |
 | 058 | `058_scene_party_core.sql` | Scene Party core: `scene_packs`/`scene_characters`/`scene_act_templates` (read-only content), `scene_sessions` (+realtime; Director-turn CAS `version`+`director_busy_until`), `scene_cast` (NULL user = AI castmate); `character_chat_messages` gains `message_type`+`payload`, nullable `sender_id` (bot rows service-role only, insert RLS tightened to 'user'); RPCs `create_scene_session`/`claim_scene_character`/`get_scene_cast` |
 | 059 | `059_scene_party_seed_packs.sql` | Scene Party launch content: 4 packs × 6 characters × 3 acts (Midsummer Carnival seasonal, Haunted Mansion, Campus Drama, Royal Court) — all free, original/public-domain |
+| 060 | `060_scene_director_engine.sql` | Scene Party Director engine: message-counter trigger, `claim_director_turn` CAS+lease (service_role only), `get_scene_cast` profiles-join fix (058 bug — empty cast grid), `scene_started` notification trigger. Pair with: deploy `scene-director`, redeploy `gemini-proxy`+`send_battle_notification`, webhook on `scene_sessions` UPDATE |
 
 **Note:** Migrations `010a` and `010b` are independent of each other but both depend on `001`. Run all files in filename order. Both `010_` files must be applied.
 

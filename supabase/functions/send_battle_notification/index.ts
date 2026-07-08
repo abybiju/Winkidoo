@@ -503,6 +503,71 @@ Deno.serve(async (req) => {
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SCENE_SESSIONS — Scene Party lifecycle (PUSH ONLY).
+    // In-app rows: scene_started comes from the notify_scene_started() DB
+    // trigger (migration 060); scene_act_ended rows are inserted by the
+    // scene-director Edge Function (it knows the Best Performance winner).
+    // Here we only deliver push, so there are never duplicate in-app rows.
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (payload.table === "scene_sessions" && payload.type === "UPDATE") {
+      const record = payload.record as {
+        id?: string; room_id?: string; pack_id?: string;
+        status?: string; current_act?: number; created_by?: string;
+      } | null;
+      const oldRecord = (payload.old_record as {
+        status?: string; current_act?: number;
+      } | null) ?? null;
+      if (!record?.id || !record?.room_id) {
+        return respond({ ok: true, skipped: "scene_sessions no record" });
+      }
+
+      const wentLive = oldRecord?.status === "casting" && record.status === "live";
+      const actClosed = (record.current_act ?? 0) > (oldRecord?.current_act ?? 0) &&
+        oldRecord?.status === "live";
+      const wrapped = oldRecord?.status === "live" && record.status === "ended";
+      if (!wentLive && !actClosed && !wrapped) {
+        return respond({ ok: true, skipped: "scene_sessions no-op" });
+      }
+
+      const { data: castRows } = await supabaseAdmin()
+        .from("scene_cast").select("user_id")
+        .eq("session_id", record.id).not("user_id", "is", null);
+      let recipients = (castRows ?? []).map((r) => r.user_id as string);
+      if (wentLive && record.created_by) {
+        recipients = recipients.filter((u) => u !== record.created_by);
+      }
+      if (recipients.length === 0) {
+        return respond({ ok: true, skipped: "scene_sessions no recipients" });
+      }
+
+      const { data: pack } = record.pack_id
+        ? await supabaseAdmin().from("scene_packs").select("name").eq("id", record.pack_id).maybeSingle()
+        : { data: null };
+      const packName = (pack?.name as string | undefined) ?? "Your scene";
+
+      const title = wentLive
+        ? "🎬 The scene has started!"
+        : wrapped
+        ? "🎬 That's a wrap!"
+        : `🎬 Act ${oldRecord?.current_act} is in the books`;
+      const bodyText = wentLive
+        ? `${packName} is live — get in character.`
+        : wrapped
+        ? `${packName} just ended — see how it wrapped.`
+        : `${packName}: the next act is starting…`;
+      const type = wentLive ? "scene_started" : "scene_act_ended";
+
+      const pushes = recipients.map((userId) => ({
+        userId,
+        title,
+        body: bodyText,
+        data: { type, room_id: record.room_id! },
+      }));
+      const sent = await sendNotifications(pushes);
+      return respond({ ok: true, table: "scene_sessions", sent });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // USER_FRIENDS — friend request + accept (PUSH ONLY).
     // In-app rows are written by the notify_friend_event() DB trigger (migration
     // 055); here we only deliver push so there are no duplicate in-app rows.

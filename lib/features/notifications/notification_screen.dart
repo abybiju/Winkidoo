@@ -280,6 +280,10 @@ class _NotificationTile extends StatelessWidget {
         return Icons.group_add_rounded;
       case NotificationType.chatJoinApproved:
         return Icons.check_circle_rounded;
+      case NotificationType.sceneStarted:
+        return Icons.movie_rounded;
+      case NotificationType.sceneActEnded:
+        return Icons.theaters_rounded;
       case NotificationType.unknown:
         return Icons.notifications_rounded;
     }
@@ -313,6 +317,10 @@ class _NotificationTile extends StatelessWidget {
         return AppTheme.primaryOrange;
       case NotificationType.chatJoinApproved:
         return const Color(0xFF81C784);
+      case NotificationType.sceneStarted:
+        return AppTheme.primaryOrange;
+      case NotificationType.sceneActEnded:
+        return const Color(0xFFFFD54F);
       case NotificationType.unknown:
         return AppTheme.primaryOrange;
     }

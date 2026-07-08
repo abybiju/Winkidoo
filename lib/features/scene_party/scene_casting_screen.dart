@@ -13,6 +13,8 @@ import 'package:winkidoo/models/scene_session.dart';
 import 'package:winkidoo/providers/auth_provider.dart';
 import 'package:winkidoo/providers/character_chat_provider.dart';
 import 'package:winkidoo/providers/scene_party_provider.dart';
+import 'package:winkidoo/providers/supabase_provider.dart';
+import 'package:winkidoo/services/scene_director_client.dart';
 
 /// Scene casting room — claim a character, see who's in, start the show.
 class SceneCastingScreen extends ConsumerStatefulWidget {
@@ -26,6 +28,37 @@ class SceneCastingScreen extends ConsumerStatefulWidget {
 }
 
 class _SceneCastingScreenState extends ConsumerState<SceneCastingScreen> {
+  bool _starting = false;
+
+  /// Creator kicks off the scene: the Director opens Act 1 server-side, then
+  /// we drop into the chat. Fail-soft: any skip/error still lands in chat.
+  Future<void> _startScene() async {
+    if (_starting) return;
+    setState(() => _starting = true);
+    try {
+      final director =
+          SceneDirectorClient(ref.read(supabaseClientProvider));
+      final result = await director.start(widget.roomId);
+      if (!mounted) return;
+      if (result['error'] == 'Claim a character first') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Claim a character before starting the scene!')),
+        );
+        setState(() => _starting = false);
+        return;
+      }
+      ref.invalidate(sceneSessionProvider(widget.roomId));
+      context.go('/shell/chat/${widget.roomId}');
+    } catch (e) {
+      // The Director engine is fail-soft — enter the chat anyway; a later
+      // tick can still open the act.
+      if (!mounted) return;
+      ref.invalidate(sceneSessionProvider(widget.roomId));
+      context.go('/shell/chat/${widget.roomId}');
+    }
+  }
+
   String? _claimingCharacterId;
 
   Future<void> _refresh() async {
@@ -366,11 +399,8 @@ class _SceneCastingScreenState extends ConsumerState<SceneCastingScreen> {
           child: isCreator
               ? GlossyButton(
                   full: true,
-                  label: '🎬 Start the Scene',
-                  onTap: () {
-                    // Phase B: call scene-director start before entering chat.
-                    context.go('/shell/chat/${widget.roomId}');
-                  },
+                  label: _starting ? '🎬 Raising the curtain…' : '🎬 Start the Scene',
+                  onTap: _startScene,
                 )
               : Column(
                   children: [

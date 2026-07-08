@@ -350,7 +350,7 @@ begin
   from public.scene_cast c
   join public.scene_sessions s on s.id = c.session_id
   join public.scene_characters sc on sc.id = c.character_id
-  left join public.profiles p on p.id = c.user_id
+  left join public.profiles p on p.user_id = c.user_id
   where s.room_id = p_room_id
   order by sc.sort_order, sc.name;
 end;

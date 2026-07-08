@@ -137,6 +137,20 @@ Deno.serve(async (req: Request) => {
     if (parsed.generationConfig.thinkingConfig == null) {
       parsed.generationConfig.thinkingConfig = { thinkingBudget: 0 };
     }
+    // Default Gemini safety thresholds for every call that doesn't set its
+    // own. The app is Teen 13+ and no client path configures SafetySettings,
+    // so this closes the gap server-side for already-installed builds too.
+    if (parsed.safetySettings == null) {
+      parsed.safetySettings = [
+        "HARM_CATEGORY_HARASSMENT",
+        "HARM_CATEGORY_HATE_SPEECH",
+        "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "HARM_CATEGORY_DANGEROUS_CONTENT",
+      ].map((category) => ({
+        category,
+        threshold: "BLOCK_MEDIUM_AND_ABOVE",
+      }));
+    }
     body = JSON.stringify(parsed);
   } catch (_) {
     // Body isn't JSON we can parse — forward it unchanged.

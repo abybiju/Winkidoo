@@ -23,6 +23,7 @@ import 'package:winkidoo/services/character_chat_realtime_service.dart';
 import 'package:winkidoo/services/api_rate_limiter.dart';
 import 'package:winkidoo/services/character_chat_service.dart';
 import 'package:winkidoo/services/scene_realtime_service.dart';
+import 'package:winkidoo/services/scene_director_client.dart';
 import 'package:winkidoo/providers/scene_party_provider.dart';
 import 'package:winkidoo/features/scene_party/widgets/scene_header.dart';
 import 'package:winkidoo/features/scene_party/widgets/scene_message_bubbles.dart';
@@ -42,6 +43,7 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
   final _scrollController = ScrollController();
   late final CharacterChatRealtimeService _realtimeService;
   late final SceneRealtimeService _sceneRealtime;
+  late final SceneDirectorClient _sceneDirector;
   bool _isSending = false;
   bool _isPopoverOpen = false;
   List<TypingUser> _typingOthers = const [];
@@ -68,6 +70,7 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     );
     // Scene Party: live session updates for this room. Harmless for plain
     // chat rooms (no scene_sessions row → no events).
+    _sceneDirector = SceneDirectorClient(Supabase.instance.client);
     _sceneRealtime = SceneRealtimeService(Supabase.instance.client);
     _sceneRealtime.subscribe(
       roomId: widget.roomId,
@@ -85,6 +88,7 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
     _typingTimer?.cancel();
     _realtimeService.dispose();
     _sceneRealtime.dispose();
+    _sceneDirector.dispose();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -230,6 +234,12 @@ class _CharacterChatScreenState extends ConsumerState<CharacterChatScreen> {
 
       notifier.reconcile(tempId, inserted);
       _scrollToBottom();
+
+      // Scene mode: poke the Director engine (debounced; server CAS collapses
+      // concurrent ticks from all members to one action).
+      if (inScene && sceneSession.isLive) {
+        _sceneDirector.tick(widget.roomId);
+      }
 
       if (needsTransform) {
         try {

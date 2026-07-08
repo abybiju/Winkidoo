@@ -34,6 +34,8 @@ class NotificationRouter {
         return;
       case 'chat_join_request':
       case 'chat_join_approved':
+      case 'scene_started':
+      case 'scene_act_ended':
         final roomId = data['room_id'] as String?;
         if (roomId != null && roomId.isNotEmpty) {
           router.push('/shell/chat/$roomId');

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:winkidoo/core/theme/app_theme.dart';
+import 'package:winkidoo/core/utils/scene_state.dart';
+import 'package:winkidoo/models/scene_pack.dart';
 import 'package:winkidoo/models/scene_session.dart';
 import 'package:winkidoo/providers/scene_party_provider.dart';
 
@@ -25,6 +27,22 @@ class SceneHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pack = ref.watch(scenePackByIdProvider(session.packId)).value;
     final cast = ref.watch(sceneCastProvider(roomId)).value ?? const [];
+    final acts = ref.watch(scenePackActsProvider(session.packId)).value;
+    SceneActTemplate? currentAct;
+    if (acts != null && session.isLive) {
+      for (final a in acts) {
+        if (a.actNumber == session.currentAct) {
+          currentAct = a;
+          break;
+        }
+      }
+    }
+    final actProgress = currentAct != null
+        ? SceneState.actProgress(
+            userMsgsInAct: session.userMsgsInAct,
+            minUserMessages: currentAct.minUserMessages,
+          )
+        : null;
 
     return GestureDetector(
       onTap: session.isCasting
@@ -38,7 +56,10 @@ class SceneHeader extends ConsumerWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppTheme.glassBorder),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
           children: [
             Text(pack?.emoji ?? '🎬', style: const TextStyle(fontSize: 18)),
             const SizedBox(width: 8),
@@ -104,6 +125,23 @@ class SceneHeader extends ConsumerWidget {
               const SizedBox(width: 4),
               const Icon(PhosphorIconsBold.caretRight,
                   size: 12, color: Colors.white54),
+            ],
+          ],
+            ),
+            // Act progress toward the next act break (server-paced).
+            if (actProgress != null) ...[
+              const SizedBox(height: 7),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: actProgress,
+                  minHeight: 3,
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryOrange.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
             ],
           ],
         ),
