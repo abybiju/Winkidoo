@@ -24,12 +24,12 @@ jobs:
       - name: Send keepalive query
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -uo pipefail
 
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "::error::SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set as repository secrets."
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY must be set as repository secrets."
             exit 1
           fi
 
@@ -38,14 +38,18 @@ jobs:
           # A real row read against a real table. This goes PostgREST -> Postgres,
           # which is what actually counts as project activity. select=* avoids
           # breaking if columns are renamed by a future migration.
+          # Uses the anon key deliberately: RLS returns an empty array to an
+          # unauthenticated caller, but the query still reaches Postgres, so a
+          # `200 []` is the expected success — do not "fix" this by switching
+          # back to the service role key on a public repo.
           # Retried: transient DNS failures on the runner have failed this job before.
           ok=0
           for attempt in 1 2 3 4 5; do
             http_code=$(
               curl -sS --max-time 30 -o /tmp/ka-response -w "%{http_code}" \
                 "${SUPABASE_URL}/rest/v1/profiles?select=*&limit=1" \
-                -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-                -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+                -H "apikey: ${SUPABASE_ANON_KEY}" \
+                -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
               || echo "000"
             )
             echo "Attempt ${attempt}: DB read returned HTTP ${http_code}"
@@ -62,7 +66,7 @@ jobs:
           auth_code=$(
             curl -sS --max-time 30 -o /dev/null -w "%{http_code}" \
               "${SUPABASE_URL}/auth/v1/settings" \
-              -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
             || echo "000"
           )
           echo "Auth settings returned HTTP ${auth_code}"
